@@ -22,7 +22,7 @@ TÜBİTAK 2209-A projesi _"Üretken Yapay Zekâ Modellerinin Türk Edebiyatı A�
 Backend/    Express 5 + TypeScript + Prisma (MySQL)   → API
 Frontend/   React 19 + Vite + TypeScript + Tailwind   → arayüz
 docs/       İş planı, ADR, diyagramlar, OpenAPI
-legacy/     İlk JavaScript prototipi (F3'te arayüz parçaları taşınınca silinecek)
+legacy/     İlk JavaScript prototipi (yeni arayüz sıfırdan tasarlanacak, F3 başında silinecek)
 .github/    CI (GitHub Actions)
 ```
 

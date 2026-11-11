@@ -376,24 +376,24 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 ## 14. Faz bazında görev listesi
 
 ### F0 — Hazırlık (H1)
-- [ ] Anahtarları gözden geçir: sohbette paylaşılan anahtar iptal/yenilenir, yeni anahtarlar yalnızca `.env`'de.
-- [ ] Mimari kararlar: dil (TS), DB (MySQL), ORM, stil, kimlik doğrulama → ADR.
-- [ ] ER şeması ve veri sözlüğü.
-- [ ] OpenAPI taslağı (Bölüm 8).
-- [ ] Arayüz tel çerçeveleri (6 sayfa) ve renk/tipografi.
-- [ ] Depo: klasör yapısı, ESLint/Prettier, Husky, GitHub Actions iskeleti, `docker-compose.yml` (MySQL).
-- [ ] Proje panosu (GitHub Projects): bu belgedeki görevler kart olarak.
+- [ ] Anahtarları gözden geçir: sohbette paylaşılan anahtar iptal/yenilenir, yeni anahtarlar yalnızca `.env`'de. _(Kullanıcıda bekliyor)_
+- [x] Mimari kararlar: dil (TS), DB (MySQL), ORM, stil, kimlik doğrulama → ADR. _(6 ADR; kimlik doğrulama kararı F4'te)_
+- [x] ER şeması ve veri sözlüğü.
+- [x] OpenAPI taslağı (Bölüm 8).
+- [x] **Arayüz tasarımı: SIFIRDAN yeni tasarım** (6 sayfa tel çerçevesi, renk, tipografi, bileşen dili). Eski prototip tasarımı kullanılmaz. `ui-ux-pro-max` eklentisiyle yapılır, tasarım yönü onaylandıktan sonra F3'te kodlanır. _(Yön A seçildi, 5 ekran taslağı Stitch'te hazır, düzeltme listesi ADR 0007'de)_
+- [x] Depo: klasör yapısı, ESLint/Prettier, Husky, GitHub Actions iskeleti, `docker-compose.yml` (MySQL). _(CI ve Docker henüz doğrulanmadı, PR #1)_
+- [ ] Proje panosu (GitHub Projects): bu belgedeki görevler kart olarak. _(Henüz yapılmadı)_
 
 ### F1 — Backend çekirdeği (H2–H4)
 - [ ] Katmanlı yapı: `routes → controllers → services → repositories`.
-- [ ] `config` modülü + zod ile ortam doğrulama.
+- [x] `config` modülü + zod ile ortam doğrulama. _(F0'da yapıldı)_
 - [ ] Prisma şeması, ilk migration, seed (taslak rubrik v0.1, model listesi).
 - [ ] Rubrik servisi: şema, doğrulama, sürümleme, içe/dışa aktarım, etkinleştirme.
 - [ ] `LLMProvider` arayüzü + OpenAI, Anthropic, Google adaptörleri + Mock.
 - [ ] Ortak HTTP davranışı: zaman aşımı, yeniden deneme, hata sınıflandırma.
 - [ ] Prompt şablon kaydı ve sürümleme.
 - [ ] Üretim servisi + `generations` kaydı.
-- [ ] Merkezi hata middleware'i, istek günlüğü (pino, requestId), 404 ve bozuk-JSON işleyicisi.
+- [x] Merkezi hata middleware'i, istek günlüğü (pino, requestId), 404 ve bozuk-JSON işleyicisi. _(F0'da yapıldı)_
 - [ ] Her görev için birim/entegrasyon testi (T01–T12, T22, T27–T28).
 
 ### F2 — Değerlendirme ve analiz (H5–H6)
@@ -409,8 +409,8 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 - [ ] Testler T13–T21, T36–T37.
 
 ### F3 — Frontend (H7–H10)
-- [ ] Proje iskeleti: TS, Router, TanStack Query, API istemcisi (tip güvenli), hata sınırları.
-- [ ] Tasarım sistemi: renkler, tipografi, düğme/form/kart/tablo/bildirim bileşenleri.
+- [ ] Proje iskeleti: TS, Router, TanStack Query, API istemcisi (tip güvenli), hata sınırları. _(Kısmen F0'da yapıldı, hata sınırları kaldı)_
+- [ ] Tasarım sistemi (sıfırdan): F0'daki onaylı tasarım yönüne göre renkler, tipografi, düğme/form/kart/tablo/bildirim bileşenleri. `ui-ux-pro-max` ve `ui-styling` eklentileri kullanılır. Eski prototipin CSS'i (`legacy/Frontend`) kullanılmaz.
 - [ ] Sayfalar: Karşılaştır → Üretim → Kütüphane → Analiz → Rubrik → Hakkında.
 - [ ] Grafikler: radar (kriter), gruplu çubuk (model), ısı tablosu (model × tür).
 - [ ] Yükleniyor/boş/hata durumları, iptal ve yeniden deneme.

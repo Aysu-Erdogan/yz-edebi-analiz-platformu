@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="tr" data-dir="A" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YZ Edebi Analiz: tasarım önizlemesi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Cormorant+Garamond:wght@500;600;700&family=Crimson+Pro:wght@400;600;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+/* ---- Yön A: Akademik Lacivert ---- */
+:root[data-dir="A"] { --head: "Crimson Pro", Georgia, serif; --body: "Atkinson Hyperlegible", system-ui, sans-serif; }
+:root[data-dir="A"][data-theme="light"] {
+  --bg:#F8FAFC; --card:#FFFFFF; --fg:#0F172A; --mfg:#475569; --border:#CBD5E1; --muted:#E9EEF5;
+  --pri:#1E3A5F; --onpri:#FFFFFF; --acc:#B45309; --onacc:#FFFFFF; --ring:#1E3A5F;
+}
+:root[data-dir="A"][data-theme="dark"] {
+  --bg:#0B1220; --card:#111B2E; --fg:#E6EDF7; --mfg:#A3B1C6; --border:#2A3A55; --muted:#17233A;
+  --pri:#8DB4E8; --onpri:#0B1220; --acc:#F2B84B; --onacc:#1A1203; --ring:#8DB4E8;
+}
+/* ---- Yön B: Edebi Sıcak ---- */
+:root[data-dir="B"] { --head: "Cormorant Garamond", Georgia, serif; --body: "Libre Baskerville", Georgia, serif; }
+:root[data-dir="B"][data-theme="light"] {
+  --bg:#FFFBEB; --card:#FFFFFF; --fg:#292524; --mfg:#57534E; --border:#E2D9C3; --muted:#F5EFDC;
+  --pri:#6B5B4B; --onpri:#FFFFFF; --acc:#B45309; --onacc:#FFFFFF; --ring:#6B5B4B;
+}
+:root[data-dir="B"][data-theme="dark"] {
+  --bg:#1C1917; --card:#292524; --fg:#F5F0E6; --mfg:#B8AFA3; --border:#4A433D; --muted:#332E2A;
+  --pri:#D6B98C; --onpri:#1C1917; --acc:#F2B84B; --onacc:#1A1203; --ring:#D6B98C;
+}
+/* Üç model rengi: Okabe-Ito tabanlı, renk körlüğüne uygun. Renge ek olarak desen ve işaret de kullanılır. */
+:root[data-theme="light"] { --m1:#0072B2; --m2:#B45F00; --m3:#B0508A; --ok:#166534; --warn:#92400E; --bad:#B91C1C; }
+:root[data-theme="dark"]  { --m1:#56B4E9; --m2:#F5A623; --m3:#E08CC0; --ok:#4ADE80; --warn:#FBBF24; --bad:#F87171; }
+
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--body); font-size:1rem; line-height:1.6; }
+h1,h2,h3 { font-family:var(--head); line-height:1.2; margin:0 0 .5rem; }
+h1 { font-size:2.25rem; } h2 { font-size:1.6rem; margin-top:2.5rem; } h3 { font-size:1.2rem; }
+p { margin:.25rem 0 .75rem; }
+a { color:var(--pri); }
+:focus-visible { outline:3px solid var(--ring); outline-offset:2px; }
+.wrap { max-width:1100px; margin:0 auto; padding:0 1rem 4rem; }
+.bar { background:var(--card); border-bottom:1px solid var(--border); }
+.bar .wrap { display:flex; flex-wrap:wrap; gap:1rem; align-items:center; justify-content:space-between; padding-top:.75rem; padding-bottom:.75rem; }
+.brand { font-family:var(--head); font-size:1.5rem; font-weight:700; color:var(--pri); border-bottom:3px solid var(--acc); }
+.nav { display:flex; flex-wrap:wrap; gap:.25rem; }
+.nav a { padding:.5rem .75rem; border-radius:6px; text-decoration:none; color:var(--mfg); font-size:.95rem; }
+.nav a[aria-current="page"] { background:var(--muted); color:var(--pri); font-weight:700; }
+.switch { display:flex; gap:.5rem; flex-wrap:wrap; }
+.switch button, .btn { font:inherit; min-height:44px; padding:.5rem 1rem; border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--fg); cursor:pointer; }
+.switch button[aria-pressed="true"] { background:var(--pri); color:var(--onpri); border-color:var(--pri); }
+.btn.primary { background:var(--pri); color:var(--onpri); border-color:var(--pri); font-weight:700; }
+.btn.accent { background:var(--acc); color:var(--onacc); border-color:var(--acc); font-weight:700; }
+.btn:disabled { opacity:.55; cursor:not-allowed; }
+.card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:1.25rem; }
+.grid { display:grid; gap:1rem; }
+.g3 { grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); }
+.g4 { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+.sw { border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--card); font-size:.8rem; }
+.sw i { display:block; height:48px; }
+.sw span { display:block; padding:.4rem .6rem; }
+.sw code { color:var(--mfg); }
+.note { background:var(--muted); border-left:4px solid var(--acc); padding:.75rem 1rem; border-radius:6px; }
+.badge { display:inline-flex; align-items:center; gap:.35rem; padding:.15rem .6rem; border-radius:999px; border:1px solid currentColor; font-size:.85rem; font-weight:700; }
+.ok { color:var(--ok); } .warn { color:var(--warn); } .bad { color:var(--bad); }
+.meter { height:10px; background:var(--muted); border-radius:6px; overflow:hidden; margin:.25rem 0 .75rem; }
+.meter b { display:block; height:100%; }
+.row { display:flex; justify-content:space-between; gap:1rem; font-size:.95rem; }
+.poem { font-family:var(--head); font-size:1.25rem; line-height:1.5; font-style:italic; margin:.5rem 0 1rem; }
+label { display:block; font-weight:700; margin-bottom:.25rem; }
+input { font:inherit; width:100%; min-height:44px; padding:.5rem .75rem; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--fg); }
+input[aria-invalid="true"] { border-color:var(--bad); border-width:2px; }
+table { width:100%; border-collapse:collapse; font-size:.95rem; }
+th, td { text-align:left; padding:.5rem .6rem; border-bottom:1px solid var(--border); }
+th { color:var(--mfg); font-weight:700; }
+td.n, th.n { text-align:right; font-variant-numeric:tabular-nums; }
+.legend { display:flex; flex-wrap:wrap; gap:1rem; margin:.5rem 0; font-size:.95rem; }
+.legend span { display:inline-flex; align-items:center; gap:.4rem; }
+svg text { fill:var(--fg); font-family:var(--body); }
+@media (prefers-reduced-motion: no-preference) { .btn, .switch button { transition:background-color .15s, border-color .15s; } }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <span class="brand">YZ Edebi Analiz</span>
+    <nav class="nav" aria-label="Ana menü">
+      <a href="#" aria-current="page">Karşılaştır</a><a href="#">Üretim ve Kütüphane</a><a href="#">Sonuçlar ve Analiz</a><a href="#">Rubrik ve Hakkında</a>
+    </nav>
+    <div class="switch" role="group" aria-label="Önizleme ayarları">
+      <button type="button" data-set="dir" data-v="A" aria-pressed="true">Yön A: Akademik Lacivert</button>
+      <button type="button" data-set="dir" data-v="B" aria-pressed="false">Yön B: Edebi Sıcak</button>
+      <button type="button" data-set="theme" data-v="light" aria-pressed="true">Açık</button>
+      <button type="button" data-set="theme" data-v="dark" aria-pressed="false">Koyu</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Tasarım önizlemesi</h1>
+  <p class="note"><strong>Örnek veri.</strong> Bu sayfadaki metinler, puanlar ve grafikler tasarımı göstermek için uydurulmuştur, gerçek sonuç değildir. Yukarıdan yönü ve temayı değiştirin.</p>
+
+  <h2>Renkler</h2>
+  <div class="grid g4" id="swatches"></div>
+
+  <h2>Yazı</h2>
+  <div class="grid g3">
+    <div class="card"><h3>Başlık yazısı</h3><p class="poem">Işığın çağıldadığı ğüzel şiir: İstanbul, çöl, öğüt.</p><p>Pijamalı hasta yağız şoföre çabucak güvendi.</p></div>
+    <div class="card"><h3>Gövde yazısı</h3><p>Rubrik temelli değerlendirmede her kriter 1 ile 5 arasında puanlanır ve 0–100 ölçeğine dönüştürülür. ÇĞİÖŞÜ çğıöşü karakterleri doğru görünmelidir.</p><p><a href="#">Bağlantı örneği</a></p></div>
+    <div class="card"><h3>Sayılar</h3><p style="font-size:2rem;font-family:var(--head);font-weight:700;font-variant-numeric:tabular-nums">78 / 100</p><p>Sütunlarda sayılar hizalı durur (tabular).</p></div>
+  </div>
+
+  <h2>Karşılaştırma kartları</h2>
+  <p class="note"><span class="badge warn" aria-hidden="true">▲ Taslak</span> Taslak rubrik (v0.1): uzman doğrulaması yok. Sonuçlar geçicidir.</p>
+  <div class="grid g3" style="margin-top:1rem" id="cards"></div>
+
+  <h2>Grafik: model karşılaştırması</h2>
+  <div class="card">
+    <h3>Şiir, tema: doğa (örnek veri)</h3>
+    <div class="legend" id="legend"></div>
+    <div id="chart"></div>
+    <details style="margin-top:.75rem"><summary>Tablo olarak göster</summary><div id="tbl"></div></details>
+  </div>
+
+  <h2>Bileşenler ve durumlar</h2>
+  <div class="grid g3">
+    <div class="card"><h3>Düğmeler</h3>
+      <p><button class="btn primary" type="button">Karşılaştır</button> <button class="btn" type="button">İptal</button></p>
+      <p><button class="btn accent" type="button">Toplu üretimi başlat</button> <button class="btn" type="button" disabled>Devre dışı</button></p>
+    </div>
+    <div class="card"><h3>Durum etiketleri</h3>
+      <p><span class="badge ok">✔ Başarılı</span></p><p><span class="badge warn">▲ Devam ediyor</span></p><p><span class="badge bad">✖ Başarısız</span></p>
+      <p style="color:var(--mfg);font-size:.9rem">Durum yalnızca renkle değil simge ve yazıyla da verilir.</p>
+    </div>
+    <div class="card"><h3>Form</h3>
+      <label for="m1">Metin başlığı</label><input id="m1" value="Sonbahar" />
+      <p style="margin-top:.75rem"><label for="m2">Model etiketi</label><input id="m2" aria-invalid="true" aria-describedby="e2" /><span id="e2" class="bad">✖ Bu alan boş bırakılamaz.</span></p>
+    </div>
+  </div>
+</main>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const root = document.documentElement;
+const MODELS = [
+  { name: "ChatGPT", v: "--m1", mark: "●", fill: "var(--m1)", pat: null },
+  { name: "Claude", v: "--m2", mark: "■", fill: "url(#hatch)", pat: "hatch" },
+  { name: "Gemini", v: "--m3", mark: "▲", fill: "url(#dots)", pat: "dots" },
+];
+const CRITERIA = ["İmge gücü", "Ritim ve ahenk", "Duygu aktarımı", "Özgünlük"];
+const SCORES = [[82, 64, 75, 70], [76, 71, 84, 79], [68, 60, 72, 66]]; // [model][kriter], örnek
+const AVG = SCORES.map((r) => Math.round(r.reduce((a, b) => a + b) / r.length));
+
+function swatches() {
+  const names = [["--bg","Zemin"],["--card","Kart"],["--fg","Metin"],["--mfg","Soluk metin"],["--pri","Ana renk"],["--acc","Vurgu"],["--border","Kenarlık"],["--m1","Model 1"],["--m2","Model 2"],["--m3","Model 3"],["--ok","Başarılı"],["--bad","Hata"]];
+  const cs = getComputedStyle(root);
+  $("#swatches").innerHTML = names.map(([v, n]) => `<div class="sw"><i style="background:var(${v})"></i><span>${n}<br><code>${cs.getPropertyValue(v).trim()}</code></span></div>`).join("");
+}
+function cards() {
+  const poems = ["Yaprak yaprak döküldü gün,\nRüzgâr eski bir şarkıyı\nSusmuş dallara bıraktı.", "Dağın omzunda uyuyan bulut\nGölgesini nehre emanet etti;\nSu, sessizce hatırladı.", "Ormanın yeşil nefesinde\nBir çocuk gibi uyanıyor sabah;\nKuşlar ışığı sayıyor."];
+  $("#cards").innerHTML = MODELS.map((m, i) => `
+    <article class="card" aria-label="${m.name}">
+      <div class="row"><h3><span aria-hidden="true" style="color:var(${m.v})">${m.mark}</span> ${m.name}</h3><strong style="font-size:1.4rem">${AVG[i]}<small style="color:var(--mfg)"> / 100</small></strong></div>
+      <p class="poem">${poems[i].replace(/\n/g, "<br>")}</p>
+      ${CRITERIA.map((c, j) => `<div class="row"><span>${c}</span><span>${SCORES[i][j]}</span></div><div class="meter" role="img" aria-label="${c}: ${SCORES[i][j]} / 100"><b style="width:${SCORES[i][j]}%;background:var(${m.v})"></b></div>`).join("")}
+    </article>`).join("");
+}
+function legend() {
+  $("#legend").innerHTML = MODELS.map((m) => `<span><span aria-hidden="true" style="color:var(${m.v});font-size:1.1rem">${m.mark}</span> ${m.name}</span>`).join("");
+}
+function chart() {
+  const W = 760, H = 320, L = 40, B = 44, T = 16, gw = (W - L) / CRITERIA.length, bw = gw / 5;
+  const y = (v) => T + (H - T - B) * (1 - v / 100);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Kriter bazında model puanları çubuk grafiği"><defs>
+    <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="var(--card)"/><line x1="0" y1="0" x2="0" y2="7" stroke="var(--m2)" stroke-width="4"/></pattern>
+    <pattern id="dots" width="7" height="7" patternUnits="userSpaceOnUse"><rect width="7" height="7" fill="var(--card)"/><circle cx="3.5" cy="3.5" r="2" fill="var(--m3)"/></pattern></defs>`;
+  [0, 25, 50, 75, 100].forEach((t) => { s += `<line x1="${L}" x2="${W}" y1="${y(t)}" y2="${y(t)}" stroke="var(--border)"/><text x="${L - 6}" y="${y(t) + 4}" text-anchor="end" font-size="12">${t}</text>`; });
+  CRITERIA.forEach((c, j) => {
+    const gx = L + j * gw + bw;
+    MODELS.forEach((m, i) => {
+      const x = gx + i * (bw + 4), v = SCORES[i][j];
+      s += `<rect x="${x}" y="${y(v)}" width="${bw}" height="${y(0) - y(v)}" fill="${m.fill}" stroke="var(${m.v})" stroke-width="2"/><text x="${x + bw / 2}" y="${y(v) - 5}" text-anchor="middle" font-size="12" font-weight="700">${v}</text>`;
+    });
+    s += `<text x="${L + j * gw + gw / 2}" y="${H - 16}" text-anchor="middle" font-size="13">${c}</text>`;
+  });
+  $("#chart").innerHTML = s + "</svg>";
+  $("#tbl").innerHTML = `<table><thead><tr><th>Kriter</th>${MODELS.map((m) => `<th class="n">${m.name}</th>`).join("")}</tr></thead><tbody>${CRITERIA.map((c, j) => `<tr><td>${c}</td>${MODELS.map((_, i) => `<td class="n">${SCORES[i][j]}</td>`).join("")}</tr>`).join("")}<tr><th>Ortalama</th>${AVG.map((a) => `<th class="n">${a}</th>`).join("")}</tr></tbody></table>`;
+}
+document.querySelectorAll("[data-set]").forEach((b) => b.addEventListener("click", () => {
+  root.dataset[b.dataset.set] = b.dataset.v;
+  document.querySelectorAll(`[data-set="${b.dataset.set}"]`).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  swatches();
+}));
+cards(); legend(); chart();
+document.fonts.ready.then(swatches); swatches();
+</script>
+</body>
+</html>

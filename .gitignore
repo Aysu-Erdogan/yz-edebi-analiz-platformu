@@ -17,3 +17,6 @@ Thumbs.db
 **/src/generated/
 coverage/
 *.tsbuildinfo
+
+# Kişisel geliştirme aracı ayarı (MCP bağlantıları)
+.mcp.json
