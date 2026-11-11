@@ -1,0 +1,269 @@
+/* --- 1. RENK PALETİ VE DEĞİŞKENLER --- */
+:root {
+  --bg-main: #0f172a;        /* Çok koyu lacivert ana arka plan */
+  --bg-card: #1e293b;        /* Kart ve panel arka planları */
+  --text-main: #f8fafc;      /* Ana başlık ve metinler (beyazımsı) */
+  --text-muted: #94a3b8;     /* İkincil açıklamalar ve gri metinler */
+  --primary: #6366f1;        /* Modern yapay zeka moru/laciverti */
+  --primary-hover: #4f46e5;  /* Buton hover durumu */
+  --success: #10b981;        /* Başarılı / Onay durumları */
+  --border-color: #334155;   /* Çerçeve ve çizgi renkleri */
+}
+
+/* --- 2. GENEL SIFIRLAMA VE TİPOGRAFİ --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* --- 3. BAŞLIKLAR VE METİNLER --- */
+h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+p {
+  color: var(--text-muted);
+}
+
+/* --- 4. BİLEŞEN STİLLERİ --- */
+
+/* Navbar (Üst Menü) */
+.navbar {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.navbar-brand {
+  color: var(--text-main);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.navbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.navbar-menu a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.navbar-menu a:hover {
+  color: var(--text-main);
+}
+
+/* Ana Butonlar */
+.btn-primary {
+  background-color: var(--primary);
+  color: #ffffff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Metin Giriş Alanları (Textarea) */
+textarea,
+input[type="text"],
+select {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+}
+
+textarea {
+  min-height: 220px;
+  resize: vertical;
+}
+
+select {
+  cursor: pointer;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% - 3px), calc(100% - 12px) calc(50% - 3px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+}
+
+textarea:focus,
+input[type="text"]:focus,
+select:focus {
+  border-color: var(--primary);
+}
+
+/* Analiz Sonuç Kartları */
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.app {
+  min-height: 100vh;
+  background-color: var(--bg-main);
+}
+
+.app-main {
+  padding: 1.5rem 2rem 2.5rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.control-panel,
+.text-panel {
+  margin-top: 0;
+}
+
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: sticky;
+  top: 5.5rem;
+}
+
+.control-panel h2,
+.text-panel h2 {
+  font-size: 1.25rem;
+}
+
+.field-label {
+  display: block;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.option-group {
+  border: none;
+  min-width: 0;
+}
+
+.option-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.option-btn {
+  background-color: var(--bg-main);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.option-btn:hover {
+  color: var(--text-main);
+  border-color: var(--primary);
+}
+
+.option-btn.is-selected {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.compare-btn {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.text-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.text-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .control-panel {
+    position: static;
+  }
+
+  .text-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .navbar,
+  .app-main {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .navbar {
+    flex-wrap: wrap;
+  }
+}
