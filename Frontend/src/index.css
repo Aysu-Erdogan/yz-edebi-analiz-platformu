@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+
+/* Tasarım belirteçleri: tema renkleri tek yerde. Açık/koyu tema ileride (F3) bu değişkenlerle yönetilir. */
+@theme {
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-ink: #1e293b;
+  --color-muted: #64748b;
+  --color-surface: #ffffff;
+  --color-page: #f8fafc;
+  --color-line: #e2e8f0;
+  --color-ok: #059669;
+  --color-warn: #d97706;
+  --color-bad: #dc2626;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-page text-ink font-sans antialiased;
+  }
+  /* Klavye ile gezenler için belirgin odak halkası */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-600;
+  }
+}

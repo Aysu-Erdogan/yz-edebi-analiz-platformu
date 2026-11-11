@@ -1,0 +1,266 @@
+// YZ Edebi Analiz Platformu - veri modeli (docs/IS_PLANI.md Bölüm 5)
+// Değişiklik yaparken: yeni migration üretin, mevcut migration'ı düzenlemeyin.
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ---------------------------------------------------------------- Enum'lar
+
+/// Edebi tür. Rubrikler tür başına tanımlanır.
+enum Genre {
+  siir
+  hikaye
+  deneme
+}
+
+enum RubricStatus {
+  draft
+  active
+  archived
+}
+
+enum TextSource {
+  generated
+  manual
+}
+
+/// Üretim, değerlendirme ve iş kayıtlarının ortak durum alanı.
+enum RunStatus {
+  pending
+  running
+  succeeded
+  failed
+}
+
+enum EvaluatorType {
+  llm
+  human
+}
+
+enum PromptKind {
+  generate
+  judge
+}
+
+enum Role {
+  admin
+}
+
+// ---------------------------------------------------------------- Modeller
+
+/// Yapılandırılmış YZ modelleri. Model emekli olunca kod değil kayıt güncellenir.
+model ProviderModel {
+  id            Int      @id @default(autoincrement())
+  provider      String   @db.VarChar(32) // openai | anthropic | google | mock
+  modelId       String   @map("model_id") @db.VarChar(128)
+  displayName   String   @map("display_name") @db.VarChar(128)
+  active        Boolean  @default(true)
+  defaultParams Json?    @map("default_params")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  generations Generation[]
+
+  @@unique([provider, modelId])
+  @@map("provider_models")
+}
+
+/// Sürümlü prompt şablonları: üretim ve yargıç (değerlendirme) için.
+model PromptTemplate {
+  id        Int        @id @default(autoincrement())
+  kind      PromptKind
+  version   String     @db.VarChar(32)
+  body      String     @db.LongText
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  generations Generation[]
+  evaluations Evaluation[]
+
+  @@unique([kind, version])
+  @@map("prompt_templates")
+}
+
+/// Rubrik. Bir değerlendirmede kullanıldıktan sonra değiştirilmez (usedAt dolar), yeni sürüm açılır.
+model Rubric {
+  id         Int          @id @default(autoincrement())
+  genre      Genre
+  version    String       @db.VarChar(32)
+  status     RubricStatus @default(draft)
+  scaleMin   Int          @map("scale_min")
+  scaleMax   Int          @map("scale_max")
+  sourceNote String?      @map("source_note") @db.Text
+  usedAt     DateTime?    @map("used_at")
+  createdAt  DateTime     @default(now()) @map("created_at")
+
+  criteria    RubricCriterion[]
+  evaluations Evaluation[]
+
+  @@unique([genre, version])
+  @@index([genre, status])
+  @@map("rubrics")
+}
+
+model RubricCriterion {
+  id          Int    @id @default(autoincrement())
+  rubricId    Int    @map("rubric_id")
+  key         String @db.VarChar(64)
+  label       String @db.VarChar(128)
+  description String @db.Text
+  weight      Float
+  sortOrder   Int    @default(0) @map("sort_order")
+
+  rubric Rubric        @relation(fields: [rubricId], references: [id], onDelete: Cascade)
+  levels RubricLevel[]
+
+  @@unique([rubricId, key])
+  @@map("rubric_criteria")
+}
+
+/// Kriterin düzey açıklamaları (ör. 1 = zayıf ... 5 = çok iyi).
+model RubricLevel {
+  id          Int    @id @default(autoincrement())
+  criterionId Int    @map("criterion_id")
+  score       Int
+  descriptor  String @db.Text
+
+  criterion RubricCriterion @relation(fields: [criterionId], references: [id], onDelete: Cascade)
+
+  @@unique([criterionId, score])
+  @@map("rubric_levels")
+}
+
+/// Bir deney / toplu çalıştırma (ör. "Kasım 2026 çekirdek veri seti").
+model Experiment {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(160)
+  description String?  @db.Text
+  config      Json
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  generations Generation[]
+
+  @@map("experiments")
+}
+
+/// Değerlendirilen metin: modelden üretilmiş ya da elle girilmiş.
+model Text {
+  id           Int        @id @default(autoincrement())
+  genre        Genre
+  theme        String     @db.VarChar(32) // aşk | doğa | teknoloji (kod tarafında doğrulanır)
+  body         String     @db.LongText
+  source       TextSource
+  label        String?    @db.VarChar(128) // elle girilen metinde model etiketi
+  generationId Int?       @unique @map("generation_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  generation  Generation?  @relation(fields: [generationId], references: [id])
+  evaluations Evaluation[]
+
+  @@index([genre, theme])
+  @@map("texts")
+}
+
+/// Bir model çağrısı: hangi model, hangi prompt, hangi parametre, ne kadar sürdü.
+model Generation {
+  id               Int       @id @default(autoincrement())
+  providerModelId  Int       @map("provider_model_id")
+  promptTemplateId Int       @map("prompt_template_id")
+  experimentId     Int?      @map("experiment_id")
+  genre            Genre
+  theme            String    @db.VarChar(32)
+  replicateNo      Int       @default(1) @map("replicate_no")
+  params           Json
+  status           RunStatus @default(pending)
+  error            String?   @db.Text
+  inputTokens      Int?      @map("input_tokens")
+  outputTokens     Int?      @map("output_tokens")
+  latencyMs        Int?      @map("latency_ms")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  completedAt      DateTime? @map("completed_at")
+
+  providerModel  ProviderModel  @relation(fields: [providerModelId], references: [id])
+  promptTemplate PromptTemplate @relation(fields: [promptTemplateId], references: [id])
+  experiment     Experiment?    @relation(fields: [experimentId], references: [id])
+  text           Text?
+
+  @@index([experimentId])
+  @@index([genre, theme])
+  @@map("generations")
+}
+
+/// Bir metnin bir rubrikle bir değerlendirici (yargıç model ya da uzman) tarafından puanlanması.
+/// Başarısız değerlendirme status = failed olarak kalır; uydurma puan yazılmaz.
+model Evaluation {
+  id               Int           @id @default(autoincrement())
+  textId           Int           @map("text_id")
+  rubricId         Int           @map("rubric_id")
+  promptTemplateId Int?          @map("prompt_template_id")
+  evaluatorType    EvaluatorType @map("evaluator_type")
+  evaluatorRef     String        @map("evaluator_ref") @db.VarChar(128) // model kaydı ya da uzman kodu
+  replicateNo      Int           @default(1) @map("replicate_no")
+  status           RunStatus     @default(pending)
+  error            String?       @db.Text
+  totalScore       Float?        @map("total_score")
+  rawResponse      Json?         @map("raw_response")
+  createdAt        DateTime      @default(now()) @map("created_at")
+
+  text           Text              @relation(fields: [textId], references: [id], onDelete: Cascade)
+  rubric         Rubric            @relation(fields: [rubricId], references: [id])
+  promptTemplate PromptTemplate?   @relation(fields: [promptTemplateId], references: [id])
+  scores         EvaluationScore[]
+
+  @@index([textId])
+  @@index([rubricId])
+  @@map("evaluations")
+}
+
+model EvaluationScore {
+  id           Int     @id @default(autoincrement())
+  evaluationId Int     @map("evaluation_id")
+  criterionKey String  @map("criterion_key") @db.VarChar(64)
+  score        Float
+  comment      String? @db.Text
+
+  evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@unique([evaluationId, criterionKey])
+  @@map("evaluation_scores")
+}
+
+/// DB tabanlı basit iş kuyruğu (toplu üretim ve puanlama).
+model Job {
+  id         Int       @id @default(autoincrement())
+  type       String    @db.VarChar(32)
+  payload    Json
+  status     RunStatus @default(pending)
+  total      Int       @default(0)
+  done       Int       @default(0)
+  failed     Int       @default(0)
+  result     Json?
+  error      String?   @db.Text
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  startedAt  DateTime? @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+
+  @@index([status, createdAt])
+  @@map("jobs")
+}
+
+/// Yalnızca yönetici hesabı (F4).
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique @db.VarChar(190)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         Role     @default(admin)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}

@@ -1,0 +1,25 @@
+{
+  "name": "yz-edebi-analiz-platformu",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Üretken yapay zekâ modellerinin Türkçe edebi metin performansını rubrik temelli karşılaştıran platform",
+  "scripts": {
+    "prepare": "husky",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "install:all": "npm ci --prefix Backend && npm ci --prefix Frontend",
+    "typecheck": "npm run typecheck --prefix Backend && npm run typecheck --prefix Frontend",
+    "lint": "npm run lint --prefix Backend && npm run lint --prefix Frontend",
+    "test": "npm test --prefix Backend && npm test --prefix Frontend",
+    "build": "npm run build --prefix Backend && npm run build --prefix Frontend",
+    "verify": "npm run format:check && npm run typecheck && npm run lint && npm test && npm run build"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,json,css,yml,yaml}": "prettier --write"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.10.0"
+  }
+}

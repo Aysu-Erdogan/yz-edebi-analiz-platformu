@@ -12,3 +12,11 @@ dist/
 .DS_Store
 Thumbs.db
 .claude/
+
+# Üretilen dosyalar
+**/src/generated/
+coverage/
+*.tsbuildinfo
+
+# Kişisel geliştirme aracı ayarı (MCP bağlantıları)
+.mcp.json
