@@ -376,7 +376,7 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 ## 14. Faz bazında görev listesi
 
 ### F0 — Hazırlık (H1)
-- [ ] Anahtarları gözden geçir: sohbette paylaşılan anahtar iptal/yenilenir, yeni anahtarlar yalnızca `.env`'de. _(Kullanıcıda bekliyor)_
+- [x] Anahtarları gözden geçir: sohbette paylaşılan anahtar iptal/yenilenir, yeni anahtarlar yalnızca `.env`'de. _(Eski anahtar iptal edildi, yeni anahtarlar `.env`'de, süreleri 1,5 yıl; 19 Kas 2026)_
 - [x] Mimari kararlar: dil (TS), DB (MySQL), ORM, stil, kimlik doğrulama → ADR. _(6 ADR; kimlik doğrulama kararı F4'te)_
 - [x] ER şeması ve veri sözlüğü.
 - [x] OpenAPI taslağı (Bölüm 8).
