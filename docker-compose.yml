@@ -1,0 +1,73 @@
+# Tek komutla kurulum: docker compose up --build
+#   Arayüz : http://localhost:8080
+#   API    : http://localhost:8080/api/v1/health  (arayüz üzerinden) ya da http://localhost:3000/api/v1/health
+# Sırlar `.env` dosyasından okunur (.env.example'a bakın). Dosya yoksa varsayılanlarla çalışır.
+
+name: yz-edebi-analiz
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: yz_edebi
+      MYSQL_USER: yz_app
+      # Varsayılanlar yalnızca yerel geliştirme içindir. Sunucuya kurarken .env ile değiştirin.
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-yz_dev_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-yz_root_dev_password}
+      TZ: Europe/Istanbul
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
+    ports:
+      # Yalnızca yerel makineden erişilir, ağa açılmaz.
+      - '127.0.0.1:3307:3306'
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./Backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: '3000'
+      CORS_ORIGINS: http://localhost:8080,http://localhost:5173
+      # Kapsayıcı içinde veritabanı, "db" servis adıyla bulunur (.env'deki DATABASE_URL'in üzerine yazılır).
+      DATABASE_URL: mysql://yz_app:${MYSQL_PASSWORD:-yz_dev_password}@db:3306/yz_edebi
+    ports:
+      - '3000:3000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./Frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - '8080:80'
+
+volumes:
+  db_data:

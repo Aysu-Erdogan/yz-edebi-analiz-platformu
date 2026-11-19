@@ -1,0 +1,560 @@
+openapi: 3.1.0
+info:
+  title: YZ Edebi Analiz Platformu API
+  version: 0.1.0
+  description: |
+    Üretken yapay zekâ modellerinin Türkçe edebi metinlerini rubrik temelli üreten, puanlayan ve karşılaştıran API.
+
+    **Durum:** Bu belge hedef sözleşmedir (F0 taslağı). Her uçta `x-status` alanı vardır:
+    `implemented` (kodda çalışıyor) ya da `planned` (ilgili fazda yazılacak).
+
+    **Zarf:** Tüm yanıtlar `{ success: true, data }` ya da `{ success: false, error }` biçimindedir.
+    Hata kodları sabittir ve istemci bunlara göre davranabilir.
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Yerel geliştirme (doğrudan backend)
+  - url: http://localhost:8080/api/v1
+    description: Docker Compose (nginx üzerinden)
+# Varsayılan: okuma uçları açıktır. Yazma uçları `security` ile yönetici girişi ister.
+security: []
+tags:
+  - name: Sistem
+    description: Sağlık ve yapılandırma bilgisi
+  - name: Rubrik
+    description: Rubrik yönetimi (sürümlü, kullanıldıktan sonra değişmez)
+  - name: Üretim
+    description: Model çağrıları, toplu işler ve metin kütüphanesi
+  - name: Değerlendirme
+    description: Rubrik temelli puanlama ve karşılaştırma
+  - name: Analiz
+    description: Özet, istatistik ve dışa aktarım
+  - name: Kimlik
+    description: Yönetici girişi
+
+paths:
+  /health:
+    get:
+      tags: [Sistem]
+      summary: Sağlık kontrolü
+      description: Süreç ve veritabanı durumu. Veritabanı yanıt vermezse 503 döner.
+      x-status: implemented
+      operationId: getHealth
+      responses:
+        '200':
+          description: Sistem çalışıyor
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Health' }
+        '503':
+          $ref: '#/components/responses/Error'
+
+  /models:
+    get:
+      tags: [Sistem]
+      summary: Yapılandırılmış YZ modelleri
+      description: Anahtarı tanımlı olan sağlayıcıların aktif modelleri.
+      x-status: planned
+      operationId: listModels
+      responses:
+        '200':
+          description: Model listesi
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/ProviderModel' }
+
+  /rubrics:
+    get:
+      tags: [Rubrik]
+      summary: Rubrikleri listele
+      x-status: planned
+      operationId: listRubrics
+      parameters:
+        - name: genre
+          in: query
+          schema: { $ref: '#/components/schemas/Genre' }
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/RubricStatus' }
+      responses:
+        '200':
+          description: Rubrik listesi
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: '#/components/schemas/Rubric' }
+  /rubrics/{id}:
+    get:
+      tags: [Rubrik]
+      summary: Rubrik ayrıntısı (kriterler ve düzeyler)
+      x-status: planned
+      operationId: getRubric
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Rubrik
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Rubric' }
+        '404':
+          $ref: '#/components/responses/Error'
+  /rubrics/import:
+    post:
+      tags: [Rubrik]
+      summary: Rubrik JSON'unu içe aktar (taslak olarak)
+      description: Şema ve ağırlık doğrulaması yapılır. Yönetici yetkisi gerekir.
+      x-status: planned
+      operationId: importRubric
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RubricInput' }
+      responses:
+        '201':
+          description: Oluşturuldu
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+  /rubrics/{id}/activate:
+    post:
+      tags: [Rubrik]
+      summary: Rubriği etkinleştir
+      description: Aynı türdeki önceki etkin rubrik arşivlenir.
+      x-status: planned
+      operationId: activateRubric
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Etkinleştirildi
+        '401':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+
+  /generations:
+    post:
+      tags: [Üretim]
+      summary: Toplu üretim (ve isteğe bağlı puanlama) işi başlat
+      description: Model, tür ve tema kombinasyonları için iş oluşturur. İş arka planda çalışır.
+      x-status: planned
+      operationId: createGenerationJob
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GenerationRequest' }
+      responses:
+        '202':
+          description: İş kuyruğa alındı
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          jobId: { type: integer }
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+    get:
+      tags: [Üretim]
+      summary: Üretimleri listele
+      x-status: planned
+      operationId: listGenerations
+      parameters:
+        - { name: genre, in: query, schema: { $ref: '#/components/schemas/Genre' } }
+        - { name: theme, in: query, schema: { type: string } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/RunStatus' } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        '200':
+          description: Üretim listesi
+  /jobs/{id}:
+    get:
+      tags: [Üretim]
+      summary: İş durumu ve ilerleme
+      x-status: planned
+      operationId: getJob
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: İş
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Job' }
+        '404':
+          $ref: '#/components/responses/Error'
+
+  /texts:
+    get:
+      tags: [Üretim]
+      summary: Metin kütüphanesi
+      x-status: planned
+      operationId: listTexts
+      parameters:
+        - { name: genre, in: query, schema: { $ref: '#/components/schemas/Genre' } }
+        - { name: theme, in: query, schema: { type: string } }
+        - { name: source, in: query, schema: { type: string, enum: [generated, manual] } }
+      responses:
+        '200':
+          description: Metin listesi
+    post:
+      tags: [Üretim]
+      summary: Elle metin ekle
+      x-status: planned
+      operationId: createText
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [genre, theme, body]
+              properties:
+                genre: { $ref: '#/components/schemas/Genre' }
+                theme: { type: string, maxLength: 32 }
+                body: { type: string, minLength: 1, maxLength: 20000 }
+                label: { type: string, maxLength: 128, description: Model etiketi (ör. ChatGPT) }
+      responses:
+        '201':
+          description: Oluşturuldu
+        '400':
+          $ref: '#/components/responses/Error'
+
+  /evaluations:
+    post:
+      tags: [Değerlendirme]
+      summary: Metin(leri) rubrikle puanla
+      description: |
+        Yargıç model metni kör (model adı verilmeden) puanlar. Geçersiz çıktı bir kez yeniden denenir,
+        yine geçersizse kayıt `failed` olur. Uydurma puan yazılmaz.
+      x-status: planned
+      operationId: createEvaluation
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EvaluationRequest' }
+      responses:
+        '202':
+          description: İş kuyruğa alındı
+        '400':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+    get:
+      tags: [Değerlendirme]
+      summary: Değerlendirmeleri listele
+      x-status: planned
+      operationId: listEvaluations
+      parameters:
+        - { name: textId, in: query, schema: { type: integer } }
+        - { name: rubricId, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/RunStatus' } }
+      responses:
+        '200':
+          description: Değerlendirme listesi
+  /comparisons:
+    post:
+      tags: [Değerlendirme]
+      summary: Üç metni yan yana karşılaştır
+      description: Verilen metinleri etkin rubrikle puanlayıp kriter bazında karşılaştırma döndürür.
+      x-status: planned
+      operationId: compareTexts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [genre, theme, items]
+              properties:
+                genre: { $ref: '#/components/schemas/Genre' }
+                theme: { type: string }
+                items:
+                  type: array
+                  minItems: 2
+                  maxItems: 3
+                  items:
+                    type: object
+                    required: [body]
+                    properties:
+                      label: { type: string }
+                      body: { type: string, maxLength: 20000 }
+      responses:
+        '200':
+          description: Karşılaştırma sonucu
+        '400':
+          $ref: '#/components/responses/Error'
+
+  /analytics/summary:
+    get:
+      tags: [Analiz]
+      summary: Model, tür ve tema bazında betimsel özet
+      x-status: planned
+      operationId: getAnalyticsSummary
+      responses:
+        '200':
+          description: Özet
+  /analytics/stats:
+    get:
+      tags: [Analiz]
+      summary: İstatistik testleri (Kruskal-Wallis vb.)
+      x-status: planned
+      operationId: getAnalyticsStats
+      responses:
+        '200':
+          description: İstatistik sonuçları
+  /export:
+    get:
+      tags: [Analiz]
+      summary: Veriyi dışa aktar
+      description: UTF-8 CSV ya da JSON. Taslak rubrikle üretilen sonuçlar işaretlenir.
+      x-status: planned
+      operationId: exportData
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema: { type: string, enum: [csv, json] }
+      responses:
+        '200':
+          description: Dosya
+          content:
+            text/csv: { schema: { type: string } }
+            application/json: { schema: { type: object } }
+
+  /auth/login:
+    post:
+      tags: [Kimlik]
+      summary: Yönetici girişi
+      x-status: planned
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Giriş başarılı (httpOnly çerez ayarlanır)
+        '401':
+          $ref: '#/components/responses/Error'
+        '429':
+          $ref: '#/components/responses/Error'
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+  responses:
+    Error:
+      description: Hata (sabit kodlu)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+  schemas:
+    SuccessEnvelope:
+      type: object
+      required: [success, data]
+      properties:
+        success: { type: boolean, const: true }
+        data: {}
+    ErrorEnvelope:
+      type: object
+      required: [success, error]
+      properties:
+        success: { type: boolean, const: false }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - VALIDATION_ERROR
+                - BAD_JSON
+                - PAYLOAD_TOO_LARGE
+                - UNAUTHORIZED
+                - FORBIDDEN
+                - NOT_FOUND
+                - CONFLICT
+                - RATE_LIMITED
+                - SERVICE_UNAVAILABLE
+                - INTERNAL_ERROR
+            message: { type: string }
+            details: {}
+            requestId:
+              type: string
+              description: Günlükte eşleştirme için. Yanıt başlığında `X-Request-Id` olarak da döner.
+    Health:
+      type: object
+      required: [status, version, uptimeSeconds, checks]
+      properties:
+        status: { type: string, enum: [ok, degraded] }
+        version: { type: string }
+        uptimeSeconds: { type: integer }
+        checks:
+          type: object
+          properties:
+            database: { type: string, enum: [up, down, unconfigured] }
+    Genre:
+      type: string
+      enum: [siir, hikaye, deneme]
+    RubricStatus:
+      type: string
+      enum: [draft, active, archived]
+    RunStatus:
+      type: string
+      enum: [pending, running, succeeded, failed]
+    ProviderModel:
+      type: object
+      properties:
+        id: { type: integer }
+        provider: { type: string, enum: [openai, anthropic, google, mock] }
+        modelId: { type: string }
+        displayName: { type: string }
+        active: { type: boolean }
+    RubricLevel:
+      type: object
+      required: [score, descriptor]
+      properties:
+        score: { type: integer }
+        descriptor: { type: string }
+    RubricCriterion:
+      type: object
+      required: [key, label, description, weight, levels]
+      properties:
+        key: { type: string, pattern: '^[a-zA-Z][a-zA-Z0-9]*$' }
+        label: { type: string }
+        description: { type: string }
+        weight: { type: number, exclusiveMinimum: 0 }
+        levels:
+          type: array
+          items: { $ref: '#/components/schemas/RubricLevel' }
+    RubricInput:
+      type: object
+      required: [genre, version, scale, criteria]
+      properties:
+        genre: { $ref: '#/components/schemas/Genre' }
+        version: { type: string, examples: ['0.1-taslak'] }
+        sourceNote: { type: string, examples: ['GEÇİCİ TASLAK: uzman doğrulaması yok'] }
+        scale:
+          type: object
+          required: [min, max]
+          properties:
+            min: { type: integer }
+            max: { type: integer }
+        criteria:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/RubricCriterion' }
+    Rubric:
+      allOf:
+        - $ref: '#/components/schemas/RubricInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            status: { $ref: '#/components/schemas/RubricStatus' }
+            usedAt: { type: [string, 'null'], format: date-time }
+    GenerationRequest:
+      type: object
+      required: [modelIds, genres, themes]
+      properties:
+        modelIds:
+          type: array
+          items: { type: integer }
+          minItems: 1
+        genres:
+          type: array
+          items: { $ref: '#/components/schemas/Genre' }
+          minItems: 1
+        themes:
+          type: array
+          items: { type: string }
+          minItems: 1
+        replicates: { type: integer, minimum: 1, maximum: 10, default: 1 }
+        evaluate: { type: boolean, default: true, description: Üretimden sonra puanla }
+        judgeModelIds:
+          type: array
+          items: { type: integer }
+        experimentName: { type: string }
+        dryRun:
+          type: boolean
+          default: false
+          description: Çağrı yapmadan tahmini token ve maliyeti döndürür.
+    EvaluationRequest:
+      type: object
+      required: [textIds, rubricId, judgeModelIds]
+      properties:
+        textIds: { type: array, items: { type: integer }, minItems: 1 }
+        rubricId: { type: integer }
+        judgeModelIds: { type: array, items: { type: integer }, minItems: 1 }
+        replicates: { type: integer, minimum: 1, maximum: 5, default: 1 }
+    Job:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { type: string }
+        status: { $ref: '#/components/schemas/RunStatus' }
+        total: { type: integer }
+        done: { type: integer }
+        failed: { type: integer }
+        error: { type: [string, 'null'] }
