@@ -1,6 +1,6 @@
 # ADR 0007: Arayüz tasarım yönü: Akademik Lacivert
 
-**Durum:** Kabul · **Tarih:** 2026-11-11
+**Durum:** Kısmen yerine geçildi · **Tarih:** 2026-11-11 · Renk, yazı tipi ve biçim kararları [ADR 0008](0008-yon-c-kum-kakao-mavi.md) ile değişti. Sayfa düzeltme listesi geçerli.
 
 ## Bağlam
 

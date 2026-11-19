@@ -1,13 +1,15 @@
 <!doctype html>
-<html lang="tr" data-dir="A" data-theme="light">
+<html lang="tr" data-dir="C" data-theme="light">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>YZ Edebi Analiz: tasarım önizlemesi</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Cormorant+Garamond:wght@500;600;700&family=Crimson+Pro:wght@400;600;700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Cormorant+Garamond:wght@500;600;700&family=Crimson+Pro:wght@400;600;700&family=Libre+Baskerville:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
+/* Üst çubuk, bağlantı ve tablo başlığı varsayılanları (Yön C bunları ezer) */
+:root { --barbg:var(--card); --barfg:var(--pri); --barnav:var(--mfg); --barcur:var(--muted); --navcurfg:var(--pri); --link:var(--pri); --thbg:transparent; --thfg:var(--mfg); }
 /* ---- Yön A: Akademik Lacivert ---- */
 :root[data-dir="A"] { --head: "Crimson Pro", Georgia, serif; --body: "Atkinson Hyperlegible", system-ui, sans-serif; }
 :root[data-dir="A"][data-theme="light"] {
@@ -31,23 +33,56 @@
 /* Üç model rengi: Okabe-Ito tabanlı, renk körlüğüne uygun. Renge ek olarak desen ve işaret de kullanılır. */
 :root[data-theme="light"] { --m1:#0072B2; --m2:#B45F00; --m3:#B0508A; --ok:#166534; --warn:#92400E; --bad:#B91C1C; }
 :root[data-theme="dark"]  { --m1:#56B4E9; --m2:#F5A623; --m3:#E08CC0; --ok:#4ADE80; --warn:#FBBF24; --bad:#F87171; }
+/* ---- Yön C: kullanıcı kuralı %60 Kum, %30 Kakao, %10 Elektrik Mavi (yalnızca açık tema) ----
+   Zemin ve kartlar kum, üst çubuk/alt bilgi/tablo başlığı/metin kakao, mavi yalnızca düğme, odak halkası, vurgu çizgisi.
+   Mavi küçük metinde kullanılmaz (mavi/kum kontrastı 3.41). Model renkleri %10 payın dışında, mavi içermeyen ÖNERİ paleti. */
+:root[data-dir="C"] { --head:"Inter", system-ui, sans-serif; --body:"Inter", system-ui, sans-serif; --poem:"Crimson Pro", Georgia, serif;
+  --bg:#E2E0D8; --card:#E2E0D8; --fg:#35281E; --mfg:#584D43; --muted:#D4D1C9;
+  --border:rgba(53,40,30,.3); --ctrl:rgba(53,40,30,.6);
+  --pri:#2E6BFF; --onpri:#FFFFFF; --acc:#2E6BFF; --onacc:#FFFFFF; --ring:#2E6BFF;
+  --barbg:#E2E0D8; --barfg:#35281E; --barnav:#584D43; --barcur:transparent; --navcurfg:#35281E; --link:#35281E;
+  --thbg:#35281E; --thfg:#E2E0D8;
+  --m1:#B84F00; --m2:#00785A; --m3:#A8508A; --ok:#166534; --warn:#92400E; --bad:#B91C1C; }
+:root[data-dir="C"] [data-v="dark"] { display:none; }
+[data-only] { display:none; }
+:root[data-dir="C"] [data-only="C"] { display:block; }
+/* Yön C biçimi (referans görsel): sade kum çubuk, hap düğmeler, çok büyük kalın başlık, geniş boşluk, kakao özet kartları */
+:root[data-dir="C"] .bar { border-bottom:0; }
+:root[data-dir="C"] .foot { background:var(--fg); color:var(--bg); }
+:root[data-dir="C"] .brand { font-size:1rem; letter-spacing:.14em; text-transform:uppercase; border-bottom:0; }
+:root[data-dir="C"] .nav a[aria-current="page"] { border-radius:0; border-bottom:2px solid var(--acc); }
+:root[data-dir="C"] .btn, :root[data-dir="C"] .switch button { border-radius:999px; font-weight:600; }
+:root[data-dir="C"] .card { border-radius:20px; }
+:root[data-dir="C"] .note { border-radius:16px; }
+:root[data-dir="C"] input { border-radius:12px; }
+:root[data-dir="C"] h1 { font-weight:800; letter-spacing:-.02em; }
+:root[data-dir="C"] h2, :root[data-dir="C"] h3 { font-weight:700; letter-spacing:-.01em; }
+.hero { text-align:center; padding:3.5rem 0 2.5rem; }
+.hero .tag { display:inline-block; background:var(--pri); color:var(--onpri); border-radius:999px; padding:.2rem .9rem; font-size:.85rem; font-weight:700; }
+.hero .hero-title { font-family:var(--head); font-size:clamp(2.5rem,7vw,4.5rem); font-weight:800; letter-spacing:-.03em; line-height:1.05; margin:1rem 0 .75rem; }
+.hero p { font-size:1.25rem; max-width:40rem; margin:0 auto 1.5rem; }
+.hero .actions { display:flex; gap:1.5rem; justify-content:center; align-items:center; flex-wrap:wrap; }
+.hero .actions a { font-weight:600; }
+.kpi { background:var(--fg); color:var(--bg); border-radius:20px; padding:1.25rem 1.5rem; }
+.kpi b { display:block; font-size:2.25rem; font-weight:800; letter-spacing:-.02em; line-height:1.1; }
 
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); font-family:var(--body); font-size:1rem; line-height:1.6; }
 h1,h2,h3 { font-family:var(--head); line-height:1.2; margin:0 0 .5rem; }
 h1 { font-size:2.25rem; } h2 { font-size:1.6rem; margin-top:2.5rem; } h3 { font-size:1.2rem; }
 p { margin:.25rem 0 .75rem; }
-a { color:var(--pri); }
+a { color:var(--link); }
 :focus-visible { outline:3px solid var(--ring); outline-offset:2px; }
 .wrap { max-width:1100px; margin:0 auto; padding:0 1rem 4rem; }
-.bar { background:var(--card); border-bottom:1px solid var(--border); }
+.bar { background:var(--barbg); border-bottom:1px solid var(--border); }
+.foot { background:var(--barbg); color:var(--barfg); padding:1.25rem 1rem; text-align:center; font-size:.9rem; }
 .bar .wrap { display:flex; flex-wrap:wrap; gap:1rem; align-items:center; justify-content:space-between; padding-top:.75rem; padding-bottom:.75rem; }
-.brand { font-family:var(--head); font-size:1.5rem; font-weight:700; color:var(--pri); border-bottom:3px solid var(--acc); }
+.brand { font-family:var(--head); font-size:1.5rem; font-weight:700; color:var(--barfg); border-bottom:3px solid var(--acc); }
 .nav { display:flex; flex-wrap:wrap; gap:.25rem; }
-.nav a { padding:.5rem .75rem; border-radius:6px; text-decoration:none; color:var(--mfg); font-size:.95rem; }
-.nav a[aria-current="page"] { background:var(--muted); color:var(--pri); font-weight:700; }
+.nav a { padding:.5rem .75rem; border-radius:6px; text-decoration:none; color:var(--barnav); font-size:.95rem; }
+.nav a[aria-current="page"] { background:var(--barcur); color:var(--navcurfg); font-weight:700; }
 .switch { display:flex; gap:.5rem; flex-wrap:wrap; }
-.switch button, .btn { font:inherit; min-height:44px; padding:.5rem 1rem; border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--fg); cursor:pointer; }
+.switch button, .btn { font:inherit; min-height:44px; padding:.5rem 1rem; border-radius:6px; border:1px solid var(--ctrl,var(--border)); background:var(--card); color:var(--fg); cursor:pointer; }
 .switch button[aria-pressed="true"] { background:var(--pri); color:var(--onpri); border-color:var(--pri); }
 .btn.primary { background:var(--pri); color:var(--onpri); border-color:var(--pri); font-weight:700; }
 .btn.accent { background:var(--acc); color:var(--onacc); border-color:var(--acc); font-weight:700; }
@@ -66,13 +101,13 @@ a { color:var(--pri); }
 .meter { height:10px; background:var(--muted); border-radius:6px; overflow:hidden; margin:.25rem 0 .75rem; }
 .meter b { display:block; height:100%; }
 .row { display:flex; justify-content:space-between; gap:1rem; font-size:.95rem; }
-.poem { font-family:var(--head); font-size:1.25rem; line-height:1.5; font-style:italic; margin:.5rem 0 1rem; }
+.poem { font-family:var(--poem,var(--head)); font-size:1.25rem; line-height:1.5; font-style:italic; margin:.5rem 0 1rem; }
 label { display:block; font-weight:700; margin-bottom:.25rem; }
-input { font:inherit; width:100%; min-height:44px; padding:.5rem .75rem; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--fg); }
+input { font:inherit; width:100%; min-height:44px; padding:.5rem .75rem; border-radius:6px; border:1px solid var(--ctrl,var(--border)); background:var(--bg); color:var(--fg); }
 input[aria-invalid="true"] { border-color:var(--bad); border-width:2px; }
 table { width:100%; border-collapse:collapse; font-size:.95rem; }
 th, td { text-align:left; padding:.5rem .6rem; border-bottom:1px solid var(--border); }
-th { color:var(--mfg); font-weight:700; }
+th { background:var(--thbg); color:var(--thfg); font-weight:700; }
 td.n, th.n { text-align:right; font-variant-numeric:tabular-nums; }
 .legend { display:flex; flex-wrap:wrap; gap:1rem; margin:.5rem 0; font-size:.95rem; }
 .legend span { display:inline-flex; align-items:center; gap:.4rem; }
@@ -88,7 +123,8 @@ svg text { fill:var(--fg); font-family:var(--body); }
       <a href="#" aria-current="page">Karşılaştır</a><a href="#">Üretim ve Kütüphane</a><a href="#">Sonuçlar ve Analiz</a><a href="#">Rubrik ve Hakkında</a>
     </nav>
     <div class="switch" role="group" aria-label="Önizleme ayarları">
-      <button type="button" data-set="dir" data-v="A" aria-pressed="true">Yön A: Akademik Lacivert</button>
+      <button type="button" data-set="dir" data-v="C" aria-pressed="true">Yön C: Kum, Kakao, Mavi (güncel kural)</button>
+      <button type="button" data-set="dir" data-v="A" aria-pressed="false">Yön A: Akademik Lacivert</button>
       <button type="button" data-set="dir" data-v="B" aria-pressed="false">Yön B: Edebi Sıcak</button>
       <button type="button" data-set="theme" data-v="light" aria-pressed="true">Açık</button>
       <button type="button" data-set="theme" data-v="dark" aria-pressed="false">Koyu</button>
@@ -97,11 +133,29 @@ svg text { fill:var(--fg); font-family:var(--body); }
 </header>
 
 <main class="wrap">
+  <section class="hero" data-only="C" aria-label="Sayfa başlığı örneği">
+    <span class="tag">Taslak v0.1</span>
+    <h2 class="hero-title">Modelleri karşılaştır</h2>
+    <p>Aynı komutla Türkçe edebi metin üretin, rubrikle puanlayın, farkı görün.</p>
+    <div class="actions"><button class="btn primary" type="button">Karşılaştırmayı başlat</button><a href="#">Nasıl çalışır ›</a></div>
+  </section>
+  <div data-only="C"><div class="grid g3">
+    <div class="kpi"><b>128</b>Toplam değerlendirme (örnek)</div>
+    <div class="kpi"><b>81.6 / 100</b>Genel ortalama puan (örnek)</div>
+    <div class="kpi"><b>%92</b>Yargıç kararlılığı (örnek)</div>
+  </div></div>
   <h1>Tasarım önizlemesi</h1>
   <p class="note"><strong>Örnek veri.</strong> Bu sayfadaki metinler, puanlar ve grafikler tasarımı göstermek için uydurulmuştur, gerçek sonuç değildir. Yukarıdan yönü ve temayı değiştirin.</p>
 
   <h2>Renkler</h2>
   <div class="grid g4" id="swatches"></div>
+  <div class="card" data-only="C" style="margin-top:1rem">
+    <h3>Renk oranı: %60 / %30 / %10</h3>
+    <div role="img" aria-label="Oran çubuğu: yüzde 60 kum, yüzde 30 kakao, yüzde 10 elektrik mavi" style="display:flex;height:44px;border:1px solid var(--ctrl);border-radius:6px;overflow:hidden">
+      <span style="flex:60;background:#E2E0D8"></span><span style="flex:30;background:#35281E"></span><span style="flex:10;background:#2E6BFF"></span>
+    </div>
+    <p style="margin-top:.5rem;font-size:.95rem"><strong>Kum %60:</strong> sayfa zemini, üst çubuk, kartlar. <strong>Kakao %30:</strong> tüm metin ve başlıklar, özet kartları, tablo başlığı, alt bilgi. <strong>Mavi %10:</strong> birincil düğme, odak halkası, marka çizgisi, seçili durum. Mavi küçük metin rengi olarak kullanılmaz (kontrast 3.41).</p>
+  </div>
 
   <h2>Yazı</h2>
   <div class="grid g3">
@@ -138,6 +192,7 @@ svg text { fill:var(--fg); font-family:var(--body); }
     </div>
   </div>
 </main>
+<footer class="foot">YZ Edebi Analiz Projesi · tasarım önizlemesi (örnek veri)</footer>
 
 <script>
 const $ = (s) => document.querySelector(s);
@@ -152,7 +207,9 @@ const SCORES = [[82, 64, 75, 70], [76, 71, 84, 79], [68, 60, 72, 66]]; // [model
 const AVG = SCORES.map((r) => Math.round(r.reduce((a, b) => a + b) / r.length));
 
 function swatches() {
-  const names = [["--bg","Zemin"],["--card","Kart"],["--fg","Metin"],["--mfg","Soluk metin"],["--pri","Ana renk"],["--acc","Vurgu"],["--border","Kenarlık"],["--m1","Model 1"],["--m2","Model 2"],["--m3","Model 3"],["--ok","Başarılı"],["--bad","Hata"]];
+  const names = root.dataset.dir === "C"
+    ? [["--bg","Kum (zemin, kart) %60"],["--fg","Kakao (metin, özet kartı) %30"],["--pri","Elektrik mavi %10"],["--mfg","Soluk metin (kakao tonu)"],["--muted","Hafif zemin (kakao %8)"],["--border","Kenarlık (kakao %30)"],["--m1","Model 1 (öneri)"],["--m2","Model 2 (öneri)"],["--m3","Model 3 (öneri)"],["--ok","Başarılı"],["--warn","Uyarı"],["--bad","Hata"]]
+    : [["--bg","Zemin"],["--card","Kart"],["--fg","Metin"],["--mfg","Soluk metin"],["--pri","Ana renk"],["--acc","Vurgu"],["--border","Kenarlık"],["--m1","Model 1"],["--m2","Model 2"],["--m3","Model 3"],["--ok","Başarılı"],["--bad","Hata"]];
   const cs = getComputedStyle(root);
   $("#swatches").innerHTML = names.map(([v, n]) => `<div class="sw"><i style="background:var(${v})"></i><span>${n}<br><code>${cs.getPropertyValue(v).trim()}</code></span></div>`).join("");
 }
@@ -188,7 +245,8 @@ function chart() {
 }
 document.querySelectorAll("[data-set]").forEach((b) => b.addEventListener("click", () => {
   root.dataset[b.dataset.set] = b.dataset.v;
-  document.querySelectorAll(`[data-set="${b.dataset.set}"]`).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+  if (root.dataset.dir === "C") root.dataset.theme = "light"; // Yön C yalnızca açık tema
+  ["dir", "theme"].forEach((k) => document.querySelectorAll(`[data-set="${k}"]`).forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.v === root.dataset[k]))));
   swatches();
 }));
 cards(); legend(); chart();
