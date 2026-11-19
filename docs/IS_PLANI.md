@@ -381,7 +381,7 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 - [x] ER şeması ve veri sözlüğü.
 - [x] OpenAPI taslağı (Bölüm 8).
 - [x] **Arayüz tasarımı: SIFIRDAN yeni tasarım** (6 sayfa tel çerçevesi, renk, tipografi, bileşen dili). Eski prototip tasarımı kullanılmaz. `ui-ux-pro-max` eklentisiyle yapılır, tasarım yönü onaylandıktan sonra F3'te kodlanır. _(Yön C: Kum, Kakao, Mavi seçildi, ADR 0008; sayfa düzeltme listesi ADR 0007'de; Stitch bırakıldı, sayfalar F3'te koda dökülür)_
-- [x] Depo: klasör yapısı, ESLint/Prettier, Husky, GitHub Actions iskeleti, `docker-compose.yml` (MySQL). _(CI ve Docker henüz doğrulanmadı, PR #1)_
+- [x] Depo: klasör yapısı, ESLint/Prettier, Husky, GitHub Actions iskeleti, `docker-compose.yml` (MySQL). _(PR #1: CI'daki 4 kontrol yeşil, Docker Compose derleme ve açılış dahil; yerelde Docker denenmedi)_
 - [x] Proje takibi: faz başına 1 milestone + 1 issue (F0–F7). _(GitHub Projects panosu yerine; issue'lar #2–#9)_
 
 ### F1 — Backend çekirdeği (H2–H4)
