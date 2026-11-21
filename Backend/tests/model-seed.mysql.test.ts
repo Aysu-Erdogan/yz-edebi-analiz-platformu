@@ -1,6 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { createDb } from '../src/lib/prisma.js';
 import { seedModels, type ModelSeed } from '../src/seed/model-seed.js';
+import { cleanGenerationData } from './support/db-clean.js';
 import { assertSafeTestDatabase, testDatabaseUrl } from './support/test-db.js';
 
 const url = testDatabaseUrl();
@@ -30,7 +31,7 @@ if (url) {
 
   describe('MySQL: model listesi seed', () => {
     beforeEach(async () => {
-      await db.providerModel.deleteMany();
+      await cleanGenerationData(db);
     });
 
     it('modelleri yükler, parametreleri JSON olarak saklar', async () => {

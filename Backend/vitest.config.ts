@@ -11,6 +11,8 @@ export default defineConfig({
     env: { NODE_ENV: 'test' },
     globalSetup: ['tests/global-setup.ts'],
     testTimeout: 20_000,
+    // MySQL testleri aynı test veritabanını ve aynı tabloları kullanır: dosyalar sırayla çalışır.
+    fileParallelism: false,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],

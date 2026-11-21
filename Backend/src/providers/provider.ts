@@ -74,6 +74,9 @@ export class ProviderError extends Error {
   }
 }
 
+/** Yaklaşık token sayımı (dört karakter bir token): gerçek sayımı sağlayıcı verir; tahmin ve Mock için. */
+export const estimateTokens = (text: string): number => Math.max(1, Math.ceil(text.length / 4));
+
 /** Boş ya da metin olmayan cevabı kabul etmez: "undefined" gibi sahte metin kaydedilmez (ADR 0004). */
 export function requireText(text: unknown): string {
   if (typeof text !== 'string' || text.trim() === '') {

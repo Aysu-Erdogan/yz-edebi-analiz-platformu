@@ -32,12 +32,15 @@ const GENRE_PROMPT: Record<Genre, { tur: string; uzunluk: string }> = {
   deneme: { tur: 'deneme', uzunluk: 'yaklaşık 250-350 sözcük' },
 };
 
-/** Tek satır: tema soruya girer, çok satırlı metin sorunun yapısını bozabilir. */
+/**
+ * Tek satır: tema soruya girer, çok satırlı metin sorunun yapısını bozabilir. En çok 32 karakter:
+ * veritabanındaki tema alanları (texts.theme, generations.theme) bu kadar.
+ */
 const themeSchema = z
   .string()
   .trim()
   .min(1, 'Tema boş olamaz')
-  .max(200, 'Tema en çok 200 karakter olabilir')
+  .max(32, 'Tema en çok 32 karakter olabilir')
   .regex(/^[^\r\n]+$/, 'Tema tek satır olmalı');
 
 /** Üretim şablonunun değişkenleri: tür, tema ve uzunluk. */

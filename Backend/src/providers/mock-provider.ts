@@ -1,4 +1,5 @@
 import {
+  estimateTokens,
   parseStructured,
   requireText,
   type GenerateRequest,
@@ -12,9 +13,6 @@ export interface MockProviderOptions {
   /** Cevabı belirler (testlerde hata ve boş cevap üretmek için). Verilmezse isteğe bağlı sabit bir metin döner. */
   respond?: (request: GenerateRequest) => string | Promise<string>;
 }
-
-/** Yaklaşık sayım: gerçek sağlayıcılar kendi sayımını verir, Mock için dört karakter bir token sayılır. */
-const estimateTokens = (text: string): number => Math.max(1, Math.ceil(text.length / 4));
 
 /** Gerçek API'ye gitmeyen sağlayıcı: testlerde ve geliştirmede para harcamadan tüm akışı dener. */
 export class MockProvider implements LLMProvider {

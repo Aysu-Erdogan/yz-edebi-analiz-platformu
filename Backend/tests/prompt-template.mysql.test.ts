@@ -8,6 +8,7 @@ import {
   createPromptTemplateService,
   type PromptTemplateService,
 } from '../src/services/prompt-template.service.js';
+import { cleanGenerationData } from './support/db-clean.js';
 import { assertSafeTestDatabase, testDatabaseUrl } from './support/test-db.js';
 
 const url = testDatabaseUrl();
@@ -33,7 +34,7 @@ if (url) {
   describe('MySQL: sürümlü komut şablonu', () => {
     let service: PromptTemplateService;
     beforeEach(async () => {
-      await db.promptTemplate.deleteMany();
+      await cleanGenerationData(db);
       service = createPromptTemplateService(new PrismaPromptTemplateRepository(db));
     });
 

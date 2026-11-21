@@ -2,12 +2,23 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { modelParamsSchema } from '../src/domain/model-params.js';
 import { modelSeedSchema } from '../src/seed/model-seed.js';
 
 const file = resolve(dirname(fileURLToPath(import.meta.url)), '../prisma/seed-data/models.json');
 const models: unknown[] = JSON.parse(readFileSync(file, 'utf8'));
 
 describe('model listesi (seed verisi)', () => {
+  it('her modelin ayarları geçerli; üretim için süre sınırı ve maliyet tahmini fiyatı var (ADR 0010)', () => {
+    for (const model of models) {
+      const { defaultParams = {} } = modelSeedSchema.parse(model);
+      const params = modelParamsSchema.parse(defaultParams);
+      expect(params.maxTokens).toBeGreaterThan(0);
+      expect(params.timeoutMs).toBeGreaterThanOrEqual(120_000); // düşünen modeller yavaş
+      expect(params.priceUsdPerMillion).toBeDefined();
+    }
+  });
+
   it('her kayıt şemaya uyar', () => {
     for (const model of models) {
       expect(modelSeedSchema.safeParse(model).error?.issues ?? []).toEqual([]);

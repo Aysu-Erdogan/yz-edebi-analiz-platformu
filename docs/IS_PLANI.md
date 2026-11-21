@@ -392,9 +392,9 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 - [ ] `LLMProvider` arayüzü + OpenAI, Anthropic, Google adaptörleri + Mock. _(Arayüz, Anthropic, Google ve Mock tamam ve gerçek servisle denendi; OpenAI anahtar gelince)_
 - [x] Ortak HTTP davranışı: zaman aşımı, yeniden deneme, hata sınıflandırma.
 - [x] Prompt şablon kaydı ve sürümleme. _(Üretim şablonu v1 taslak: metin ve uzunluk değerleri danışmanla kesinleşecek; yargıç şablonları F2'de)_
-- [ ] Üretim servisi + `generations` kaydı.
+- [x] Üretim servisi + `generations` kaydı. _(Servis hazır: model başına hata izolasyonu, maliyet sınırı, dry-run; toplu iş ve ilerleme F2'deki iş kuyruğunda, API ucu F4'te yönetici girişiyle)_
 - [x] Merkezi hata middleware'i, istek günlüğü (pino, requestId), 404 ve bozuk-JSON işleyicisi. _(F0'da yapıldı)_
-- [ ] Her görev için birim/entegrasyon testi (T01–T12, T22, T27–T28).
+- [x] Her görev için birim/entegrasyon testi (T01–T12, T22, T27–T28). _(T07 ve T12 servis düzeyinde, Mock ve test veritabanıyla)_
 
 ### F2 — Değerlendirme ve analiz (H5–H6)
 - [ ] Yargıç prompt'u (kör, ayırıcılı, injection'a dayanıklı), yapılandırılmış çıktı, zod doğrulama.

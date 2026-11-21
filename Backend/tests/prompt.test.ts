@@ -58,7 +58,9 @@ describe('üretim değişkenleri', () => {
 
   it('temayı kırpar; boş, çok uzun ve çok satırlı tema reddedilir (sorunun yapısı bozulmasın)', () => {
     expect(generationVars('siir', '  Deniz  ').tema).toBe('Deniz');
-    for (const bad of ['', '   ', 'a'.repeat(201), 'iki\nsatır', 'satır\rsonu']) {
+    // Veritabanındaki tema alanı en çok 32 karakter (texts.theme, generations.theme).
+    expect(generationVars('siir', 'a'.repeat(32)).tema).toHaveLength(32);
+    for (const bad of ['', '   ', 'a'.repeat(33), 'iki\nsatır', 'satır\rsonu']) {
       expect(() => generationVars('siir', bad), JSON.stringify(bad)).toThrow();
     }
   });
