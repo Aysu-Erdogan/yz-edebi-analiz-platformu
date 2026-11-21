@@ -68,8 +68,12 @@ Sonra kök dizinde `.env` dosyası oluşturup `DATABASE_URL` değerini yazın:
 
 ```bash
 cp .env.example .env
-# .env içinde: DATABASE_URL=mysql://yz_app:PAROLANIZ@localhost:3306/yz_edebi
+# .env içinde: DATABASE_URL=mysql://yz_app:PAROLANIZ@localhost:3306/yz_edebi?allowPublicKeyRetrieval=true
+# Testler için: TEST_DATABASE_URL=mysql://yz_app:PAROLANIZ@localhost:3306/yz_edebi_test?allowPublicKeyRetrieval=true
 ```
+
+> `?allowPublicKeyRetrieval=true`, yerel MySQL 8'in şifresiz (TLS'siz) bağlantıda istediği anahtar alışverişine izin verir; yalnızca kendi bilgisayarınızdaki `localhost` için kullanın. Bağlantıyı denemek için: `cd Backend && npm run db:check` (parolayı yazmaz).
+> Test veritabanının adı `_test` ile bitmelidir ve gerçek veritabanından ayrı olmalıdır (testler tabloları temizler).
 
 Şemayı uygulayın:
 

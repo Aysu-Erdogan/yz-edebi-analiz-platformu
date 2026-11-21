@@ -17,6 +17,6 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["src", "tests", "prisma", "prisma.config.ts", "vitest.config.ts"],
+  "include": ["src", "tests", "scripts", "prisma", "prisma.config.ts", "vitest.config.ts"],
   "exclude": ["node_modules", "dist"]
 }
