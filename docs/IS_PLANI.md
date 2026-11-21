@@ -385,12 +385,12 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 - [x] Proje takibi: faz başına 1 milestone + 1 issue (F0–F7). _(GitHub Projects panosu yerine; issue'lar #2–#9)_
 
 ### F1 — Backend çekirdeği (H2–H4)
-- [ ] Katmanlı yapı: `routes → controllers → services → repositories`.
+- [x] Katmanlı yapı: `routes → services → repositories`. _(Ayrı controller katmanı yok: rota doğrudan servisi çağırıyor, bilinçli sadeleştirme)_
 - [x] `config` modülü + zod ile ortam doğrulama. _(F0'da yapıldı)_
-- [ ] Prisma şeması, ilk migration, seed (taslak rubrik v0.1, model listesi).
-- [ ] Rubrik servisi: şema, doğrulama, sürümleme, içe/dışa aktarım, etkinleştirme.
-- [ ] `LLMProvider` arayüzü + OpenAI, Anthropic, Google adaptörleri + Mock.
-- [ ] Ortak HTTP davranışı: zaman aşımı, yeniden deneme, hata sınıflandırma.
+- [x] Prisma şeması, ilk migration, seed (taslak rubrik v0.1, model listesi: ADR 0010).
+- [x] Rubrik servisi: şema, doğrulama, sürümleme, içe/dışa aktarım, etkinleştirme. _(Okuma uçları açık, yazma uçları F4'te yönetici girişiyle)_
+- [ ] `LLMProvider` arayüzü + OpenAI, Anthropic, Google adaptörleri + Mock. _(Arayüz, Anthropic, Google ve Mock tamam ve gerçek servisle denendi; OpenAI anahtar gelince)_
+- [x] Ortak HTTP davranışı: zaman aşımı, yeniden deneme, hata sınıflandırma.
 - [ ] Prompt şablon kaydı ve sürümleme.
 - [ ] Üretim servisi + `generations` kaydı.
 - [x] Merkezi hata middleware'i, istek günlüğü (pino, requestId), 404 ve bozuk-JSON işleyicisi. _(F0'da yapıldı)_

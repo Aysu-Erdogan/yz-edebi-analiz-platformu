@@ -13,3 +13,4 @@ Her önemli teknik karar burada kısa bir kayıtla tutulur: **bağlam, karar, so
 | 0007 | [Arayüz tasarım yönü: Akademik Lacivert](0007-arayuz-tasarim-yonu.md)    | Kısmen yerine geçildi (0008) |
 | 0008 | [Yön C: Kum, Kakao, Mavi](0008-yon-c-kum-kakao-mavi.md)                  | Kabul    |
 | 0009 | [Puan normalleştirme: aralık tabanlı (min-max)](0009-puan-normallestirme-min-max.md) | Kabul    |
+| 0010 | [Karşılaştırılan modeller: orta sınıf (Sonnet 5.5, Gemini 3.8 Flash)](0010-karsilastirilan-modeller.md) | Kabul    |

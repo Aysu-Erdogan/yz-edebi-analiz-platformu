@@ -138,7 +138,10 @@ async function main(): Promise<void> {
       provider: safe(new GoogleProvider({ apiKey: geminiKey })),
       model: geminiModel,
       secret: geminiKey,
-      price: { 'gemini-3.5-flash-lite': [0.3, 2.5] }[geminiModel] as [number, number] | undefined,
+      // gemini-3.8-flash: 31 Aralık 2026'ya kadar bu fiyat, 1 Ocak 2027'den sonra [1.5, 7.5] (ADR 0010).
+      price: { 'gemini-3.5-flash-lite': [0.3, 2.5], 'gemini-3.8-flash': [0.75, 3.75] }[
+        geminiModel
+      ] as [number, number] | undefined,
     });
   }
 

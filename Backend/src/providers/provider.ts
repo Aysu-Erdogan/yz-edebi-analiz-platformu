@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 
-export type ProviderId = 'openai' | 'anthropic' | 'google' | 'mock';
+export const PROVIDER_IDS = ['openai', 'anthropic', 'google', 'mock'] as const;
+export type ProviderId = (typeof PROVIDER_IDS)[number];
 
 export interface GenerateRequest {
   /** Sağlayıcıdaki model kimliği (kayıtlı model listesinden gelir, koda gömülmez). */
