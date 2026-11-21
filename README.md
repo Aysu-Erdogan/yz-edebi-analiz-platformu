@@ -106,6 +106,14 @@ Kök dizinden:
 | `npm test`             | Birim ve entegrasyon testleri                                 |
 | `npm run build`        | Üretim derlemesi                                              |
 
+`Backend` klasöründen:
+
+| Komut                                  | Ne yapar                                                                                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run db:check`                     | `DATABASE_URL` ve `TEST_DATABASE_URL` bağlanıyor mu? (parolayı yazmaz)                                                                       |
+| `npm run db:migrate` / `db:seed`       | Tabloları oluşturur / taslak rubrik v0.1'i yükler                                                                                            |
+| `npm run llm:smoke`                    | Claude ve Gemini'ye **gerçek** iki küçük istek atar (kuruşluk). Anahtarları `.env`'den okur, yazmaz. Model: `-- --claude <model> --gemini <model>` |
+
 Her commit öncesi değişen dosyalar otomatik biçimlendirilir (Husky + lint-staged). Her push ve PR'da GitHub Actions biçim, tip, lint, test, derleme, migration ve Docker açılışını doğrular.
 
 ## Güvenlik notları
