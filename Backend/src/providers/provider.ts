@@ -83,3 +83,22 @@ export function requireText(text: unknown): string {
   }
   return text;
 }
+
+/**
+ * Modelin JSON cevabını şemaya göre doğrular. Hata mesajı yalnızca alan yollarını söyler,
+ * modelin cevabı mesaja sızmaz (günlüklere ve hata kayıtlarına gitmesin).
+ */
+export function parseStructured<T>(text: string, schema: z.ZodType<T>): T {
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch (cause) {
+    throw new ProviderError('invalid_output', 'Model cevabı geçerli JSON değil', { cause });
+  }
+  const parsed = schema.safeParse(json);
+  if (!parsed.success) {
+    const fields = parsed.error.issues.map((i) => i.path.join('.') || '(kök)').join(', ');
+    throw new ProviderError('invalid_output', `Model cevabı beklenen biçime uymuyor: ${fields}`);
+  }
+  return parsed.data;
+}

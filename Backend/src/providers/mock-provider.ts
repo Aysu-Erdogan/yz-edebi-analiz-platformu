@@ -1,5 +1,5 @@
 import {
-  ProviderError,
+  parseStructured,
   requireText,
   type GenerateRequest,
   type GenerateResult,
@@ -38,21 +38,8 @@ export class MockProvider implements LLMProvider {
   async generateJson<T>(request: JsonRequest<T>): Promise<JsonResult<T>> {
     const started = Date.now();
     const text = await this.answer(request);
-
-    let json: unknown;
-    try {
-      json = JSON.parse(text);
-    } catch (cause) {
-      throw new ProviderError('invalid_output', 'Model cevabı geçerli JSON değil', { cause });
-    }
-    const parsed = request.schema.safeParse(json);
-    if (!parsed.success) {
-      // Yalnızca alan yolları yazılır; modelin cevabı hata mesajına sızmaz.
-      const fields = parsed.error.issues.map((i) => i.path.join('.') || '(kök)').join(', ');
-      throw new ProviderError('invalid_output', `Model cevabı beklenen biçime uymuyor: ${fields}`);
-    }
     return {
-      data: parsed.data,
+      data: parseStructured(text, request.schema),
       inputTokens: estimateTokens(request.prompt),
       outputTokens: estimateTokens(text),
       latencyMs: Date.now() - started,
