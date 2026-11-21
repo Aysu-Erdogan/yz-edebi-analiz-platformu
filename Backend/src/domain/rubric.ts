@@ -4,6 +4,10 @@ import { z } from 'zod';
 export const GENRES = ['siir', 'hikaye', 'deneme'] as const;
 export type Genre = (typeof GENRES)[number];
 
+/** Rubrik durumu: taslak → etkin → arşivli. Veritabanındaki `RubricStatus` ile aynıdır. */
+export const RUBRIC_STATUSES = ['draft', 'active', 'archived'] as const;
+export type RubricStatus = (typeof RUBRIC_STATUSES)[number];
+
 /** Ağırlıklar ondalık yuvarlama farkıyla (0.1 + 0.2 + 0.7) 1'e eşit sayılır. */
 const WEIGHT_SUM_TOLERANCE = 1e-6;
 
