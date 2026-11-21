@@ -25,7 +25,8 @@ const HINTS: Record<string, string> = {
   auth: 'anahtar geçersiz ya da hesapta bakiye yok: anahtarı ve kredi bakiyesini kontrol edin',
   invalid_request: 'istek reddedildi: model adı yanlış ya da bu hesapta kapalı olabilir',
   rate_limit: 'kota doldu: biraz bekleyip yeniden deneyin',
-  timeout: 'cevap 30 sn içinde gelmedi',
+  timeout:
+    'cevap süresinde gelmedi: yavaş model olabilir, süreyi uzatın (npm run llm:smoke -- --timeout 120)',
   server_error: 'servis geçici olarak yanıt vermiyor ya da bağlantı kurulamadı',
   safety_blocked: 'güvenlik filtresi cevabı engelledi',
   empty_output: 'boş cevap geldi',
@@ -116,8 +117,11 @@ async function main(): Promise<void> {
   const claudeModel = option('--claude') ?? 'claude-haiku-5-5';
   const geminiModel = option('--gemini') ?? 'gemini-3.5-flash-lite';
 
-  // Tek deneme, 30 sn sınır: deneme komutunda yeniden deneme yok, sorun neyse olduğu gibi görünsün.
-  const safe = (p: LLMProvider) => withResilience(p, { maxAttempts: 1, timeoutMs: 30_000 });
+  // Tek deneme: deneme komutunda yeniden deneme yok, sorun neyse olduğu gibi görünsün.
+  // Süre varsayılan 30 sn; yavaş modeller için `--timeout <saniye>` ile uzatılır.
+  const seconds = Number(option('--timeout') ?? 30);
+  const timeoutMs = (Number.isFinite(seconds) && seconds > 0 ? seconds : 30) * 1000;
+  const safe = (p: LLMProvider) => withResilience(p, { maxAttempts: 1, timeoutMs });
   const targets: SmokeTarget[] = [];
   if (claudeKey) {
     targets.push({
@@ -138,10 +142,12 @@ async function main(): Promise<void> {
       provider: safe(new GoogleProvider({ apiKey: geminiKey })),
       model: geminiModel,
       secret: geminiKey,
-      // gemini-3.8-flash: 31 Aralık 2026'ya kadar bu fiyat, 1 Ocak 2027'den sonra [1.5, 7.5] (ADR 0010).
-      price: { 'gemini-3.5-flash-lite': [0.3, 2.5], 'gemini-3.8-flash': [0.75, 3.75] }[
-        geminiModel
-      ] as [number, number] | undefined,
+      // gemini-3.8-flash ve 3.6-flash: 31 Aralık 2026'ya kadar bu fiyat, 1 Ocak 2027'den sonra [1.5, 7.5] (ADR 0010).
+      price: {
+        'gemini-3.5-flash-lite': [0.3, 2.5],
+        'gemini-3.6-flash': [0.75, 3.75],
+        'gemini-3.8-flash': [0.75, 3.75],
+      }[geminiModel] as [number, number] | undefined,
     });
   }
 

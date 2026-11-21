@@ -27,6 +27,21 @@ Ana karşılaştırma **orta sınıf** modellerle yapılır:
 2. **Modeller "düşünür."** Cevap öncesi iç düşünme yaparlar ve miktarı modele göre farklıdır; bu bir karıştırıcı etkendir. Düşünme tokenleri ücretlendirilir.
 3. **Fiyat ve model adları değişkendir.** Gemini 3.8 Flash fiyatı 1 Ocak 2027'de iki katına çıkar. Model adları belgelerden alınmıştır; kullanmadan önce `npm run llm:smoke -- --claude claude-sonnet-5-5 --gemini gemini-3.8-flash` ile teyit edilir.
 
+## Gerçek servis doğrulaması (21 Kasım 2026, `llm:smoke`)
+
+| Model | Sonuç |
+| --- | --- |
+| `claude-sonnet-5-5` | Çalışıyor: metin 1,5 sn, JSON 1,4 sn. |
+| `gemini-3.8-flash` | Model adı ve anahtar doğru, ama **HTTP 503 "yüksek talep"** döndü. Servis hatayı 30 saniyeden geç veriyor. Geçici bir yoğunluk. |
+| `gemini-3.6-flash` | Çalışıyor, ama yavaş: metin 6 sn, JSON 28 sn (bir kelimelik istek, düşünme tokenleri dahil). |
+| `gemini-3.5-flash-lite` (önceki deneme) | Çalışıyor, hızlı: 1-2 sn. |
+
+Çıkarımlar:
+
+- **Süre sınırları geniş tutulur.** Düşünen Gemini modelleri küçük işte bile 30 saniyeyi bulabiliyor; gerçek bir şiir üretiminde daha uzun sürer. Üretimde varsayılan deneme süre sınırı model başına ayarlanabilir olmalı (varsayılan 120 sn).
+- **503 yoğunluk hatası geçici sayılır** ve yeniden denenir (T08). Yoğunluk sürerse kayıt `failed` olur, sahte cevap yazılmaz (ADR 0004).
+- **Gemini için yedek model:** `gemini-3.6-flash` doğrulanmış yedektir; ana model (`gemini-3.8-flash`) yoğunluk nedeniyle kullanılamazsa karar yeniden verilir. Karşılaştırma verisi üretilmeden önce son karar kayda geçirilir (modelin sınıfı ve sürümü sonuçlarla birlikte yazılmalı).
+
 ## Sonuçlar
 
 - Karşılaştırma iki aile ve orta sınıfla başlar; maliyet 100 metin için kabaca bir dolar altındadır.
