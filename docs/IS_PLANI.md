@@ -385,16 +385,16 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 - [x] Proje takibi: faz başına 1 milestone + 1 issue (F0–F7). _(GitHub Projects panosu yerine; issue'lar #2–#9)_
 
 ### F1 — Backend çekirdeği (H2–H4)
-- [ ] Katmanlı yapı: `routes → controllers → services → repositories`.
+- [x] Katmanlı yapı: `routes → services → repositories`. _(Ayrı controller katmanı yok: rota doğrudan servisi çağırıyor, bilinçli sadeleştirme)_
 - [x] `config` modülü + zod ile ortam doğrulama. _(F0'da yapıldı)_
-- [ ] Prisma şeması, ilk migration, seed (taslak rubrik v0.1, model listesi).
-- [ ] Rubrik servisi: şema, doğrulama, sürümleme, içe/dışa aktarım, etkinleştirme.
-- [ ] `LLMProvider` arayüzü + OpenAI, Anthropic, Google adaptörleri + Mock.
-- [ ] Ortak HTTP davranışı: zaman aşımı, yeniden deneme, hata sınıflandırma.
-- [ ] Prompt şablon kaydı ve sürümleme.
-- [ ] Üretim servisi + `generations` kaydı.
+- [x] Prisma şeması, ilk migration, seed (taslak rubrik v0.1, model listesi: ADR 0010).
+- [x] Rubrik servisi: şema, doğrulama, sürümleme, içe/dışa aktarım, etkinleştirme. _(Okuma uçları açık, yazma uçları F4'te yönetici girişiyle)_
+- [ ] `LLMProvider` arayüzü + OpenAI, Anthropic, Google adaptörleri + Mock. _(Arayüz, Anthropic, Google ve Mock tamam ve gerçek servisle denendi; OpenAI anahtar gelince)_
+- [x] Ortak HTTP davranışı: zaman aşımı, yeniden deneme, hata sınıflandırma.
+- [x] Prompt şablon kaydı ve sürümleme. _(Üretim şablonu v1 taslak: metin ve uzunluk değerleri danışmanla kesinleşecek; yargıç şablonları F2'de)_
+- [x] Üretim servisi + `generations` kaydı. _(Servis hazır: model başına hata izolasyonu, maliyet sınırı, dry-run; toplu iş ve ilerleme F2'deki iş kuyruğunda, API ucu F4'te yönetici girişiyle)_
 - [x] Merkezi hata middleware'i, istek günlüğü (pino, requestId), 404 ve bozuk-JSON işleyicisi. _(F0'da yapıldı)_
-- [ ] Her görev için birim/entegrasyon testi (T01–T12, T22, T27–T28).
+- [x] Her görev için birim/entegrasyon testi (T01–T12, T22, T27–T28). _(T07 ve T12 servis düzeyinde, Mock ve test veritabanıyla)_
 
 ### F2 — Değerlendirme ve analiz (H5–H6)
 - [ ] Yargıç prompt'u (kör, ayırıcılı, injection'a dayanıklı), yapılandırılmış çıktı, zod doğrulama.
@@ -423,6 +423,7 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 - [ ] Yük testi, yavaş sorgu/indeks gözden geçirme.
 - [ ] Düzgün kapanış, sağlık kontrolü, DB yeniden bağlanma.
 - [ ] `npm audit`, Dependabot.
+- [ ] GitHub Actions sürümlerini güncelle (`actions/checkout`, `actions/setup-node`): CI'da "Node.js 20 kullanımdan kalkıyor" uyarısı var.
 
 ### F5 — Test ve hata ayıklama (H12–H13)
 - [ ] 38 senaryonun hepsi otomatik ya da belgeli elle test.

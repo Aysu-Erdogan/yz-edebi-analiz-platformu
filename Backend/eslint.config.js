@@ -14,4 +14,6 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  // Komut satırı araçları çıktıyı konsola yazar.
+  { files: ['scripts/**/*.ts', 'prisma/**/*.ts'], rules: { 'no-console': 'off' } },
 );

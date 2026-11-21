@@ -2,6 +2,8 @@ import { createApp } from './app.js';
 import { EnvError, loadEnv } from './config/env.js';
 import { createLogger } from './lib/logger.js';
 import { createDb, pingDb } from './lib/prisma.js';
+import { PrismaRubricRepository } from './repositories/prisma-rubric.repository.js';
+import { createRubricService } from './services/rubric.service.js';
 
 const VERSION = process.env.APP_VERSION ?? process.env.npm_package_version ?? '0.1.0';
 const SHUTDOWN_TIMEOUT_MS = 10_000;
@@ -27,6 +29,7 @@ async function main(): Promise<void> {
     logger,
     version: VERSION,
     checkDb: db ? () => pingDb(db) : undefined,
+    rubrics: db ? createRubricService(new PrismaRubricRepository(db)) : undefined,
   });
 
   const server = app.listen(env.PORT, () => {

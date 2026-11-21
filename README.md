@@ -68,8 +68,12 @@ Sonra kök dizinde `.env` dosyası oluşturup `DATABASE_URL` değerini yazın:
 
 ```bash
 cp .env.example .env
-# .env içinde: DATABASE_URL=mysql://yz_app:PAROLANIZ@localhost:3306/yz_edebi
+# .env içinde: DATABASE_URL=mysql://yz_app:PAROLANIZ@localhost:3306/yz_edebi?allowPublicKeyRetrieval=true
+# Testler için: TEST_DATABASE_URL=mysql://yz_app:PAROLANIZ@localhost:3306/yz_edebi_test?allowPublicKeyRetrieval=true
 ```
+
+> `?allowPublicKeyRetrieval=true`, yerel MySQL 8'in şifresiz (TLS'siz) bağlantıda istediği anahtar alışverişine izin verir; yalnızca kendi bilgisayarınızdaki `localhost` için kullanın. Bağlantıyı denemek için: `cd Backend && npm run db:check` (parolayı yazmaz).
+> Test veritabanının adı `_test` ile bitmelidir ve gerçek veritabanından ayrı olmalıdır (testler tabloları temizler).
 
 Şemayı uygulayın:
 
@@ -101,6 +105,14 @@ Kök dizinden:
 | `npm run lint`         | ESLint                                                        |
 | `npm test`             | Birim ve entegrasyon testleri                                 |
 | `npm run build`        | Üretim derlemesi                                              |
+
+`Backend` klasöründen:
+
+| Komut                                  | Ne yapar                                                                                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run db:check`                     | `DATABASE_URL` ve `TEST_DATABASE_URL` bağlanıyor mu? (parolayı yazmaz)                                                                       |
+| `npm run db:migrate` / `db:seed`       | Tabloları oluşturur / taslak rubrik v0.1'i yükler                                                                                            |
+| `npm run llm:smoke`                    | Claude ve Gemini'ye **gerçek** iki küçük istek atar (kuruşluk). Anahtarları `.env`'den okur, yazmaz. Model: `-- --claude <model> --gemini <model>` |
 
 Her commit öncesi değişen dosyalar otomatik biçimlendirilir (Husky + lint-staged). Her push ve PR'da GitHub Actions biçim, tip, lint, test, derleme, migration ve Docker açılışını doğrular.
 

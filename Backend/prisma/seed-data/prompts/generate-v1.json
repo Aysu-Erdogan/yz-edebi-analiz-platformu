@@ -1,0 +1,5 @@
+{
+  "kind": "generate",
+  "version": "v1",
+  "body": "Aşağıdaki tür ve tema için özgün bir Türkçe metin yaz.\n\nTür: {{tur}}\nTema: {{tema}}\nUzunluk: {{uzunluk}}\n\nYalnızca metnin kendisini yaz. Başlık, açıklama, yorum ya da giriş cümlesi ekleme."
+}
