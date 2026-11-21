@@ -391,7 +391,7 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 - [x] Rubrik servisi: şema, doğrulama, sürümleme, içe/dışa aktarım, etkinleştirme. _(Okuma uçları açık, yazma uçları F4'te yönetici girişiyle)_
 - [ ] `LLMProvider` arayüzü + OpenAI, Anthropic, Google adaptörleri + Mock. _(Arayüz, Anthropic, Google ve Mock tamam ve gerçek servisle denendi; OpenAI anahtar gelince)_
 - [x] Ortak HTTP davranışı: zaman aşımı, yeniden deneme, hata sınıflandırma.
-- [ ] Prompt şablon kaydı ve sürümleme.
+- [x] Prompt şablon kaydı ve sürümleme. _(Üretim şablonu v1 taslak: metin ve uzunluk değerleri danışmanla kesinleşecek; yargıç şablonları F2'de)_
 - [ ] Üretim servisi + `generations` kaydı.
 - [x] Merkezi hata middleware'i, istek günlüğü (pino, requestId), 404 ve bozuk-JSON işleyicisi. _(F0'da yapıldı)_
 - [ ] Her görev için birim/entegrasyon testi (T01–T12, T22, T27–T28).
