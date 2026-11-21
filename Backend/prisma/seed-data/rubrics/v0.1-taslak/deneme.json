@@ -1,0 +1,72 @@
+{
+  "genre": "deneme",
+  "version": "0.1-taslak",
+  "sourceNote": "GEÇİCİ TASLAK: uzman doğrulaması yok. Kriterler başvuru önerisindeki kriterlerle uyumludur; düzey açıklamaları taslak olarak yazılmıştır ve uzman görüşüyle değişecektir.",
+  "scale": { "min": 1, "max": 5 },
+  "criteria": [
+    {
+      "key": "dusunselDerinlik",
+      "label": "Düşünsel Derinlik",
+      "description": "Savunulan düşüncenin gerekçesi, örnekleri ve derinliği.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "Düşünce yüzeysel; genel geçer ifadelerle sınırlı." },
+        { "score": 3, "descriptor": "Bazı düşünceler gelişiyor ama gerekçe ve örnek eksik." },
+        {
+          "score": 5,
+          "descriptor": "Savunulan düşünce gerekçe, örnek ve karşı görüşle derinleştirilmiş."
+        }
+      ]
+    },
+    {
+      "key": "tutarlilik",
+      "label": "Tutarlılık",
+      "description": "Fikir akışı ve bölümler arasındaki bağ.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "Fikirler birbirinden kopuk; metin kendi içinde çelişiyor." },
+        { "score": 3, "descriptor": "Genel bir akış var ama bazı geçişler ve bağlantılar zayıf." },
+        {
+          "score": 5,
+          "descriptor": "Giriş, gelişme ve sonuç tek bir düşünce çizgisinde birleşiyor."
+        }
+      ]
+    },
+    {
+      "key": "dilselDogruluk",
+      "label": "Dilsel Doğruluk",
+      "description": "Dil bilgisi, yazım, noktalama ve sözcük seçiminin doğruluğu.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "Çok sayıda hata var ve bunlar anlamı bozuyor." },
+        { "score": 3, "descriptor": "Birkaç hata var ama anlam korunuyor." },
+        {
+          "score": 5,
+          "descriptor": "Dil bilgisi, yazım ve noktalama doğru; sözcük seçimi yerinde."
+        }
+      ]
+    },
+    {
+      "key": "kisiselUslup",
+      "label": "Kişisel Üslup",
+      "description": "Yazarın kendine özgü sesi ve anlatış biçimi.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "Üslup belirsiz; kalıp ifadelerle yazılmış." },
+        { "score": 3, "descriptor": "Üslup bazı yerlerde belirgin, genelde sıradan." },
+        { "score": 5, "descriptor": "Metne özgü, tutarlı ve ayırt edilebilir bir yazar sesi var." }
+      ]
+    },
+    {
+      "key": "ozgunluk",
+      "label": "Özgünlük",
+      "description": "Konuya getirilen bakışın ayırt ediciliği.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "Bilinen görüşlerin tekrarı." },
+        { "score": 3, "descriptor": "Bilinen görüşe bazı özgün katkılar ekleniyor." },
+        { "score": 5, "descriptor": "Konuya ayırt edici ve özgün bir bakış getiriyor." }
+      ]
+    }
+  ]
+}

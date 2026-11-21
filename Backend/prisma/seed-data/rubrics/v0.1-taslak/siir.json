@@ -1,0 +1,87 @@
+{
+  "genre": "siir",
+  "version": "0.1-taslak",
+  "sourceNote": "GEÇİCİ TASLAK: uzman doğrulaması yok. Kriterler başvuru önerisindeki kriterlerle uyumludur; düzey açıklamaları taslak olarak yazılmıştır ve uzman görüşüyle değişecektir.",
+  "scale": { "min": 1, "max": 5 },
+  "criteria": [
+    {
+      "key": "imgeGucu",
+      "label": "İmge Gücü",
+      "description": "Metafor, benzetme ve sembollerin kalitesi ve özgünlüğü.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "İmge yok ya da yalnızca bilinen klişeler var." },
+        {
+          "score": 3,
+          "descriptor": "Bazı özgün imgeler var; imgeler dalgalı ya da birbiriyle tutarsız."
+        },
+        {
+          "score": 5,
+          "descriptor": "Özgün, canlı ve metnin bütününe yayılan, birbiriyle tutarlı imgeler var."
+        }
+      ]
+    },
+    {
+      "key": "ritimAhenk",
+      "label": "Ritim ve Ahenk",
+      "description": "Ses, ölçü, tekrar ve akıcılık.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "Ritim ve ses uyumu yok; dizeler kopuk okunuyor." },
+        { "score": 3, "descriptor": "Kısmen akıcı; ritim bazı dizelerde bozuluyor." },
+        {
+          "score": 5,
+          "descriptor": "Ses, ölçü ve tekrarlar anlamı destekleyen belirgin bir ahenk kuruyor."
+        }
+      ]
+    },
+    {
+      "key": "duyguAktarimi",
+      "label": "Duygu Aktarımı",
+      "description": "Duygunun okura geçmesi ve inandırıcılığı.",
+      "weight": 0.2,
+      "levels": [
+        {
+          "score": 1,
+          "descriptor": "Duygu hissedilmiyor ya da yalnızca soyut ifadelerle söyleniyor."
+        },
+        {
+          "score": 3,
+          "descriptor": "Duygu bazı yerlerde geçiyor; açıklayıcı ve yüzeysel kalan bölümler var."
+        },
+        {
+          "score": 5,
+          "descriptor": "Duygu imge ve sesle okura güçlü ve inandırıcı biçimde geçiyor."
+        }
+      ]
+    },
+    {
+      "key": "ozgunluk",
+      "label": "Özgünlük",
+      "description": "Temaya getirilen bakışın ve söyleyişin ayırt ediciliği.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "Bilinen kalıpların ve ifadelerin tekrarı." },
+        { "score": 3, "descriptor": "Bilinen tema az da olsa kişisel bir bakışla işlenmiş." },
+        {
+          "score": 5,
+          "descriptor": "Temaya belirgin, ayırt edici ve beklenmedik bir bakış getiriyor."
+        }
+      ]
+    },
+    {
+      "key": "anlamButunlugu",
+      "label": "Anlam Bütünlüğü",
+      "description": "Dizeler arasındaki bağ ve metnin bir bütün oluşturması.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "Dizeler birbirinden kopuk; metin bir bütün oluşturmuyor." },
+        { "score": 3, "descriptor": "Genel bir bütünlük var ancak bazı dizeler konudan sapıyor." },
+        {
+          "score": 5,
+          "descriptor": "Tüm dizeler tek bir anlam çizgisinde birleşiyor; başı ve sonu yerli yerinde."
+        }
+      ]
+    }
+  ]
+}

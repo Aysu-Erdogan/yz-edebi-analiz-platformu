@@ -1,0 +1,84 @@
+{
+  "genre": "hikaye",
+  "version": "0.1-taslak",
+  "sourceNote": "GEÇİCİ TASLAK: uzman doğrulaması yok. Kriterler başvuru önerisindeki kriterlerle uyumludur; düzey açıklamaları taslak olarak yazılmıştır ve uzman görüşüyle değişecektir.",
+  "scale": { "min": 1, "max": 5 },
+  "criteria": [
+    {
+      "key": "olayOrgusu",
+      "label": "Olay Örgüsü",
+      "description": "Giriş, gelişme ve sonuç ile olaylar arasındaki neden-sonuç ilişkisi.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "Olaylar rastgele diziliyor; neden-sonuç bağı yok." },
+        { "score": 3, "descriptor": "Temel bir akış var ancak geçişler ya da sonuç zayıf." },
+        {
+          "score": 5,
+          "descriptor": "Olaylar neden-sonuç bağıyla ilerliyor; giriş, gelişme ve sonuç dengeli."
+        }
+      ]
+    },
+    {
+      "key": "karakterTutarliligi",
+      "label": "Karakter Tutarlılığı",
+      "description": "Karakterlerin davranış, tutum ve konuşmalarının kendi içinde tutarlılığı.",
+      "weight": 0.2,
+      "levels": [
+        {
+          "score": 1,
+          "descriptor": "Karakterler belirsiz ya da davranışları kendi içinde çelişiyor."
+        },
+        {
+          "score": 3,
+          "descriptor": "Karakterler belirli ama bazı davranışları tutarsız ya da yüzeysel."
+        },
+        {
+          "score": 5,
+          "descriptor": "Karakterler ayırt edilebilir; tutum ve konuşmaları baştan sona tutarlı."
+        }
+      ]
+    },
+    {
+      "key": "anlatimGucu",
+      "label": "Anlatım Gücü",
+      "description": "Dil, betimleme, anlatıcı sesi ve akıcılık.",
+      "weight": 0.2,
+      "levels": [
+        {
+          "score": 1,
+          "descriptor": "Anlatım dağınık; betimleme yok ya da dil hataları anlamı bozuyor."
+        },
+        { "score": 3, "descriptor": "Anlatım anlaşılır ama sıradan; betimleme sınırlı." },
+        {
+          "score": 5,
+          "descriptor": "Dil canlı ve akıcı; betimleme ve anlatıcı sesi hikâyeyi taşıyor."
+        }
+      ]
+    },
+    {
+      "key": "yaraticilik",
+      "label": "Yaratıcılık",
+      "description": "Kurgu, karakter ve bakış açısındaki özgünlük.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "Çok bilinen olay ve kalıpların tekrarı." },
+        { "score": 3, "descriptor": "Bilinen kurguya bazı özgün ayrıntılar eklenmiş." },
+        {
+          "score": 5,
+          "descriptor": "Kurguda, kişilerde ya da bakış açısında özgün ve beklenmedik bir yön var."
+        }
+      ]
+    },
+    {
+      "key": "temaIslenisi",
+      "label": "Tema İşlenişi",
+      "description": "Verilen temanın hikâyede ne ölçüde ve ne derinlikte işlendiği.",
+      "weight": 0.2,
+      "levels": [
+        { "score": 1, "descriptor": "Verilen tema işlenmemiş ya da yalnızca adı anılıyor." },
+        { "score": 3, "descriptor": "Tema işlenmiş ama yüzeysel ya da yalnızca bir bölümde." },
+        { "score": 5, "descriptor": "Tema olaylara ve karakterlere yayılarak derinlikle işlenmiş." }
+      ]
+    }
+  ]
+}

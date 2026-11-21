@@ -423,6 +423,7 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 - [ ] Yük testi, yavaş sorgu/indeks gözden geçirme.
 - [ ] Düzgün kapanış, sağlık kontrolü, DB yeniden bağlanma.
 - [ ] `npm audit`, Dependabot.
+- [ ] GitHub Actions sürümlerini güncelle (`actions/checkout`, `actions/setup-node`): CI'da "Node.js 20 kullanımdan kalkıyor" uyarısı var.
 
 ### F5 — Test ve hata ayıklama (H12–H13)
 - [ ] 38 senaryonun hepsi otomatik ya da belgeli elle test.
