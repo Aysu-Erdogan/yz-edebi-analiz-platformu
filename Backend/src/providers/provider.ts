@@ -1,0 +1,80 @@
+import type { z } from 'zod';
+
+export type ProviderId = 'openai' | 'anthropic' | 'google' | 'mock';
+
+export interface GenerateRequest {
+  /** Sağlayıcıdaki model kimliği (kayıtlı model listesinden gelir, koda gömülmez). */
+  model: string;
+  prompt: string;
+  system?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
+
+export interface JsonRequest<T> extends GenerateRequest {
+  /** Cevap bu şemaya uymak zorunda; uymazsa `invalid_output` hatası fırlatılır. */
+  schema: z.ZodType<T>;
+}
+
+export interface Usage {
+  inputTokens: number;
+  outputTokens: number;
+  latencyMs: number;
+}
+
+export interface GenerateResult extends Usage {
+  text: string;
+}
+
+export interface JsonResult<T> extends Usage {
+  data: T;
+}
+
+/** Tüm sağlayıcı adaptörlerinin (Claude, Gemini, OpenAI, Mock) uyduğu ortak sözleşme. */
+export interface LLMProvider {
+  readonly id: ProviderId;
+  generateText(request: GenerateRequest): Promise<GenerateResult>;
+  generateJson<T>(request: JsonRequest<T>): Promise<JsonResult<T>>;
+}
+
+export type ProviderErrorKind =
+  | 'rate_limit' // 429, kota
+  | 'timeout'
+  | 'server_error' // 5xx
+  | 'auth' // anahtar geçersiz
+  | 'invalid_request'
+  | 'safety_blocked' // güvenlik filtresi
+  | 'empty_output'
+  | 'invalid_output'; // JSON bozuk ya da şemaya uymuyor
+
+/** Yalnızca geçici hatalar yeniden denenir; kalıcı hatayı tekrarlamak boşuna kota harcar. */
+const RETRYABLE: ReadonlySet<ProviderErrorKind> = new Set([
+  'rate_limit',
+  'timeout',
+  'server_error',
+]);
+
+export class ProviderError extends Error {
+  readonly retryable: boolean;
+
+  constructor(
+    public readonly kind: ProviderErrorKind,
+    message: string,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+    this.name = 'ProviderError';
+    this.retryable = RETRYABLE.has(kind);
+  }
+}
+
+/** Boş ya da metin olmayan cevabı kabul etmez: "undefined" gibi sahte metin kaydedilmez (ADR 0004). */
+export function requireText(text: unknown): string {
+  if (typeof text !== 'string' || text.trim() === '') {
+    throw new ProviderError(
+      'empty_output',
+      'Model boş cevap verdi (güvenlik filtresi ya da sağlayıcı hatası olabilir)',
+    );
+  }
+  return text;
+}
