@@ -9,6 +9,8 @@ export interface GenerateRequest {
   system?: string;
   temperature?: number;
   maxTokens?: number;
+  /** Zaman aşımında iptal sinyali verilir; adaptörler bunu HTTP isteğine geçirmelidir (fetch'in `signal`ı). */
+  signal?: AbortSignal;
 }
 
 export interface JsonRequest<T> extends GenerateRequest {
@@ -56,15 +58,18 @@ const RETRYABLE: ReadonlySet<ProviderErrorKind> = new Set([
 
 export class ProviderError extends Error {
   readonly retryable: boolean;
+  /** Sağlayıcı "şu kadar sonra tekrar dene" dediyse (Retry-After başlığı) milisaniye cinsinden. */
+  readonly retryAfterMs: number | undefined;
 
   constructor(
     public readonly kind: ProviderErrorKind,
     message: string,
-    options?: ErrorOptions,
+    options: ErrorOptions & { retryAfterMs?: number } = {},
   ) {
     super(message, options);
     this.name = 'ProviderError';
     this.retryable = RETRYABLE.has(kind);
+    this.retryAfterMs = options.retryAfterMs;
   }
 }
 
