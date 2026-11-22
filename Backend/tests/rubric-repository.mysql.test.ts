@@ -16,8 +16,9 @@ if (url) {
     await db.$disconnect();
   });
 
-  /** Her testten önce rubrik tablolarını boşaltır (kriter ve düzeyler zincirleme silinir). */
+  /** Her testten önce rubrik tablolarını boşaltır (kriter ve düzeyler zincirleme silinir; rubriğe bağlı değerlendirmeler önce silinir). */
   const clean = async () => {
+    await db.evaluation.deleteMany();
     await db.rubric.deleteMany();
   };
 
