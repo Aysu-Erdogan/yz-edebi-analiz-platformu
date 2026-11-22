@@ -231,6 +231,20 @@ Kod sürümü: R1-R2 `ddfda94` / `2fb47db` (`--timeout` seçeneği henüz yoktu,
 | OpenAI    | `gpt-6.2-sol`           | 2 / 10                     | **Seçildi (orta sınıf)**; bağlam 1,05 milyon token, en çok 128 bin çıkış token          |
 | OpenAI    | `gpt-6.2-astra`         | 8 / 40                     | Amiral gemisi; (ilk duyuru sayfasında `gpt-6-astra` 10 / 50, güncel sayfa 8 / 40)       |
 
+### Sağlayıcı belgelerindeki tutarsızlıklar (22 Kas 2026)
+
+**[Veri]** Fiyat ve model bilgisini sağlayıcıların belge sayfalarından okurken, aynı sağlayıcının sayfaları birbiriyle çelişti. Bu yüzden her fiyat/model satırı **okunma tarihi ve kaynak sayfayla** kaydedilir (bkz. bölüm 10).
+
+| Konu                          | Çelişki                                                                                                                                        |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| OpenAI Astra fiyatı           | Modeller ve karşılaştırma sayfaları: `gpt-6.2-astra` $8 / $40. İlk duyuru yazısı: `gpt-6-astra` $10 / $50 (GPT-6.2 güncellemesinden önce).      |
+| OpenAI Sol model kimliği      | Modeller ve karşılaştırma sayfaları: `gpt-6.2-sol`. Eylül duyuru yazısı: `gpt-6-sol`. Fiyat ikisinde de $2 / $10.                              |
+| Google Gemini 3.8 Flash       | Modeller sayfası: "önceki nesil Flash modelimiz". Fiyat sayfası: "en zeki Flash modelimiz".                                                    |
+| Gemini 4 modellerinin durumu  | Modeller sayfasında durum etiketi (kararlı/önizleme) yok; fiyat sayfası da hangilerinin önizleme olduğunu söylemiyor.                          |
+| OpenAI Terra                  | Yalnızca modeller sayfasında geçiyor; karşılaştırma sayfasında ve duyuru yazılarında yok.                                                      |
+
+**[Veri]** Bilgi, Claude'un web okuma aracıyla sayfalardan okundu; sayfa içeriği bir model tarafından özetlendi, bu yüzden bazı satırlar doğrudan alıntı değil özetten geldi (bu belgede yalnızca doğrudan okunanlar tabloya alındı, bkz. bölüm 10). **[Yorum]** Makalede "model sürümü ve fiyat" bilgisi verilirken sayfa adresi ve erişim tarihi mutlaka yazılmalı; sağlayıcı belgeleri tek başına tutarlı bir kaynak değildir.
+
 ## 6. Sınırlılıklar ve geçerlilik tehditleri
 
 Her biri raporda/makalede ayrıca yazılmalıdır:
@@ -244,6 +258,7 @@ Her biri raporda/makalede ayrıca yazılmalıdır:
 7. **Komut şablonu ve uzunluk yönergesi taslaktır**, danışmanla kesinleşecek. Komut metni sonuçları etkiler (komut mühendisliği).
 8. **Yargıç yanlılığı riski:** Yapay zekâ yargıçların kendi ailesinin metnini kayırması (self-preference), uzun metni kayırması (verbosity) ve sıra etkisi; **çapraz yargıç ilkesiyle** (modelin kendi metnini kendisinin puanlamaması, İş planı 7.3) azaltılması planlanıyor. **[TODO]** Yargıç yöntemi F2'de belirlenince buraya yazılacak.
 9. Denemeler küçük örnekle yapıldı (N = 2-6); istatistiksel çıkarım için yeterli değil.
+10. **Sağlayıcı belgeleri birbiriyle çelişebiliyor** (bkz. bölüm 5, "Sağlayıcı belgelerindeki tutarsızlıklar"); model kimliği, sürüm ve fiyat bilgisi okunma tarihi ve kaynak sayfayla kaydedilir, üretim sırasındaki model kimliği her kayıtla saklanır.
 
 ## 7. Etik, gizlilik ve şeffaflık
 
@@ -315,6 +330,7 @@ Hepsi **22 Kasım 2026**'da okundu (fiyat ve model adları sonradan değişebili
 
 | Tarih       | Değişiklik                                                                                                  |
 | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| 22 Kas 2026 | Sağlayıcı belge tutarsızlıkları (bölüm 5) ve sınırlılık 10 eklendi. |
 | 22 Kas 2026 | Bölüm 3.6 (sürekli entegrasyon: dört kontrolün içeriği, iş süreleri) eklendi. |
 | 22 Kas 2026 | Belge oluşturuldu. Model seçimi gerekçesi (ADR 0010), R1-R8 gerçek servis verileri, fiyat envanteri, sınırlılıklar, kontrol listesi eklendi. |
 
