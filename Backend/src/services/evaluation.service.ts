@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { estimateCostUsd } from '../domain/model-params.js';
 import { AppError } from '../lib/errors.js';
 import type { ProviderRegistry } from '../providers/registry.js';
 import { withResilience, type ResilienceOptions } from '../providers/resilient-provider.js';
@@ -26,8 +27,21 @@ export type EvaluationResult =
       totalScore: number;
       scores: JudgedCriterion[];
       attempts: number;
+      /** Başarılı çağrının token sayıları (yeniden denenen bozuk cevabınki sağlayıcıdan gelmez, dahil değil). */
+      inputTokens: number;
+      outputTokens: number;
+      /** Gerçek maliyet (dolar): tokenler × model fiyatı. Fiyat bilinmiyorsa boş. */
+      costUsd: number | null;
     }
-  | { evaluationId: number; status: 'failed'; error: string; attempts: number };
+  | {
+      evaluationId: number;
+      status: 'failed';
+      error: string;
+      attempts: number;
+      inputTokens: null;
+      outputTokens: null;
+      costUsd: null;
+    };
 
 export interface EvaluationService {
   evaluate(raw: unknown): Promise<EvaluationResult>;
@@ -114,6 +128,9 @@ export function createEvaluationService(deps: EvaluationDeps): EvaluationService
             status: 'failed',
             error: judged.error,
             attempts: judged.attempts,
+            inputTokens: null,
+            outputTokens: null,
+            costUsd: null,
           };
         }
         await deps.evaluations.succeed(evaluationId, {
@@ -141,6 +158,14 @@ export function createEvaluationService(deps: EvaluationDeps): EvaluationService
           totalScore: judged.total,
           scores: judged.scores,
           attempts: judged.attempts,
+          inputTokens: judged.inputTokens,
+          outputTokens: judged.outputTokens,
+          costUsd:
+            estimateCostUsd(
+              judged.inputTokens,
+              judged.outputTokens,
+              model.params.priceUsdPerMillion,
+            ) ?? null,
         };
       } catch (error) {
         // Kayıt yazılamadı (veritabanı hatası): takılı kalmasın, hata yukarı atılsın.

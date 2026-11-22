@@ -4,10 +4,8 @@ import { GENRES } from '../domain/rubric.js';
 import type { ProviderRegistry } from '../providers/registry.js';
 import type { GenerationRepository } from '../repositories/generation.repository.js';
 import type { JobRepository, StoredJob } from '../repositories/job.repository.js';
-import type {
-  ProviderModelRecord,
-  ProviderModelRepository,
-} from '../repositories/provider-model.repository.js';
+import type { ProviderModelRepository } from '../repositories/provider-model.repository.js';
+import { runBatchLanes, type BatchItem } from './batch-lanes.js';
 import type { GenerationService } from './generation.service.js';
 import type { JobHandler } from './job-runner.js';
 import type { PromptTemplateService } from './prompt-template.service.js';
@@ -81,13 +79,6 @@ export interface GenerateBatchDeps {
   providers: ProviderRegistry;
 }
 
-interface Item {
-  model: ProviderModelRecord;
-  genre: (typeof GENRES)[number];
-  theme: string;
-  replicateNo: number;
-}
-
 const keyOf = (i: {
   providerModelId: number;
   genre: string;
@@ -137,17 +128,6 @@ export function createGenerateBatchHandler(deps: GenerateBatchDeps): JobHandler 
       }
     }
 
-    // Şeritler: sağlayıcı başına sıralı öğe listesi.
-    const lanes = new Map<string, Item[]>();
-    for (const model of models) {
-      const lane = lanes.get(model.provider) ?? [];
-      for (const topic of payload.topics) {
-        for (let replicateNo = 1; replicateNo <= payload.replicates; replicateNo++) {
-          lane.push({ model, genre: topic.genre, theme: topic.theme, replicateNo });
-        }
-      }
-      lanes.set(model.provider, lane);
-    }
     const finished = new Set(
       (
         await deps.generations.findSucceeded({
@@ -156,61 +136,34 @@ export function createGenerateBatchHandler(deps: GenerateBatchDeps): JobHandler 
         })
       ).map(keyOf),
     );
-    const isFinished = (item: Item) =>
-      finished.has(
-        keyOf({
-          providerModelId: item.model.id,
-          genre: item.genre,
-          theme: item.theme,
-          replicateNo: item.replicateNo,
-        }),
-      );
-
-    let done = [...lanes.values()].flat().filter(isFinished).length;
-    let failed = 0;
-    let spent = 0; // shortcut: bütçe her çalıştırma için ayrı sayılır (çökme sonrası devamda sıfırdan), yeni işte de böyle
-    let halt: 'budget' | 'error' | undefined;
-
-    // Şeritler aynı anda yazar: yazmaları sıraya dizip her seferinde güncel sayaçları yazarız.
-    let writes: Promise<void> = Promise.resolve();
-    const report = () => (writes = writes.then(() => ctx.progress({ done, failed })));
-    await report(); // yeniden başlatmada devam noktası hemen görünsün
-
-    async function runLane(items: Item[]): Promise<void> {
-      try {
-        for (const item of items) {
-          if (isFinished(item)) continue;
-          if (ctx.signal.aborted || halt) return;
-          const result = await deps.generation.generate({
-            genre: item.genre,
-            theme: item.theme,
-            modelIds: [item.model.id],
-            replicates: 1,
-            firstReplicateNo: item.replicateNo,
+    // Öğeler: model sırasıyla, her model kendi sağlayıcısının şeridinde sırayla çalışır.
+    const items: BatchItem[] = [];
+    for (const model of models) {
+      for (const topic of payload.topics) {
+        for (let replicateNo = 1; replicateNo <= payload.replicates; replicateNo++) {
+          items.push({
+            key: keyOf({
+              providerModelId: model.id,
+              genre: topic.genre,
+              theme: topic.theme,
+              replicateNo,
+            }),
+            lane: model.provider,
+            run: async () => {
+              const result = await deps.generation.generate({
+                genre: topic.genre,
+                theme: topic.theme,
+                modelIds: [model.id],
+                replicates: 1,
+                firstReplicateNo: replicateNo,
+              });
+              const outcome = result.outcomes[0]!;
+              return { succeeded: outcome.status === 'succeeded', costUsd: outcome.costUsd };
+            },
           });
-          const outcome = result.outcomes[0]!;
-          if (outcome.status === 'succeeded') done++;
-          else failed++;
-          spent += outcome.costUsd ?? 0;
-          if (payload.maxCostUsd !== undefined && spent >= payload.maxCostUsd) halt ??= 'budget';
-          await report();
         }
-      } catch (error) {
-        halt = 'error'; // diğer şeritler yeni öğe almasın
-        throw error;
       }
     }
-
-    const settled = await Promise.allSettled([...lanes.values()].map(runLane));
-    const rejected = settled.find((s): s is PromiseRejectedResult => s.status === 'rejected');
-    if (rejected) throw rejected.reason; // kod/veritabanı hatası: iş failed olur, neden yazılır
-    if (ctx.signal.aborted) return { status: 'interrupted' };
-    if (halt === 'budget') {
-      return {
-        status: 'failed',
-        error: `Bütçe doldu: harcanan $${spent.toFixed(4)} (sınır $${payload.maxCostUsd}); ${done}/${ctx.job.total} öğe tamam. Aynı parametrelerle yeni iş eklerseniz kalanlar yapılır, biten öğeler atlanır.`,
-      };
-    }
-    return { status: 'done', result: { done, failed, spentUsd: spent } };
+    return runBatchLanes(ctx, items, finished, payload.maxCostUsd);
   };
 }

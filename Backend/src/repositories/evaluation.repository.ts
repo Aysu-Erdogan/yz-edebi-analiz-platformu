@@ -8,6 +8,20 @@ export interface EvaluableText {
   body: string;
 }
 
+/** Başarıyla puanlanmış bir öğenin kimliği: toplu işin kaldığı yeri bulması için. */
+export interface SucceededEvaluation {
+  textId: number;
+  evaluatorRef: string;
+  replicateNo: number;
+}
+
+/** Üretilmiş metnin yazarı (üretim kaydından): çapraz yargıç ve kendi-puanı analizi için. Hakeme verilmez. */
+export interface TextAuthor {
+  textId: number;
+  provider: string;
+  modelId: string;
+}
+
 export interface StartEvaluation {
   textId: number;
   rubricId: number;
@@ -41,4 +55,19 @@ export interface EvaluationRepository {
     id: number,
     failure: { error: string; rawResponse?: Record<string, unknown> },
   ): Promise<void>;
+  /** Verilen metinleri döner; olmayan kimlikler listede yer almaz. */
+  findTexts(ids: number[]): Promise<EvaluableText[]>;
+  /** Üretilmiş metinlerin yazarı (elle girilen metinlerin yazarı yoktur, listede yer almaz). */
+  findAuthors(textIds: number[]): Promise<TextAuthor[]>;
+  /** Verilen komut, rubrik ve metinlerle başarıyla puanlanmış öğeler (toplu işin kaldığı yeri bulması için). */
+  findSucceeded(filter: {
+    promptTemplateId: number;
+    rubricIds: number[];
+    textIds: number[];
+  }): Promise<SucceededEvaluation[]>;
+  /**
+   * Yarım kalan ("çalışıyor") kayıtları başarısız yapar, kaç tane olduğunu döner. Tek işçi varsayımıyla işçi
+   * açılırken çağrılır: o sırada "çalışıyor" görünen kayıt çökmüş bir sürecin artığıdır.
+   */
+  failInterrupted(error: string): Promise<number>;
 }

@@ -5,6 +5,8 @@ import type {
   EvaluationRepository,
   EvaluationSuccess,
   StartEvaluation,
+  SucceededEvaluation,
+  TextAuthor,
 } from './evaluation.repository.js';
 
 const MAX_ERROR_LENGTH = 2000;
@@ -18,6 +20,51 @@ export class PrismaEvaluationRepository implements EvaluationRepository {
       where: { id },
       select: { id: true, genre: true, theme: true, body: true },
     });
+  }
+
+  findTexts(ids: number[]): Promise<EvaluableText[]> {
+    return this.db.text.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, genre: true, theme: true, body: true },
+    });
+  }
+
+  async findAuthors(textIds: number[]): Promise<TextAuthor[]> {
+    const rows = await this.db.text.findMany({
+      where: { id: { in: textIds }, generationId: { not: null } },
+      select: {
+        id: true,
+        generation: { select: { providerModel: { select: { provider: true, modelId: true } } } },
+      },
+    });
+    return rows.flatMap((row) => {
+      const model = row.generation?.providerModel;
+      return model ? [{ textId: row.id, provider: model.provider, modelId: model.modelId }] : [];
+    });
+  }
+
+  findSucceeded(filter: {
+    promptTemplateId: number;
+    rubricIds: number[];
+    textIds: number[];
+  }): Promise<SucceededEvaluation[]> {
+    return this.db.evaluation.findMany({
+      where: {
+        status: 'succeeded',
+        promptTemplateId: filter.promptTemplateId,
+        rubricId: { in: filter.rubricIds },
+        textId: { in: filter.textIds },
+      },
+      select: { textId: true, evaluatorRef: true, replicateNo: true },
+    });
+  }
+
+  async failInterrupted(error: string): Promise<number> {
+    const result = await this.db.evaluation.updateMany({
+      where: { status: 'running' },
+      data: { status: 'failed', error: error.slice(0, MAX_ERROR_LENGTH) },
+    });
+    return result.count;
   }
 
   async start(input: StartEvaluation): Promise<number> {
