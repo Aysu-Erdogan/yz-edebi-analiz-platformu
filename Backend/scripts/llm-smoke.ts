@@ -150,6 +150,7 @@ async function main(): Promise<void> {
         'gemini-3.5-flash-lite': [0.3, 2.5],
         'gemini-3.6-flash': [0.75, 3.75],
         'gemini-3.8-flash': [0.75, 3.75],
+        'gemini-4-hydrogen': [1.5, 7.5], // zam tarihi belgede yok (22 Kas 2026)
       }[geminiModel] as [number, number] | undefined,
     });
   }

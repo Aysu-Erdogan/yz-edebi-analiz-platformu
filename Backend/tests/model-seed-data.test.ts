@@ -25,13 +25,13 @@ describe('model listesi (seed verisi)', () => {
     }
   });
 
-  it('ADR 0010: orta sınıf üç model, Claude Sonnet 5.5, Gemini 3.8 Flash ve GPT-6.2 Sol', () => {
+  it('ADR 0010: orta sınıf üç model, Claude Sonnet 5.5, Gemini 4 Hydrogen ve GPT-6.2 Sol', () => {
     const ids = models
       .map((m) => modelSeedSchema.parse(m))
       .map((m) => `${m.provider}/${m.modelId}`);
     expect(ids.sort()).toEqual([
       'anthropic/claude-sonnet-5-5',
-      'google/gemini-3.8-flash',
+      'google/gemini-4-hydrogen',
       'openai/gpt-6.2-sol',
     ]);
   });
