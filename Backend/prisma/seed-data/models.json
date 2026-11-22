@@ -20,5 +20,16 @@
       "timeoutMs": 120000,
       "priceUsdPerMillion": { "input": 0.75, "output": 3.75 }
     }
+  },
+  {
+    "provider": "openai",
+    "modelId": "gpt-6.2-sol",
+    "displayName": "GPT-6.2 Sol",
+    "active": true,
+    "defaultParams": {
+      "maxTokens": 8192,
+      "timeoutMs": 120000,
+      "priceUsdPerMillion": { "input": 2, "output": 10 }
+    }
   }
 ]

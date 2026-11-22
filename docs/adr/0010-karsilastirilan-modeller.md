@@ -1,10 +1,10 @@
-# ADR 0010: Karşılaştırılan modeller: orta sınıf (Claude Sonnet 5.5, Gemini 3.8 Flash)
+# ADR 0010: Karşılaştırılan modeller: orta sınıf (Claude Sonnet 5.5, Gemini 3.8 Flash, GPT-6.2 Sol)
 
-**Durum:** Kabul · **Tarih:** 2026-11-21
+**Durum:** Kabul · **Tarih:** 2026-11-21 (GPT-6.2 Sol 2026-11-22'de eklendi)
 
 ## Bağlam
 
-Platform üretken yapay zekâ modellerinin Türkçe edebi metin başarısını karşılaştırıyor. Karşılaştırmanın adil olması için modellerin **aynı sınıftan** (fiyat ve yetenek bakımından benzer) seçilmesi gerekiyor. Başvuru önerisinde üçüncü model olarak GPT de vardı, ancak OpenAI anahtarı henüz yok ve adaptörü yazılmadı.
+Platform üretken yapay zekâ modellerinin Türkçe edebi metin başarısını karşılaştırıyor. Karşılaştırmanın adil olması için modellerin **aynı sınıftan** (fiyat ve yetenek bakımından benzer) seçilmesi gerekiyor. Başvuru önerisinde üçüncü model olarak GPT de vardı. Başta OpenAI anahtarı ve adaptörü yoktu, 22 Kasım 2026'da ikisi de hazırlandı ve gerçek servisle doğrulandı.
 
 ## Karar
 
@@ -14,12 +14,13 @@ Ana karşılaştırma **orta sınıf** modellerle yapılır:
 | --- | --- | --- |
 | Claude (Anthropic) | `claude-sonnet-5-5` | 2 / 10 |
 | Gemini (Google) | `gemini-3.8-flash` | 0,75 / 3,75 (31 Aralık 2026'ya kadar), sonra 1,50 / 7,50 |
+| GPT (OpenAI) | `gpt-6.2-sol` | 2 / 10 |
 
 - Model listesi **veridir**, koda gömülmez: `Backend/prisma/seed-data/models.json` dosyasından `provider_models` tablosuna yüklenir (`npm run db:seed`). Model emekli olunca kayıt güncellenir, kod değişmez.
 - Seed, var olan kayda dokunmaz (yönetici ayarladığı `active` ve parametreleri ezmez).
 - Varsayılan üretim parametresi `maxTokens: 8192`. Düşünen modellerde düşünme tokenleri de bu sınıra dahildir; yarım kalan cevap kaydedilmez, hata olur (ADR 0004). İlk gerçek üretimde ölçülüp ayarlanır.
 - Ek olarak ucuz sınıf (`claude-haiku-5-5`, `gemini-3.5-flash-lite`) ileride "model boyutu fark yaratıyor mu?" sorusu için eklenebilir; ikisi de `llm:smoke` ile doğrulandı.
-- GPT (OpenAI), anahtar ve adaptör hazır olunca listeye eklenir.
+- GPT (OpenAI) listeye eklendi: `gpt-6.2-sol`, Claude Sonnet 5.5 ile aynı fiyat sınıfında. Daha ucuz seçenekler (`gpt-6.1-terra` 1 / 5, `gpt-6-luna` 0,10 / 0,50) ucuz sınıf karşılaştırması için ileride eklenebilir.
 
 ## Sınırlılıklar (yöntem bölümünde yazılmalı)
 
@@ -50,9 +51,9 @@ Ana karşılaştırma **orta sınıf** modellerle yapılır:
 | `gemini-3.8-flash` | **Yoğunluk sürüyor:** metin isteği yine HTTP 503 "yüksek talep", JSON isteği 120 sn'de zaman aşımı. |
 | `gpt-6.2-sol` (OpenAI, aday) | **Çalışıyor** (kredi yüklendikten sonra): metin 2,7 sn, JSON 1,5 sn. Model adı, istek biçimi (Responses API), `store: false` ve katı JSON şeması kabul edildi. İlk denemede hesapta kredi yoktu: OpenAI bakiye hatasını 429 ile bildirir (tür `insufficient_quota`, kod `credit_balance_exhausted`); adaptör bunu geçici hız sınırı değil kalıcı bakiye hatası (`auth`) sayar, yeniden denemez. Bu sınıflandırma gerçek cevapla doğrulandı. |
 
-OpenAI orta sınıf adayı `gpt-6.2-sol` ($2 giriş / $10 çıkış, milyon token), daha ucuz seçenekler `gpt-6.1-terra` ($1/$5) ve `gpt-6-luna` ($0,10/$0,50). `gpt-6.2-sol` doğrulandı; `models.json`'a eklenmesi kullanıcı kararıyla ayrıca yapılır.
+OpenAI orta sınıf adayı `gpt-6.2-sol` ($2 giriş / $10 çıkış, milyon token), daha ucuz seçenekler `gpt-6.1-terra` ($1/$5) ve `gpt-6-luna` ($0,10/$0,50). `gpt-6.2-sol` doğrulandı ve `models.json`'a eklendi.
 
 ## Sonuçlar
 
-- Karşılaştırma iki aile ve orta sınıfla başlar; maliyet 100 metin için kabaca bir dolar altındadır.
-- Çapraz yargıç ilkesi (modelin kendi metnini kendisinin puanlamaması, İş planı 7.3) için iki aileden birer yargıç modeli kullanılabilir.
+- Karşılaştırma üç aile ve orta sınıfla başlar. "100 metin için kabaca bir dolar altı" tahmini iki model için yapılmıştı; üç model için ilk gerçek üretimde yeniden ölçülür.
+- Çapraz yargıç ilkesi (modelin kendi metnini kendisinin puanlamaması, İş planı 7.3) için üç aileden birer yargıç modeli kullanılabilir.
