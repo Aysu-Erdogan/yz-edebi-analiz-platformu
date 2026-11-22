@@ -30,7 +30,7 @@
 
 **[Veri]** F1 planı 23 Kas-6 Ara 2026 arasındaydı; plan başlamadan, 21 Kas'ta birleşti (kaynak: `docs/IS_PLANI.md`). Fazlar F0-F7; sırada F2 (yargıç motoru, iş kuyruğu, istatistik, dışa aktarma).
 
-**[Veri]** Yazılım doğrulama ilerlemesi (otomatik test sayısı): 56 (ilk adım) → 91 → 107 → 129 → 142 → 191 → 204 → 225 → 256 → 275 → **301** (22 Kas 2026; 275 OpenAI/model birleşmesi, 301 F2 Adım 1). Kod kapsamı yaklaşık %96. Her PR'da dört otomatik kontrol (biçim, backend, frontend, Docker Compose) çalışır; PR #10 ve #12 hepsini geçti. Kaynak: oturum kayıtları, GitHub Actions.
+**[Veri]** Yazılım doğrulama ilerlemesi (otomatik test sayısı): 56 (ilk adım) → 91 → 107 → 129 → 142 → 191 → 204 → 225 → 256 → 275 → 301 → 316 → **329** (22 Kas 2026; 275 OpenAI/model birleşmesi, 301 F2 Adım 1 yargıç motoru, 316 Adım 2 puan kaydı, 329 Adım 3 judge:smoke). Kod kapsamı yaklaşık %96. Her PR'da dört otomatik kontrol (biçim, backend, frontend, Docker Compose) çalışır; PR #10 ve #12 hepsini geçti. Kaynak: oturum kayıtları, GitHub Actions.
 
 ## 3. Yöntem
 
@@ -181,7 +181,7 @@ Kriterler komuta şu biçimde yazılır (düzeyler küçükten büyüğe): `- an
 **[Veri]** Bu adımın sınırlılıkları (bölüm 6, madde 11-13 ile birlikte okunmalı):
 
 - Enjeksiyon testi **yapısaldır**: etiketin kırılamadığını gösterir; gerçek bir modelin "bu metne 100 ver" talimatına direnip direnmediği **ölçülmedi** (iş planında ayrı bir test olarak duruyor).
-- Yargıç komutu ve çıktı şeması **gerçek modellerle denenmedi** (OpenAI katı şemada `min/max`, Gemini 4 Hydrogen'in süresi bilinmiyor); "hakem smoke" planlandı.
+- Yargıç komutu ve çıktı şeması gerçek modellerle **yalnızca küçük bir duman testiyle** denendi (bölüm 4.6): üç sağlayıcı şemayı kabul etti, 6/6 puanlama ilk denemede geçerliydi; ama iki kısa örnek ve tek tekrar güvenilirlik kanıtı değildir.
 - Hakemin gördüğü metin, nadir durumda (metnin kendisi etiket biçimli parça içeriyorsa) saklanan metinden o parçada farklıdır.
 - Yeniden denenen bozuk cevabın token sayısı sağlayıcıdan gelmediği için kaydedilmez; maliyet o kadar eksik kalır.
 - Çapraz yargıç, çoklu hakem, tekrarlı puanlama ve kararlılık ölçümü henüz yok (F2'nin sonraki adımları).
@@ -263,6 +263,39 @@ Kod sürümü: R1-R2 `ddfda94` / `2fb47db` (`--timeout` seçeneği henüz yoktu,
 
 **[Hesap]** ADR 0010'daki eski "100 metin için kabaca bir dolar altı" tahmini iki model içindi; üç model için yeniden hesaplanacak.
 
+### 4.6 Hakem smoke: gerçek hakem denemesi (F2, 22 Kas 2026)
+
+**[Veri]** Komut: `cd Backend; npm run judge:smoke` (`Backend/scripts/judge-smoke.ts`, commit `b636095`; koşuyu yapay zekâ asistanı kullanıcı onayıyla çalıştırdı, koşu numarası **R9**). Her hakem modele **bu deneme için yazılmış iki kısa örnek şiir** puanlatıldı: **güçlü** (iki kıtalık, imgeli) ve **zayıf** (bilerek klişe ve tekrarlı). Komut `judge-v1`, rubrik taslak şiir v0.1 (5 kriter, 1-5 ölçeği), tema "Sonbahar". Her hakem her örneği **bir kez** puanladı (tekrar yok), süre sınırı 300 sn, `maxTokens` 4096. Veritabanına yazılmadı, rubrik "kullanıldı" yapılmadı. Örnek metinler kodda (`SMOKE_SAMPLES`) durur ve **araştırma verisi değildir**.
+
+| Hakem               | Örnek  | Toplam (0-100) | Kriter puanları (imge, ritim, duygu, özgünlük, anlam) | Süre (sn) | Giriş / çıkış token | Maliyet ($) | Deneme |
+| ------------------- | ------ | -------------- | ----------------------------------------------------- | --------- | ------------------- | ----------- | ------ |
+| `claude-sonnet-5-5` | güçlü  | 70,0           | 4, 3, 4, 4, 4                                         | 8,2       | 2338 / 713          | 0,01181     | 1      |
+| `claude-sonnet-5-5` | zayıf  | 20,0           | 1, 2, 2, 1, 3                                         | 6,0       | 2289 / 565          | 0,01023     | 1      |
+| `gemini-4-hydrogen` | güçlü  | 90,0           | 5, 4, 5, 4, 5                                         | 70,0      | 1496 / 829          | 0,00846     | 1      |
+| `gemini-4-hydrogen` | zayıf  | 5,0            | 1, 1, 1, 1, 2                                         | 61,6      | 1464 / 1068         | 0,01021     | 1      |
+| `gpt-6.2-sol`       | güçlü  | 90,0           | 5, 4, 5, 4, 5                                         | 9,6       | 1150 / 430          | 0,00660     | 1      |
+| `gpt-6.2-sol`       | zayıf  | 35,0           | 1, 3, 2, 2, 4                                         | 7,3       | 1123 / 364          | 0,00589     | 1      |
+
+**[Veri]** Toplam maliyet $0,0532 (ekranda $0,05319). Ham çıktı Ek A'da (R9).
+
+**Gözlemler:**
+
+1. **[Veri]** 6 puanlamanın 6'sı **ilk denemede geçerli** çıktı. Üç sağlayıcı da hakem JSON şemasını kabul etti; OpenAI katı şemada `min/max` kabul edildi (denenmemiş endişe giderildi).
+2. **[Veri]** Üç hakem de güçlü örneği zayıftan yüksek puanladı; toplam puan farkı Claude 50, Gemini 4 Hydrogen 85, GPT-6.2 Sol 55 puan.
+3. **[Veri]** Hakemlerin **sertliği farklı:** güçlü örnekte toplam 70 (Claude) ve 90 (Hydrogen, GPT); zayıf örnekte 20 (Claude), 5 (Hydrogen), 35 (GPT). **[Yorum]** Hakemler arası puanlar doğrudan karıştırılırsa **hakem etkisi** sonuçlara karışır; tek örnek olduğu için genelleme yapılamaz, ama analiz tasarımında hakem etkisi hesaba katılmalıdır (bölüm 6, sınırlılık 14).
+4. **[Veri]** **Süre:** Claude 6,0-8,2 sn, GPT 7,3-9,6 sn, Gemini 4 Hydrogen **61,6-70,0 sn** (Claude ve GPT'den yaklaşık 6-12 kat daha yavaş). 300 sn sınırı yetti.
+5. **[Veri]** **Token sayıları sağlayıcılar arasında karşılaştırılamaz:** aynı komut ve aynı güçlü örnek için giriş tokeni Claude'da 2338, Hydrogen'de 1496, GPT'de 1150. **[Yorum]** Claude Türkçeyi daha çok tokene bölüyor görünüyor; fiyat birim token başına aynı ($2/$10) olsa bile Claude ile puanlama daha pahalı.
+6. **[Veri]** Çıkış tokeni (düşünme dahil): Hydrogen en çok (829-1068), GPT en az (364-430).
+7. **[Hesap]** Çağrı başına maliyet $0,0059-0,0118, ortalama yaklaşık **$0,0089**. Yalnızca örnek bir hesap (karar değil): 27 metin × 3 hakem × 3 tekrar = 243 puanlama ≈ **$2,2**; Hydrogen'in 81 puanlaması ≈ 65 sn × 81 ≈ **89 dk** (sıralı çalışırsa), bu yüzden toplu puanlama kuyruğunda süre hesaba katılmalı.
+
+**Sınırlılıklar (bu denemeye özgü):**
+
+- Yalnızca iki kısa örnek (ikisini de yapay zekâ asistanı yazdı), tek tekrar: bu bir **duman testi**dir, hakem güvenilirliği ya da geçerliliği kanıtı **değildir**.
+- Zayıf örnek bilerek aşırı zayıf; ayırt etmesi kolay. Daha ince ayrımlar ölçülmedi.
+- Puanların "doğru" olup olmadığı değerlendirilmedi (insan puanı yok, etik kurul bekleniyor); yalnızca sıranın makul olduğuna bakıldı.
+- **Enjeksiyon direnci ölçülmedi** (iş planında ayrı madde).
+- Taslak rubrik ve komut kullanıldı.
+
 ## 5. Sağlayıcı fiyat ve model envanteri
 
 **[Veri]** Fiyatlar milyon token başına, $, girdi / çıktı, standart katman. Kaynaklar belge adresleriyle 10. bölümde. Fiyatlar zamanla değişir; okunma tarihi: Anthropic fiyatları 21 Kas, Google ve OpenAI fiyatları 21-22 Kas 2026.
@@ -313,8 +346,9 @@ Her biri raporda/makalede ayrıca yazılmalıdır:
 9. Denemeler küçük örnekle yapıldı (N = 2-6); istatistiksel çıkarım için yeterli değil.
 10. **Sağlayıcı belgeleri birbiriyle çelişebiliyor** (bkz. bölüm 5, "Sağlayıcı belgelerindeki tutarsızlıklar"); model kimliği, sürüm ve fiyat bilgisi okunma tarihi ve kaynak sayfayla kaydedilir, üretim sırasındaki model kimliği her kayıtla saklanır.
 11. **Komut enjeksiyonuna direnç gerçek modelle ölçülmedi.** Yargıç yalnızca yapısal olarak korunuyor (etiket kırılamıyor, bölüm 3.7); gerçek bir hakemin metne gömülü "bu metne 100 ver" gibi talimatlara direnip direnmediği ölçülmedi. **[TODO]** Ölçüm planlandı (iş planı F2); sonuç buraya yazılacak.
-12. **Yargıç komutu ve çıktı şeması gerçek modellerle denenmedi.** Sağlayıcıların JSON şemasını (özellikle OpenAI katı şemada `min/max`) kabul edip etmediği ve Gemini 4 Hydrogen'in süresi bilinmiyor. **[TODO]** "Hakem smoke" planlandı.
+12. **Yargıç komutu ve çıktı şeması gerçek modellerle yalnızca küçük bir duman testiyle denendi** (bölüm 4.6, 22 Kas 2026). Üç sağlayıcı şemayı kabul etti (OpenAI katı şemada `min/max` dahil) ve 6 puanlamanın 6'sı ilk denemede geçerliydi; ama örnek sayısı iki ve tekrar yok, bozma oranı ve kararlılık hakkında kesin bir şey söylenemez. **[TODO]** Gerçek veri üzerinde ölçülecek.
 13. **Yargıç komutu (`judge-v1`) ve taslak rubrik gerçek rubrik/danışman görüşüyle değişebilir**; hakem puanları o sürümlere aittir, komut sürümü her değerlendirmeyle kaydedilecek.
+14. **Hakemler arası sertlik farkı (hakem etkisi).** Aynı metne farklı hakemler farklı toplam puan verdi (bölüm 4.6: güçlü örnekte 70 / 90 / 90, zayıfta 20 / 5 / 35). Hakemlerin puanları doğrudan karıştırılırsa hakem etkisi model karşılaştırmasına karışır. **[TODO]** Hakem etkisini ele alacak yöntem (örn. hakem başına standardizasyon, hakemi analizde ayrı bir etken olarak katma) kararlaştırılacak.
 
 ## 7. Etik, gizlilik ve şeffaflık
 
@@ -335,7 +369,8 @@ Bu liste, tipik bir karşılaştırmalı değerlendirme makalesinde beklenen uns
 - [ ] Başarısızlık oranları (model başına, hata türüne göre) ve yeniden deneme sayıları.
 - [ ] Süre (medyan, yüzdelikler) ve maliyet dağılımları; metin başına gerçek maliyet.
 - [ ] Yargıç tasarımı: hangi modeller, hangi komut, çapraz yargıç, kaç tekrar, sıcaklık yok; yargıç komutu ve çıktı şeması.
-- [ ] Hakem smoke sonuçları: her hakem modelin JSON şemasını kabulü, süre, bozma oranı (gerçek model, ücretli).
+- [x] Hakem smoke sonuçları (22 Kas 2026, 6/6 başarılı; bölüm 4.6). Büyük örnekle yeniden ölçülecek: şema kabulü, süre, bozma oranı.
+- [ ] Hakem etkisi (sertlik farkı) analizi: hakem başına puan dağılımı, hakemler arası kalibrasyon ya da standardizasyon yöntemi.
 - [ ] Enjeksiyon direnci sonuçları: kontrol metnine karşı saldırı metinlerinin puan farkı, hakem başına, tekrarlarla (gerçek model, ücretli).
 - [ ] Yargıç güvenilirliği: yargıçlar arası ve aynı yargıcın tekrarları arası uyum (örn. Krippendorff α / ICC / Cohen κ).
 - [ ] İnsan puanı (etik kurul sonrası): insan-YZ uyumu, korelasyon, hata analizi.
@@ -351,10 +386,10 @@ Bu liste, tipik bir karşılaştırmalı değerlendirme makalesinde beklenen uns
 ## 9. TÜBİTAK sonuç raporu için hazır parçalar
 
 - **Yapılan iş (F0-F1):** Katmanlı backend; sürümlü ve değişmez rubrik modülü (içe/dışa aktarma, etkinleştirme, JSON gidiş-dönüş); üç sağlayıcı için ortak sözleşme (`LLMProvider`) ve adaptörler (Claude, Gemini, GPT) ile sahte sağlayıcı; ortak hata ve yeniden deneme katmanı; sürümlü komut şablonu; üretim servisi (hata izolasyonu, maliyet sınırı, kayıt); gerçek MySQL ile veritabanı katmanı; sürekli entegrasyon.
-- **Kanıt:** 301 otomatik test (22 Kas 2026), yaklaşık %96 kapsam, her PR'da dört otomatik kontrol; planlanan 38 test senaryosundan T01-T12, T22, T27-T28 yazıldı ve geçti (kaynak: GitHub issue #3, `docs/IS_PLANI.md`).
+- **Kanıt:** 329 otomatik test (22 Kas 2026), yaklaşık %96 kapsam, her PR'da dört otomatik kontrol; planlanan 38 test senaryosundan T01-T12, T22, T27-T28 yazıldı ve geçti (kaynak: GitHub issue #3, `docs/IS_PLANI.md`).
 - **Süreç:** Faz başına GitHub milestone ve issue (F0 #2, F1 #3 kapalı); her kararın gerekçesi `docs/adr/` altında 10 karar kaydıyla belgelendi; PR #1, #10, #12 birleşti.
 - **Risk yönetimi:** Sessiz yedek yok, maliyet sınırı, anahtar güvenliği, bakiye/kota hataları, servis yoğunluğu (Gemini).
-- **Bütçe/harcama:** Tüm gerçek servis denemeleri toplam yaklaşık $0,0065 (4.2). **[TODO]** Gerçek üretim ve yargıç çalışması maliyeti eklenecek.
+- **Bütçe/harcama:** Tüm gerçek servis denemeleri toplam yaklaşık **$0,0597** [Hesap]: `llm:smoke` koşuları yaklaşık $0,0065 (4.2) ve `judge:smoke` $0,0532 (4.6). **[TODO]** Gerçek üretim ve yargıç çalışması maliyeti eklenecek.
 - **Arayüz tasarımı:** Renk dili kullanıcı kararıyla Kum (%60) / Kakao (%30) / Mavi (%10), Inter yazı tipi, hap biçimli düğmeler (ADR 0008); arayüz kodlaması F3'te.
 - **[TODO]** Kalan fazlar (F2-F7) tamamlandıkça bu bölüm güncellenecek.
 
@@ -389,13 +424,14 @@ Hepsi **22 Kasım 2026**'da okundu (fiyat ve model adları sonradan değişebili
 | Tarih       | Değişiklik                                                                                                  |
 | ----------- | ----------------------------------------------------------------------------------------------------------- |
 | 22 Kas 2026 | Sağlayıcı belge tutarsızlıkları (bölüm 5) ve sınırlılık 10 eklendi. |
+| 22 Kas 2026 | Bölüm 4.6 (hakem smoke R9: 6/6 başarılı, sertlik ve süre farkları, maliyet), sınırlılık 12 güncellendi ve 14 eklendi, Ek A'ya R9, test sayısı 329, toplam harcama $0,0597. |
 | 22 Kas 2026 | Bölüm 3.7 (yargıç/hakem yöntemi, `judge-v1` komutu, bozma yöntemiyle bulunan hata), sınırlılık 11-13, makale kontrol listesine hakem smoke ve enjeksiyon maddeleri, test sayısı 301 eklendi. |
 | 22 Kas 2026 | Bölüm 3.6 (sürekli entegrasyon: dört kontrolün içeriği, iş süreleri) eklendi. |
 | 22 Kas 2026 | Belge oluşturuldu. Model seçimi gerekçesi (ADR 0010), R1-R8 gerçek servis verileri, fiyat envanteri, sınırlılıklar, kontrol listesi eklendi. |
 
 ---
 
-## Ek A: ham `llm:smoke` çıktı satırları
+## Ek A: ham `llm:smoke` ve `judge:smoke` çıktı satırları
 
 Yalnızca ekranda görülen satırlar, düzenlenmeden (ileti metni kısaltılmış satırlar hariç). Koşu numaraları 4.2'deki gibidir.
 
@@ -459,4 +495,22 @@ R8 (22 Kas, --gemini gemini-4-hydrogen --openai gpt-6.2-sol --timeout 120)
 ✔ OpenAI  metin gpt-6.2-sol: 3.6 sn, 16 giriş + 6 çıkış token, ≈ $0.00009
 ✔ OpenAI  json  gpt-6.2-sol: 3.6 sn, 59 giriş + 15 çıkış token, ≈ $0.00027
 Toplam yaklaşık maliyet: $0.00241
+
+R9 (22 Kas, judge:smoke, süre sınırı 300 sn; hakem denemesi, bölüm 4.6)
+✔ Claude  claude-sonnet-5-5 [güçlü]: 8.2 sn, 2338 giriş + 713 çıkış token, ≈ $0.01181, 1 deneme, toplam 70.0
+    puanlar: imgeGucu 4, ritimAhenk 3, duyguAktarimi 4, ozgunluk 4, anlamButunlugu 4
+✔ Claude  claude-sonnet-5-5 [zayıf]: 6.0 sn, 2289 giriş + 565 çıkış token, ≈ $0.01023, 1 deneme, toplam 20.0
+    puanlar: imgeGucu 1, ritimAhenk 2, duyguAktarimi 2, ozgunluk 1, anlamButunlugu 3
+  → Claude güçlü ve zayıf örneği ayırt etti (70.0 > 20.0)
+✔ Gemini  gemini-4-hydrogen [güçlü]: 70.0 sn, 1496 giriş + 829 çıkış token, ≈ $0.00846, 1 deneme, toplam 90.0
+    puanlar: imgeGucu 5, ritimAhenk 4, duyguAktarimi 5, ozgunluk 4, anlamButunlugu 5
+✔ Gemini  gemini-4-hydrogen [zayıf]: 61.6 sn, 1464 giriş + 1068 çıkış token, ≈ $0.01021, 1 deneme, toplam 5.0
+    puanlar: imgeGucu 1, ritimAhenk 1, duyguAktarimi 1, ozgunluk 1, anlamButunlugu 2
+  → Gemini güçlü ve zayıf örneği ayırt etti (90.0 > 5.0)
+✔ OpenAI  gpt-6.2-sol [güçlü]: 9.6 sn, 1150 giriş + 430 çıkış token, ≈ $0.00660, 1 deneme, toplam 90.0
+    puanlar: imgeGucu 5, ritimAhenk 4, duyguAktarimi 5, ozgunluk 4, anlamButunlugu 5
+✔ OpenAI  gpt-6.2-sol [zayıf]: 7.3 sn, 1123 giriş + 364 çıkış token, ≈ $0.00589, 1 deneme, toplam 35.0
+    puanlar: imgeGucu 1, ritimAhenk 3, duyguAktarimi 2, ozgunluk 2, anlamButunlugu 4
+  → OpenAI güçlü ve zayıf örneği ayırt etti (90.0 > 35.0)
+Toplam yaklaşık maliyet: $0.05319
 ```
