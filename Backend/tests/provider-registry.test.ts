@@ -5,9 +5,10 @@ import { createProviderRegistry } from '../src/providers/registry.js';
 
 describe('sağlayıcı seçimi', () => {
   it('anahtarı tanımlı sağlayıcıları verir', () => {
-    const registry = createProviderRegistry({ anthropicKey: 'a', googleKey: 'g' });
+    const registry = createProviderRegistry({ anthropicKey: 'a', googleKey: 'g', openaiKey: 'o' });
     expect(registry.get('anthropic').id).toBe('anthropic');
     expect(registry.get('google').id).toBe('google');
+    expect(registry.get('openai').id).toBe('openai');
   });
 
   it('verilen Mock sağlayıcıyı aynen döner', () => {
@@ -17,7 +18,7 @@ describe('sağlayıcı seçimi', () => {
 
   it('anahtarı olmayan sağlayıcı sessizce başka şeye düşmez, açık hata (503) verir', () => {
     const registry = createProviderRegistry({ anthropicKey: 'a' });
-    for (const id of ['google', 'mock'] as const) {
+    for (const id of ['google', 'openai', 'mock'] as const) {
       expect(() => registry.get(id), id).toThrow(AppError);
       expect(() => registry.get(id)).toThrow(/kullanılamıyor/);
     }
@@ -29,15 +30,10 @@ describe('sağlayıcı seçimi', () => {
   });
 
   it('boş ya da yalnızca boşluktan oluşan anahtar tanımsız sayılır', () => {
-    const registry = createProviderRegistry({ anthropicKey: '', googleKey: '   ' });
-    expect(() => registry.get('anthropic')).toThrow(/kullanılamıyor/);
-    expect(() => registry.get('google')).toThrow(/kullanılamıyor/);
-  });
-
-  it('OpenAI adaptörü henüz yok: anahtar olsa bile kullanılamaz', () => {
-    expect(() => createProviderRegistry({ anthropicKey: 'a' }).get('openai')).toThrow(
-      /kullanılamıyor/,
-    );
+    const registry = createProviderRegistry({ anthropicKey: '', googleKey: '   ', openaiKey: '' });
+    for (const id of ['anthropic', 'google', 'openai'] as const) {
+      expect(() => registry.get(id), id).toThrow(/kullanılamıyor/);
+    }
   });
 
   it('hata iletisi anahtar değerini içermez', () => {

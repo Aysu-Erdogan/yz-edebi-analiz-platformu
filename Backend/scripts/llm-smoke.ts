@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { EnvError, loadEnv } from '../src/config/env.js';
 import { AnthropicProvider } from '../src/providers/anthropic-provider.js';
 import { GoogleProvider } from '../src/providers/google-provider.js';
+import { OpenAIProvider } from '../src/providers/openai-provider.js';
 import { ProviderError, type LLMProvider } from '../src/providers/provider.js';
 import { withResilience } from '../src/providers/resilient-provider.js';
 
@@ -45,7 +46,7 @@ const MAX_TOKENS = 1024; // düşünen modellerde düşünme tokenleri de sını
 export async function smoke(targets: SmokeTarget[], log: (line: string) => void): Promise<boolean> {
   if (targets.length === 0) {
     log(
-      'Denenecek sağlayıcı yok: .env içinde Claude ya da Gemini API anahtarı (ANTHROPIC_API_KEY, GEMINI_API_KEY) tanımlı değil.',
+      'Denenecek sağlayıcı yok: .env içinde Claude, Gemini ya da OpenAI API anahtarı (ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY) tanımlı değil.',
     );
     return false;
   }
@@ -99,7 +100,7 @@ export async function smoke(targets: SmokeTarget[], log: (line: string) => void)
   return ok;
 }
 
-/** Komut satırındaki `--claude <model>` ve `--gemini <model>` değerleri. */
+/** Komut satırındaki `--claude <model>`, `--gemini <model>` ve `--openai <model>` değerleri. */
 function option(name: string): string | undefined {
   const i = process.argv.indexOf(name);
   return i >= 0 ? process.argv[i + 1] : undefined;
@@ -116,6 +117,8 @@ async function main(): Promise<void> {
   const geminiKey = process.env.GEMINI_API_KEY?.trim() ?? '';
   const claudeModel = option('--claude') ?? 'claude-haiku-5-5';
   const geminiModel = option('--gemini') ?? 'gemini-3.5-flash-lite';
+  const openaiKey = process.env.OPENAI_API_KEY?.trim() ?? '';
+  const openaiModel = option('--openai') ?? 'gpt-6-luna';
 
   // Tek deneme: deneme komutunda yeniden deneme yok, sorun neyse olduğu gibi görünsün.
   // Süre varsayılan 30 sn; yavaş modeller için `--timeout <saniye>` ile uzatılır.
@@ -147,7 +150,21 @@ async function main(): Promise<void> {
         'gemini-3.5-flash-lite': [0.3, 2.5],
         'gemini-3.6-flash': [0.75, 3.75],
         'gemini-3.8-flash': [0.75, 3.75],
+        'gemini-4-hydrogen': [1.5, 7.5], // zam tarihi belgede yok (22 Kas 2026)
       }[geminiModel] as [number, number] | undefined,
+    });
+  }
+  if (openaiKey) {
+    targets.push({
+      label: 'OpenAI',
+      provider: safe(new OpenAIProvider({ apiKey: openaiKey })),
+      model: openaiModel,
+      secret: openaiKey,
+      price: {
+        'gpt-6-luna': [0.1, 0.5],
+        'gpt-6.1-terra': [1, 5],
+        'gpt-6.2-sol': [2, 10],
+      }[openaiModel] as [number, number] | undefined,
     });
   }
 
