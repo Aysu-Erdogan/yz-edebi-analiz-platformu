@@ -389,7 +389,7 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 - [x] `config` modülü + zod ile ortam doğrulama. _(F0'da yapıldı)_
 - [x] Prisma şeması, ilk migration, seed (taslak rubrik v0.1, model listesi: ADR 0010).
 - [x] Rubrik servisi: şema, doğrulama, sürümleme, içe/dışa aktarım, etkinleştirme. _(Okuma uçları açık, yazma uçları F4'te yönetici girişiyle)_
-- [ ] `LLMProvider` arayüzü + OpenAI, Anthropic, Google adaptörleri + Mock. _(Arayüz, Anthropic, Google ve Mock tamam ve gerçek servisle denendi; OpenAI anahtar gelince)_
+- [x] `LLMProvider` arayüzü + OpenAI, Anthropic, Google adaptörleri + Mock. _(Arayüz, Anthropic, Google, OpenAI (Responses API) ve Mock tamam; dördü de gerçek servisle denendi, OpenAI `gpt-6.2-sol` ile 22 Kasım'da)_
 - [x] Ortak HTTP davranışı: zaman aşımı, yeniden deneme, hata sınıflandırma.
 - [x] Prompt şablon kaydı ve sürümleme. _(Üretim şablonu v1 taslak: metin ve uzunluk değerleri danışmanla kesinleşecek; yargıç şablonları F2'de)_
 - [x] Üretim servisi + `generations` kaydı. _(Servis hazır: model başına hata izolasyonu, maliyet sınırı, dry-run; toplu iş ve ilerleme F2'deki iş kuyruğunda, API ucu F4'te yönetici girişiyle)_
@@ -493,7 +493,7 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 
 ### Açık
 
-1. **OpenAI API anahtarı:** Henüz yok. ChatGPT metinleri anahtar gelene kadar mock ile geliştirilir. Anahtar en geç **Aralık başında** (F2 öncesi) gerekir.
+1. **OpenAI API anahtarı:** Alındı, kredi yüklendi ve gerçek servisle doğrulandı (22 Kasım 2026, `gpt-6.2-sol`); anahtarın adı `OPENAI_API_KEY`.
 2. **Barındırma:** Danışmana "Ardahan Üniversitesi'nde bir sunucuda Docker çalıştırabilir miyiz?" diye sorulması.
 3. **Danışmanın bitirme şablonu:** Resmî şablon gelirse rapor yapısı ona uyarlanır.
 4. **Anthropic anahtarıyla tek seferlik veri üretimi:** Sizin kararınız (Bölüm 20).

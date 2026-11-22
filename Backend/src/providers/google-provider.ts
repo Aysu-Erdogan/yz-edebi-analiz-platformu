@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { errorFromStatus } from './http-errors.js';
+import { httpError, networkError } from './http-errors.js';
 import {
   ProviderError,
   parseStructured,
@@ -43,30 +43,6 @@ const BLOCKED_FINISH_REASONS: ReadonlySet<string> = new Set([
   'PROHIBITED_CONTENT',
   'SPII',
 ]);
-
-/** Ağ hatası: bizim iptalimiz zaman aşımıdır, geri kalanı (bağlantı kopması vb.) geçici sunucu hatasıdır. */
-function networkError(error: unknown): ProviderError {
-  if (
-    error instanceof DOMException &&
-    (error.name === 'AbortError' || error.name === 'TimeoutError')
-  ) {
-    return new ProviderError('timeout', 'İstek süresinde tamamlanamadı', { cause: error });
-  }
-  return new ProviderError('server_error', 'Sağlayıcıya bağlanılamadı', { cause: error });
-}
-
-/** Hata cevabının gövdesi JSON ya da düz metin/HTML olabilir; iletiyi buradan çıkarır. */
-async function httpError(response: Response): Promise<ProviderError> {
-  const raw = await response.text().catch(() => '');
-  let message = raw.slice(0, 200) || response.statusText || 'ayrıntı yok';
-  try {
-    const parsed = JSON.parse(raw) as { error?: { message?: string } };
-    if (parsed.error?.message) message = parsed.error.message;
-  } catch {
-    // JSON değil: düz metin kullanılır
-  }
-  return errorFromStatus(response.status, message, response.headers);
-}
 
 /** Gemini adaptörü. Hazır kütüphane yerine tek uç nokta için doğrudan HTTP kullanır (bağımlılık eklememek için). */
 export class GoogleProvider implements LLMProvider {

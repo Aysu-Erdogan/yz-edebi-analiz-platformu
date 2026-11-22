@@ -26,6 +26,47 @@ function kindFor(status: number): ProviderErrorKind {
   return 'invalid_request';
 }
 
+/** Ağ hatası: bizim iptalimiz zaman aşımıdır, geri kalanı (bağlantı kopması vb.) geçici sunucu hatasıdır. */
+export function networkError(error: unknown): ProviderError {
+  if (
+    error instanceof DOMException &&
+    (error.name === 'AbortError' || error.name === 'TimeoutError')
+  ) {
+    return new ProviderError('timeout', 'İstek süresinde tamamlanamadı', { cause: error });
+  }
+  return new ProviderError('server_error', 'Sağlayıcıya bağlanılamadı', { cause: error });
+}
+
+/** OpenAI bakiye bitince 429 verir; tür `insufficient_quota`, kod `credit_balance_exhausted` (gerçek denemede görüldü). */
+const BILLING_CODES: ReadonlySet<unknown> = new Set([
+  'insufficient_quota',
+  'credit_balance_exhausted',
+]);
+
+/**
+ * Hata cevabının gövdesi JSON ya da düz metin/HTML olabilir; `{ error: { message, type, code } }` biçimindeki
+ * iletiyi ve hata kodunu buradan çıkarır. Kod iletiye eklenir: bilinmeyen bir hatanın nedeni çıktıda görünsün.
+ */
+export async function httpError(response: Response): Promise<ProviderError> {
+  const raw = await response.text().catch(() => '');
+  let message = raw.slice(0, 200) || response.statusText || 'ayrıntı yok';
+  let quota = false;
+  try {
+    const { error } = JSON.parse(raw) as {
+      error?: { message?: string; type?: unknown; code?: unknown };
+    };
+    if (error?.message) message = error.message;
+    const label = [error?.code, error?.type].find((v) => typeof v === 'string');
+    if (label) message += ` [${label as string}]`;
+    quota = [error?.code, error?.type].some((v) => BILLING_CODES.has(v));
+  } catch {
+    // JSON değil: düz metin kullanılır
+  }
+  // OpenAI "kredi kalmadı"yı da 429 ile bildirir; bu geçici bir hız sınırı değil, bakiye sorunudur: beklemek çözmez.
+  if (quota) return new ProviderError('auth', `HTTP ${response.status}: ${message}`);
+  return errorFromStatus(response.status, message, response.headers);
+}
+
 /** Sağlayıcının HTTP hata cevabını ortak hata türüne çevirir (hangisinin yeniden deneneceği buradan gelir). */
 export function errorFromStatus(
   status: number,

@@ -8,11 +8,11 @@ TÜBİTAK 2209-A projesi _"Üretken Yapay Zekâ Modellerinin Türk Edebiyatı A�
 
 ## Belgeler
 
-| Belge                                              | İçerik                                                    |
-| -------------------------------------------------- | --------------------------------------------------------- |
-| [docs/IS_PLANI.md](docs/IS_PLANI.md)               | Uçtan uca iş planı, takvim, test stratejisi, 38 senaryo   |
-| [docs/adr/](docs/adr/README.md)                    | Mimari karar kayıtları ("neden böyle yaptık?")            |
-| [docs/diyagramlar/er.md](docs/diyagramlar/er.md)   | Veri modeli (ER diyagramı)                                |
+| Belge                                              | İçerik                                                     |
+| -------------------------------------------------- | ---------------------------------------------------------- |
+| [docs/IS_PLANI.md](docs/IS_PLANI.md)               | Uçtan uca iş planı, takvim, test stratejisi, 38 senaryo    |
+| [docs/adr/](docs/adr/README.md)                    | Mimari karar kayıtları ("neden böyle yaptık?")             |
+| [docs/diyagramlar/er.md](docs/diyagramlar/er.md)   | Veri modeli (ER diyagramı)                                 |
 | [docs/diyagramlar/uml.md](docs/diyagramlar/uml.md) | Kullanım durumu, sınıf, sıralama, durum, etkinlik, dağıtım |
 | [docs/openapi.yaml](docs/openapi.yaml)             | API sözleşmesi (hedef; `x-status` ile uygulanan/planlanan) |
 
@@ -97,22 +97,22 @@ cd Frontend && npm run dev    # http://localhost:5173 (/api istekleri backend'e 
 
 Kök dizinden:
 
-| Komut                  | Ne yapar                                                      |
-| ---------------------- | ------------------------------------------------------------- |
-| `npm run verify`       | Biçim + tip + lint + test + derleme (push öncesi çalıştırın)   |
-| `npm run format`       | Prettier ile biçimlendirir                                    |
-| `npm run typecheck`    | Backend ve Frontend tip kontrolü                              |
-| `npm run lint`         | ESLint                                                        |
-| `npm test`             | Birim ve entegrasyon testleri                                 |
-| `npm run build`        | Üretim derlemesi                                              |
+| Komut               | Ne yapar                                                     |
+| ------------------- | ------------------------------------------------------------ |
+| `npm run verify`    | Biçim + tip + lint + test + derleme (push öncesi çalıştırın) |
+| `npm run format`    | Prettier ile biçimlendirir                                   |
+| `npm run typecheck` | Backend ve Frontend tip kontrolü                             |
+| `npm run lint`      | ESLint                                                       |
+| `npm test`          | Birim ve entegrasyon testleri                                |
+| `npm run build`     | Üretim derlemesi                                             |
 
 `Backend` klasöründen:
 
-| Komut                                  | Ne yapar                                                                                                                                     |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run db:check`                     | `DATABASE_URL` ve `TEST_DATABASE_URL` bağlanıyor mu? (parolayı yazmaz)                                                                       |
-| `npm run db:migrate` / `db:seed`       | Tabloları oluşturur / taslak rubrik v0.1'i yükler                                                                                            |
-| `npm run llm:smoke`                    | Claude ve Gemini'ye **gerçek** iki küçük istek atar (kuruşluk). Anahtarları `.env`'den okur, yazmaz. Model: `-- --claude <model> --gemini <model>` |
+| Komut                            | Ne yapar                                                                                                                                                                                             |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run db:check`               | `DATABASE_URL` ve `TEST_DATABASE_URL` bağlanıyor mu? (parolayı yazmaz)                                                                                                                               |
+| `npm run db:migrate` / `db:seed` | Tabloları oluşturur / taslak rubrik v0.1'i yükler                                                                                                                                                    |
+| `npm run llm:smoke`              | Anahtarı olan sağlayıcılara (Claude, Gemini, OpenAI) **gerçek** iki küçük istek atar (kuruşluk). Anahtarları `.env`'den okur, yazmaz. Model: `-- --claude <model> --gemini <model> --openai <model>` |
 
 Her commit öncesi değişen dosyalar otomatik biçimlendirilir (Husky + lint-staged). Her push ve PR'da GitHub Actions biçim, tip, lint, test, derleme, migration ve Docker açılışını doğrular.
 

@@ -42,6 +42,16 @@ Ana karşılaştırma **orta sınıf** modellerle yapılır:
 - **503 yoğunluk hatası geçici sayılır** ve yeniden denenir (T08). Yoğunluk sürerse kayıt `failed` olur, sahte cevap yazılmaz (ADR 0004).
 - **Gemini için yedek model:** `gemini-3.6-flash` doğrulanmış yedektir; ana model (`gemini-3.8-flash`) yoğunluk nedeniyle kullanılamazsa karar yeniden verilir. Karşılaştırma verisi üretilmeden önce son karar kayda geçirilir (modelin sınıfı ve sürümü sonuçlarla birlikte yazılmalı).
 
+## Gerçek servis doğrulaması (22 Kasım 2026, `llm:smoke`)
+
+| Model | Sonuç |
+| --- | --- |
+| `claude-sonnet-5-5` | Çalışıyor: metin 1,6 sn, JSON 2,1 sn. |
+| `gemini-3.8-flash` | **Yoğunluk sürüyor:** metin isteği yine HTTP 503 "yüksek talep", JSON isteği 120 sn'de zaman aşımı. |
+| `gpt-6.2-sol` (OpenAI, aday) | **Çalışıyor** (kredi yüklendikten sonra): metin 2,7 sn, JSON 1,5 sn. Model adı, istek biçimi (Responses API), `store: false` ve katı JSON şeması kabul edildi. İlk denemede hesapta kredi yoktu: OpenAI bakiye hatasını 429 ile bildirir (tür `insufficient_quota`, kod `credit_balance_exhausted`); adaptör bunu geçici hız sınırı değil kalıcı bakiye hatası (`auth`) sayar, yeniden denemez. Bu sınıflandırma gerçek cevapla doğrulandı. |
+
+OpenAI orta sınıf adayı `gpt-6.2-sol` ($2 giriş / $10 çıkış, milyon token), daha ucuz seçenekler `gpt-6.1-terra` ($1/$5) ve `gpt-6-luna` ($0,10/$0,50). `gpt-6.2-sol` doğrulandı; `models.json`'a eklenmesi kullanıcı kararıyla ayrıca yapılır.
+
 ## Sonuçlar
 
 - Karşılaştırma iki aile ve orta sınıfla başlar; maliyet 100 metin için kabaca bir dolar altındadır.
