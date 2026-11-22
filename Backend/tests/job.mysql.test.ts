@@ -248,6 +248,21 @@ if (url) {
       expect((await repo.findById(job.id))?.error).toContain('kapatma istenmeden');
     });
 
+    it('işleyici "failed" sonucu dönerse iş failed olur, neden aynen yazılır; sıradaki iş çalışır (örn. bütçe doldu)', async () => {
+      const stopped = await repo.enqueue({ type: 'butce', payload: {}, total: 3 });
+      const next = await repo.enqueue({ type: 'say', payload: { items: 1 }, total: 1 });
+      const runner = runnerWith({
+        butce: async () => ({ status: 'failed', error: 'Bütçe doldu: 3 öğeden 1 tanesi tamam' }),
+        say: itemHandler([]),
+      });
+      await runner.runUntilIdle();
+      expect(await repo.findById(stopped.id)).toMatchObject({
+        status: 'failed',
+        error: 'Bütçe doldu: 3 öğeden 1 tanesi tamam',
+      });
+      expect((await repo.findById(next.id))?.status).toBe('succeeded');
+    });
+
     it('runUntilIdle işleri sırayla (en eski önce) çalıştırır ve işi kalmayınca durur', async () => {
       const order: number[] = [];
       const a = await repo.enqueue({ type: 't', payload: {}, total: 0 });

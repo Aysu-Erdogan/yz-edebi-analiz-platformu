@@ -9,7 +9,11 @@ export interface JobContext {
   progress(update: JobProgress): Promise<void>;
 }
 
-export type JobResult = { status: 'done'; result?: unknown } | { status: 'interrupted' };
+export type JobResult =
+  | { status: 'done'; result?: unknown }
+  /** İş bilerek yarıda kesildi (örn. bütçe doldu): iş `failed` olur, `error` nedeni aynen yazılır. */
+  | { status: 'failed'; error: string }
+  | { status: 'interrupted' };
 
 /**
  * Bir iş türünün işleyicisi. Öğelerin hata yalıtımı işleyicinin görevidir (bir öğenin hatası işi durdurmaz,
@@ -72,6 +76,8 @@ export function createJobRunner({ jobs, handlers, pollMs = 1000 }: JobRunnerOpti
       });
       if (outcome.status === 'done') {
         await jobs.complete(job.id, outcome.result ?? null);
+      } else if (outcome.status === 'failed') {
+        await jobs.fail(job.id, outcome.error);
       } else if (stopping.signal.aborted) {
         await jobs.release(job.id); // düzgün kapanma: sonraki açılışta kaldığı yerden devam eder
       } else {

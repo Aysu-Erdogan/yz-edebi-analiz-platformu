@@ -19,6 +19,14 @@ export interface GenerationSuccess {
   latencyMs: number;
 }
 
+/** Başarılı bir üretimin kimliği: toplu işte hangi öğenin bittiğini anlamak için. */
+export interface SucceededGeneration {
+  providerModelId: number;
+  genre: Genre;
+  theme: string;
+  replicateNo: number;
+}
+
 /** Üretim kayıt defteri: her model çağrısı ve (başarılıysa) ürettiği metin. */
 export interface GenerationRepository {
   /** Çağrı başlamadan kaydı açar (durum: running) ve kimliğini döner. */
@@ -27,4 +35,14 @@ export interface GenerationRepository {
   succeed(id: number, result: GenerationSuccess): Promise<number>;
   /** Kaydı başarısız yapar ve nedenini yazar. Metin kaydedilmez, sahte cevap üretilmez (ADR 0004). */
   fail(id: number, failure: { error: string; latencyMs: number }): Promise<void>;
+  /** Verilen şablonla ve modellerle başarıyla üretilmiş öğeler (toplu işin kaldığı yeri bulması için). */
+  findSucceeded(filter: {
+    promptTemplateId: number;
+    providerModelIds: number[];
+  }): Promise<SucceededGeneration[]>;
+  /**
+   * Yarım kalan ("çalışıyor") kayıtları başarısız yapar ve kaç tane olduğunu döner. Tek işçi varsayımıyla,
+   * işçi açılırken çağrılır: o sırada "çalışıyor" görünen kayıt çökmüş bir sürecin artığıdır.
+   */
+  failInterrupted(error: string): Promise<number>;
 }
