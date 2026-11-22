@@ -57,6 +57,8 @@ const RETRYABLE: ReadonlySet<ProviderErrorKind> = new Set([
   'server_error',
 ]);
 
+export const isRetryableKind = (kind: ProviderErrorKind): boolean => RETRYABLE.has(kind);
+
 export class ProviderError extends Error {
   readonly retryable: boolean;
   /** Sağlayıcı "şu kadar sonra tekrar dene" dediyse (Retry-After başlığı) milisaniye cinsinden. */

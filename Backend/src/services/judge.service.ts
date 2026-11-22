@@ -2,7 +2,7 @@ import { judgeOutputSchema, judgeVars, weightedTotal, type JudgeRubric } from '.
 import { renderPrompt } from '../domain/prompt.js';
 import type { Genre } from '../domain/rubric.js';
 import { normalizeScore } from '../domain/scoring.js';
-import { ProviderError, type LLMProvider } from '../providers/provider.js';
+import { ProviderError, type LLMProvider, type ProviderErrorKind } from '../providers/provider.js';
 
 /** Düşünen modellerde düşünme tokenleri de sınıra dahildir; çıktı kısa olsa bile geniş tutulur. */
 const DEFAULT_MAX_TOKENS = 4096;
@@ -45,7 +45,14 @@ export type JudgeOutcome =
       /** Tüm denemeler dahil toplam süre. */
       latencyMs: number;
     }
-  | { status: 'failed'; error: string; attempts: number; latencyMs: number };
+  | {
+      status: 'failed';
+      error: string;
+      /** Son hatanın türü (geçici mi kalıcı mı olduğu buradan anlaşılır). */
+      kind: ProviderErrorKind;
+      attempts: number;
+      latencyMs: number;
+    };
 
 /**
  * Bir metni rubriğe göre yargıç modele puanlatır. Cevap şemayla doğrulanır; bozuk ya da geçersiz cevap
@@ -64,6 +71,7 @@ export async function judgeText(provider: LLMProvider, input: JudgeInput): Promi
   const schema = judgeOutputSchema(input.rubric);
   const started = Date.now();
   let error = '';
+  let kind: ProviderErrorKind = 'invalid_output';
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
@@ -97,11 +105,18 @@ export async function judgeText(provider: LLMProvider, input: JudgeInput): Promi
     } catch (caught) {
       if (!(caught instanceof ProviderError)) throw caught; // kod hatası: görünür kalsın
       error = `${caught.kind}: ${caught.message}`;
+      kind = caught.kind;
       // Yalnızca bozuk/şemaya uymayan cevap yeniden denenir; diğer hatalar tekrarlansa da aynı çıkar.
       if (caught.kind !== 'invalid_output') {
-        return { status: 'failed', error, attempts: attempt, latencyMs: Date.now() - started };
+        return {
+          status: 'failed',
+          error,
+          kind,
+          attempts: attempt,
+          latencyMs: Date.now() - started,
+        };
       }
     }
   }
-  return { status: 'failed', error, attempts: MAX_ATTEMPTS, latencyMs: Date.now() - started };
+  return { status: 'failed', error, kind, attempts: MAX_ATTEMPTS, latencyMs: Date.now() - started };
 }

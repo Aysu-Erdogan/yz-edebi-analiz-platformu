@@ -1,41 +1,22 @@
 import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
-import { EnvError, loadEnv } from '../src/config/env.js';
-import { AnthropicProvider } from '../src/providers/anthropic-provider.js';
-import { GoogleProvider } from '../src/providers/google-provider.js';
-import { OpenAIProvider } from '../src/providers/openai-provider.js';
-import { ProviderError, type LLMProvider } from '../src/providers/provider.js';
-import { withResilience } from '../src/providers/resilient-provider.js';
+import { ProviderError } from '../src/providers/provider.js';
+import {
+  HINTS,
+  loadSmokeEnv,
+  option,
+  providerTargets,
+  redact,
+  timeoutMs,
+  type SmokeTarget,
+} from './smoke-common.js';
 
 /**
  * `npm run llm:smoke`: her sağlayıcıya iki küçük GERÇEK istek atar (düz metin ve JSON cevap).
  * Maliyet kuruşlar düzeyindedir. API anahtarlarını ASLA yazmaz.
  */
 
-export interface SmokeTarget {
-  label: string;
-  provider: LLMProvider;
-  model: string;
-  /** Çıktıya sızmasın diye hata iletilerinden silinir. */
-  secret: string;
-  /** Milyon token başına [girdi, çıktı] dolar; bilinmiyorsa maliyet yazılmaz. */
-  price?: [number, number];
-}
-
-const HINTS: Record<string, string> = {
-  auth: 'anahtar geçersiz ya da hesapta bakiye yok: anahtarı ve kredi bakiyesini kontrol edin',
-  invalid_request: 'istek reddedildi: model adı yanlış ya da bu hesapta kapalı olabilir',
-  rate_limit: 'kota doldu: biraz bekleyip yeniden deneyin',
-  timeout:
-    'cevap süresinde gelmedi: yavaş model olabilir, süreyi uzatın (npm run llm:smoke -- --timeout 120)',
-  server_error: 'servis geçici olarak yanıt vermiyor ya da bağlantı kurulamadı',
-  safety_blocked: 'güvenlik filtresi cevabı engelledi',
-  empty_output: 'boş cevap geldi',
-  invalid_output: 'cevap beklenen biçimde değil (JSON bozuk ya da token sınırında kesildi)',
-};
-
-const redact = (text: string, secret: string): string =>
-  secret ? text.split(secret).join('***') : text;
+export type { SmokeTarget };
 
 /** Metin için bir kelimelik, JSON için tek alanlı küçük istekler: en ucuz modelde bile kuruşlar. */
 const TEXT_PROMPT = 'Tek bir Türkçe kelime yaz: selam';
@@ -100,73 +81,17 @@ export async function smoke(targets: SmokeTarget[], log: (line: string) => void)
   return ok;
 }
 
-/** Komut satırındaki `--claude <model>`, `--gemini <model>` ve `--openai <model>` değerleri. */
-function option(name: string): string | undefined {
-  const i = process.argv.indexOf(name);
-  return i >= 0 ? process.argv[i + 1] : undefined;
-}
-
 async function main(): Promise<void> {
-  try {
-    loadEnv(); // kökteki .env'yi yükler (süreç ortamına, ekrana değil)
-  } catch (error) {
-    if (!(error instanceof EnvError)) throw error; // DATABASE_URL eksikliği burada önemsiz
-  }
-
-  const claudeKey = process.env.ANTHROPIC_API_KEY?.trim() ?? '';
-  const geminiKey = process.env.GEMINI_API_KEY?.trim() ?? '';
-  const claudeModel = option('--claude') ?? 'claude-haiku-5-5';
-  const geminiModel = option('--gemini') ?? 'gemini-3.5-flash-lite';
-  const openaiKey = process.env.OPENAI_API_KEY?.trim() ?? '';
-  const openaiModel = option('--openai') ?? 'gpt-6-luna';
-
-  // Tek deneme: deneme komutunda yeniden deneme yok, sorun neyse olduğu gibi görünsün.
-  // Süre varsayılan 30 sn; yavaş modeller için `--timeout <saniye>` ile uzatılır.
-  const seconds = Number(option('--timeout') ?? 30);
-  const timeoutMs = (Number.isFinite(seconds) && seconds > 0 ? seconds : 30) * 1000;
-  const safe = (p: LLMProvider) => withResilience(p, { maxAttempts: 1, timeoutMs });
-  const targets: SmokeTarget[] = [];
-  if (claudeKey) {
-    targets.push({
-      label: 'Claude',
-      provider: safe(new AnthropicProvider({ apiKey: claudeKey })),
-      model: claudeModel,
-      secret: claudeKey,
-      price: {
-        'claude-haiku-5-5': [0.1, 0.5],
-        'claude-sonnet-5-5': [2, 10],
-        'claude-opus-5-5': [4, 20],
-      }[claudeModel] as [number, number] | undefined,
-    });
-  }
-  if (geminiKey) {
-    targets.push({
-      label: 'Gemini',
-      provider: safe(new GoogleProvider({ apiKey: geminiKey })),
-      model: geminiModel,
-      secret: geminiKey,
-      // gemini-3.8-flash ve 3.6-flash: 31 Aralık 2026'ya kadar bu fiyat, 1 Ocak 2027'den sonra [1.5, 7.5] (ADR 0010).
-      price: {
-        'gemini-3.5-flash-lite': [0.3, 2.5],
-        'gemini-3.6-flash': [0.75, 3.75],
-        'gemini-3.8-flash': [0.75, 3.75],
-        'gemini-4-hydrogen': [1.5, 7.5], // zam tarihi belgede yok (22 Kas 2026)
-      }[geminiModel] as [number, number] | undefined,
-    });
-  }
-  if (openaiKey) {
-    targets.push({
-      label: 'OpenAI',
-      provider: safe(new OpenAIProvider({ apiKey: openaiKey })),
-      model: openaiModel,
-      secret: openaiKey,
-      price: {
-        'gpt-6-luna': [0.1, 0.5],
-        'gpt-6.1-terra': [1, 5],
-        'gpt-6.2-sol': [2, 10],
-      }[openaiModel] as [number, number] | undefined,
-    });
-  }
+  loadSmokeEnv();
+  // Varsayılan: en ucuz modeller. Süre varsayılan 30 sn; yavaş modeller için `--timeout <saniye>`.
+  const targets = providerTargets(
+    {
+      claude: option('--claude') ?? 'claude-haiku-5-5',
+      gemini: option('--gemini') ?? 'gemini-3.5-flash-lite',
+      openai: option('--openai') ?? 'gpt-6-luna',
+    },
+    timeoutMs(30),
+  );
 
   console.log('Gerçek servislere küçük istekler atılıyor (kuruşluk). Anahtarlar yazdırılmaz.');
   const ok = await smoke(targets, console.log);

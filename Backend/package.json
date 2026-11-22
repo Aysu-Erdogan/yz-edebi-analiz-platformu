@@ -21,6 +21,7 @@
     "db:migrate:dev": "prisma migrate dev",
     "db:check": "tsx scripts/db-check.ts",
     "llm:smoke": "tsx scripts/llm-smoke.ts",
+    "judge:smoke": "tsx scripts/judge-smoke.ts",
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
