@@ -113,6 +113,26 @@
 
 **[Veri]** OpenAI adaptöründe bu yöntemle 16 bozma uygulandı, 16'sı da bir testi kırmızıya çevirdi (22 Kas 2026). Üretim servisinde 8 bozma (hata izolasyonu, tekrar çarpanı, maliyet sınırı, dry-run, kapalı model, erken sağlayıcı kontrolü, çıktı tokeni, beklenmeyen hata).
 
+### 3.6 Sürekli entegrasyon (CI)
+
+**[Veri]** Her çekme isteğinde (PR) ve `main`'e her birleşmeden sonra GitHub Actions üzerinde, temiz bir Ubuntu ortamında **dört otomatik kontrol** çalışır (kaynak: `.github/workflows/ci.yml`). Aynı dal için yeni bir push gelirse eski çalışma iptal edilir. Bu, "yerelde geçen kodun temiz bir ortamda da geçtiği"nin kanıtıdır.
+
+| Kontrol                                       | Ne yapar                                                                                                                                                        |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Biçim kontrolü                                | Tüm projede prettier biçim denetimi (Node 22)                                                                                                                   |
+| Backend (tip, lint, test, derleme, migration) | **MySQL 8.0 servisi** ile: Prisma doğrulama ve üretimi, tip kontrolü, lint, **kapsamlı test** (gerçek MySQL testleri dahil; CI'da atlanması hata sayılır), derleme, migration'ların gerçek MySQL'de uygulanması |
+| Frontend (tip, lint, test, derleme)           | Tip kontrolü, lint, test ve kapsam, derleme                                                                                                                     |
+| Docker Compose (derleme ve açılış)            | Backend ve Frontend geçince başlar: uygulamayı Docker ile derleyip ayağa kaldırır; arayüz üzerinden API sağlık ucunu ve ana sayfayı uçtan uca denetler           |
+
+**[Veri]** İki ardışık çalışmanın iş süreleri (22 Kas 2026, PR #12; saniye):
+
+| Commit    | Biçim | Frontend | Backend | Docker Compose |
+| --------- | ----- | -------- | ------- | -------------- |
+| `22b7998` | 15    | 48       | 58      | 137            |
+| `a1aae65` | 7     | 49       | 69      | 107            |
+
+**[Hesap]** Backend ve Frontend paralel çalışır, Docker bunların ardından başlar: bir PR'ın tüm kontrolleri yaklaşık **3-3,5 dakikada** biter (en uzun Backend/Frontend + Docker). **[Veri]** `main`'e birleşme sonrası CI, F0 (`dd40277`), F1 (`464cd3f`) ve OpenAI/model birleşmesinde (`4c273e1`) üçünde de başarılı bitti; PR #10 ve #12 dört kontrolün dördünden geçti. **[Yorum]** Gerçek MySQL ile her PR'da 275 testin koşulması, veritabanı katmanındaki kuralların (sürümleme, değişmezlik, kayıt) yalnızca sahte depoyla değil gerçek veritabanıyla da doğrulandığını gösterir.
+
 ---
 
 ## 4. Bulgular: gerçek servis deneme verileri
@@ -295,6 +315,7 @@ Hepsi **22 Kasım 2026**'da okundu (fiyat ve model adları sonradan değişebili
 
 | Tarih       | Değişiklik                                                                                                  |
 | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| 22 Kas 2026 | Bölüm 3.6 (sürekli entegrasyon: dört kontrolün içeriği, iş süreleri) eklendi. |
 | 22 Kas 2026 | Belge oluşturuldu. Model seçimi gerekçesi (ADR 0010), R1-R8 gerçek servis verileri, fiyat envanteri, sınırlılıklar, kontrol listesi eklendi. |
 
 ---
