@@ -27,6 +27,15 @@ export interface SucceededGeneration {
   replicateNo: number;
 }
 
+/** Bir modelin geçmiş başarılı üretimlerinin ortalaması (toplu işin maliyet ve süre tahmini için). */
+export interface ModelUsage {
+  providerModelId: number;
+  count: number;
+  avgInputTokens: number;
+  avgOutputTokens: number;
+  avgLatencyMs: number;
+}
+
 /** Üretim kayıt defteri: her model çağrısı ve (başarılıysa) ürettiği metin. */
 export interface GenerationRepository {
   /** Çağrı başlamadan kaydı açar (durum: running) ve kimliğini döner. */
@@ -40,6 +49,8 @@ export interface GenerationRepository {
     promptTemplateId: number;
     providerModelIds: number[];
   }): Promise<SucceededGeneration[]>;
+  /** Geçmiş başarılı üretimlerin model başına ortalaması; hiç geçmişi olmayan model listede yer almaz. */
+  usageByModel(providerModelIds: number[]): Promise<ModelUsage[]>;
   /**
    * Yarım kalan ("çalışıyor") kayıtları başarısız yapar ve kaç tane olduğunu döner. Tek işçi varsayımıyla,
    * işçi açılırken çağrılır: o sırada "çalışıyor" görünen kayıt çökmüş bir sürecin artığıdır.

@@ -15,6 +15,14 @@ export interface SucceededEvaluation {
   replicateNo: number;
 }
 
+/** Bir hakemin geçmiş başarılı puanlamalarından bir örnek (toplu işin maliyet ve süre tahmini için). */
+export interface EvaluationUsage {
+  evaluatorRef: string;
+  inputTokens: number;
+  outputTokens: number;
+  latencyMs: number;
+}
+
 /** Üretilmiş metnin yazarı (üretim kaydından): çapraz yargıç ve kendi-puanı analizi için. Hakeme verilmez. */
 export interface TextAuthor {
   textId: number;
@@ -59,6 +67,10 @@ export interface EvaluationRepository {
   findTexts(ids: number[]): Promise<EvaluableText[]>;
   /** Üretilmiş metinlerin yazarı (elle girilen metinlerin yazarı yoktur, listede yer almaz). */
   findAuthors(textIds: number[]): Promise<TextAuthor[]>;
+  /** Tüm metinlerin kimliği (artan sırada); `genre` verilirse yalnızca o türün metinleri. */
+  listTextIds(genre?: EvaluableText['genre']): Promise<number[]>;
+  /** Hakem başına en çok `perEvaluator` son başarılı puanlamanın token ve süre bilgisi (hakemin `rawResponse.usage`'ı). */
+  recentUsage(evaluatorRefs: string[], perEvaluator: number): Promise<EvaluationUsage[]>;
   /** Verilen komut, rubrik ve metinlerle başarıyla puanlanmış öğeler (toplu işin kaldığı yeri bulması için). */
   findSucceeded(filter: {
     promptTemplateId: number;

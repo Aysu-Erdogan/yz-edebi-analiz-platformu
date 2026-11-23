@@ -22,6 +22,7 @@
     "db:check": "tsx scripts/db-check.ts",
     "llm:smoke": "tsx scripts/llm-smoke.ts",
     "judge:smoke": "tsx scripts/judge-smoke.ts",
+    "batch": "tsx scripts/batch.ts",
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

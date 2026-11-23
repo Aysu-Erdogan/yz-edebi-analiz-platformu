@@ -2,9 +2,18 @@ import { z } from 'zod';
 import { GENRES } from '../domain/rubric.js';
 import { AppError } from '../lib/errors.js';
 import type { ProviderRegistry } from '../providers/registry.js';
-import type { EvaluationRepository, TextAuthor } from '../repositories/evaluation.repository.js';
+import type {
+  EvaluableText,
+  EvaluationRepository,
+  TextAuthor,
+} from '../repositories/evaluation.repository.js';
 import type { JobRepository, StoredJob } from '../repositories/job.repository.js';
-import type { ProviderModelRepository } from '../repositories/provider-model.repository.js';
+import type {
+  ProviderModelRecord,
+  ProviderModelRepository,
+} from '../repositories/provider-model.repository.js';
+import type { StoredPromptTemplate } from '../repositories/prompt-template.repository.js';
+import type { StoredRubric } from '../repositories/rubric.repository.js';
 import { runBatchLanes, type BatchItem } from './batch-lanes.js';
 import type { EvaluationService } from './evaluation.service.js';
 import type { JobHandler } from './job-runner.js';
@@ -65,14 +74,29 @@ export interface EnqueueEvaluateBatchDeps {
   rubrics: RubricService;
 }
 
+/** Eklemeden önce hesaplanan plan: sabitlenecek sürümler, hakemler, metinler ve hakem başına öğe sayısı. */
+export interface PreparedEvaluateBatch {
+  payload: Record<string, unknown>;
+  total: number;
+  template: StoredPromptTemplate;
+  /** Her türün sabitlenen etkin rubriği. */
+  rubrics: StoredRubric[];
+  judges: ProviderModelRecord[];
+  texts: EvaluableText[];
+  /** Hakem model kimliği → o hakemin puanlayacağı metinler (dışlama uygulanmış; her biri `replicates` kez). */
+  textsPerJudge: Map<number, EvaluableText[]>;
+  replicates: number;
+  excludeSelf: boolean;
+}
+
 /**
- * Toplu puanlama işi ekler. En son hakem şablonu ve her türün etkin rubriği işe **sabitlenir**: iş sürerken
- * değişirse devam edilmez, böylece bir puan kümesinde iki farklı komut ya da cetvel karışmaz.
+ * Puanlama işini hazırlar ve doğrular, **hiçbir şey yazmaz** (plan gösterimi ve ekleme aynı hesabı kullanır).
+ * En son hakem şablonu ve her türün etkin rubriği işe **sabitlenecek** olarak döner.
  */
-export async function enqueueEvaluateBatch(
-  deps: EnqueueEvaluateBatchDeps,
+export async function prepareEvaluateBatch(
+  deps: Omit<EnqueueEvaluateBatchDeps, 'jobs'>,
   raw: unknown,
-): Promise<StoredJob> {
+): Promise<PreparedEvaluateBatch> {
   const input = inputSchema.parse(raw);
 
   const texts = await deps.evaluations.findTexts(input.textIds);
@@ -90,22 +114,52 @@ export async function enqueueEvaluateBatch(
     );
   }
   const template = await deps.templates.getLatest('judge');
-  const rubrics = [];
+  const rubrics: StoredRubric[] = [];
   for (const genre of [...new Set(texts.map((t) => t.genre))]) {
-    rubrics.push({ genre, rubricId: (await deps.rubrics.getActiveRubric(genre)).id });
+    rubrics.push(await deps.rubrics.getActiveRubric(genre));
   }
 
   const authors = input.excludeSelf
     ? new Map((await deps.evaluations.findAuthors(input.textIds)).map((a) => [a.textId, a]))
     : new Map<number, TextAuthor>();
-  const pairs = texts.flatMap((text) =>
-    judges.filter((judge) => !(input.excludeSelf && isSelf(authors.get(text.id), judge.provider))),
-  ).length;
+  const textsPerJudge = new Map<number, EvaluableText[]>();
+  for (const judge of judges) {
+    textsPerJudge.set(
+      judge.id,
+      texts.filter((text) => !(input.excludeSelf && isSelf(authors.get(text.id), judge.provider))),
+    );
+  }
 
+  return {
+    payload: {
+      ...input,
+      templateId: template.id,
+      rubrics: rubrics.map((r) => ({ genre: r.genre, rubricId: r.id })),
+    },
+    total: [...textsPerJudge.values()].reduce((sum, t) => sum + t.length, 0) * input.replicates,
+    template,
+    rubrics,
+    judges,
+    texts,
+    textsPerJudge,
+    replicates: input.replicates,
+    excludeSelf: input.excludeSelf,
+  };
+}
+
+/**
+ * Toplu puanlama işi ekler. En son hakem şablonu ve her türün etkin rubriği işe **sabitlenir**: iş sürerken
+ * değişirse devam edilmez, böylece bir puan kümesinde iki farklı komut ya da cetvel karışmaz.
+ */
+export async function enqueueEvaluateBatch(
+  deps: EnqueueEvaluateBatchDeps,
+  raw: unknown,
+): Promise<StoredJob> {
+  const prepared = await prepareEvaluateBatch(deps, raw);
   return deps.jobs.enqueue({
     type: EVALUATE_BATCH,
-    payload: { ...input, templateId: template.id, rubrics },
-    total: pairs * input.replicates,
+    payload: prepared.payload,
+    total: prepared.total,
   });
 }
 

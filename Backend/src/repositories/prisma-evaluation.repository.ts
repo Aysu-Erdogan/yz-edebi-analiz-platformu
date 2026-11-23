@@ -3,6 +3,7 @@ import type { Db } from '../lib/prisma.js';
 import type {
   EvaluableText,
   EvaluationRepository,
+  EvaluationUsage,
   EvaluationSuccess,
   StartEvaluation,
   SucceededEvaluation,
@@ -57,6 +58,43 @@ export class PrismaEvaluationRepository implements EvaluationRepository {
       },
       select: { textId: true, evaluatorRef: true, replicateNo: true },
     });
+  }
+
+  async listTextIds(genre?: EvaluableText['genre']): Promise<number[]> {
+    const rows = await this.db.text.findMany({
+      where: genre ? { genre } : {},
+      select: { id: true },
+      orderBy: { id: 'asc' },
+    });
+    return rows.map((r) => r.id);
+  }
+
+  async recentUsage(evaluatorRefs: string[], perEvaluator: number): Promise<EvaluationUsage[]> {
+    const usage: EvaluationUsage[] = [];
+    for (const evaluatorRef of evaluatorRefs) {
+      const rows = await this.db.evaluation.findMany({
+        where: { status: 'succeeded', evaluatorRef },
+        select: { rawResponse: true },
+        orderBy: { id: 'desc' },
+        take: perEvaluator,
+      });
+      for (const row of rows) {
+        const u = (row.rawResponse as { usage?: Record<string, unknown> } | null)?.usage;
+        if (
+          typeof u?.inputTokens === 'number' &&
+          typeof u.outputTokens === 'number' &&
+          typeof u.latencyMs === 'number'
+        ) {
+          usage.push({
+            evaluatorRef,
+            inputTokens: u.inputTokens,
+            outputTokens: u.outputTokens,
+            latencyMs: u.latencyMs,
+          });
+        }
+      }
+    }
+    return usage;
   }
 
   async failInterrupted(error: string): Promise<number> {

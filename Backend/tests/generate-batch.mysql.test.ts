@@ -190,6 +190,27 @@ if (url) {
       const row = await db.generation.findUniqueOrThrow({ where: { id: running } });
       expect(row).toMatchObject({ status: 'failed', error: 'sunucu kapandı, yarım kaldı' });
       expect(await generationsRepo.failInterrupted('x')).toBe(0);
+
+      // Geçmiş ortalaması yalnızca başarılı üretimlerden hesaplanır (başarısız ve yarım kalanlar sayılmaz).
+      const usage = await generationsRepo.usageByModel([modelId]);
+      expect(usage).toHaveLength(1);
+      expect(usage[0]).toMatchObject({ providerModelId: modelId, count: 2 });
+      const okRows = await db.generation.findMany({ where: { status: 'succeeded' } });
+      const avg = (pick: (r: (typeof okRows)[number]) => number | null) =>
+        okRows.reduce((sum, r) => sum + (pick(r) ?? 0), 0) / okRows.length;
+      expect(usage[0]!.avgInputTokens).toBeCloseTo(
+        avg((r) => r.inputTokens),
+        6,
+      );
+      expect(usage[0]!.avgOutputTokens).toBeCloseTo(
+        avg((r) => r.outputTokens),
+        6,
+      );
+      expect(usage[0]!.avgLatencyMs).toBeCloseTo(
+        avg((r) => r.latencyMs),
+        6,
+      );
+      expect(await generationsRepo.usageByModel([modelId + 999])).toEqual([]);
       expect((await db.generation.count({ where: { status: 'succeeded' } })).valueOf()).toBe(2);
     });
   });

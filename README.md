@@ -114,6 +114,7 @@ Kök dizinden:
 | `npm run db:migrate` / `db:seed` | Tabloları oluşturur / taslak rubrik v0.1'i yükler                                                                                                                                                    |
 | `npm run llm:smoke`              | Anahtarı olan sağlayıcılara (Claude, Gemini, OpenAI) **gerçek** iki küçük istek atar (kuruşluk). Anahtarları `.env`'den okur, yazmaz. Model: `-- --claude <model> --gemini <model> --openai <model>` |
 | `npm run judge:smoke`            | Anahtarı olan hakem modellere **gerçek** puanlama isteği atar: iki örnek metin, taslak şiir rubriği, `judge-v1` komutu (**ücretli**, birkaç sent). Veritabanına yazmaz. Model ve süre: `-- --claude <model> --gemini <model> --openai <model> --timeout <sn>` |
+| `npm run batch -- <komut>` | Toplu **üretim** (`uret`) ve **puanlama** (`puanla`); `devam` yarım kalan işi sürdürür, `durum` işleri gösterir. Varsayılan olarak yalnızca **plan** gösterir (çağrı ve harcama yok, tahmini süre ve maliyet dahil); `--calistir` ile işi ekler ve **gerçek, ücretli** çağrılarla çalıştırır. Ctrl+C düzgün durdurur. Kullanım özeti: komutsuz çalıştırın (`npm run batch`) |
 
 Her commit öncesi değişen dosyalar otomatik biçimlendirilir (Husky + lint-staged). Her push ve PR'da GitHub Actions biçim, tip, lint, test, derleme, migration ve Docker açılışını doğrular.
 

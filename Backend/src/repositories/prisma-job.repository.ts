@@ -45,6 +45,11 @@ export class PrismaJobRepository implements JobRepository {
     return toStored(row);
   }
 
+  async list(limit: number): Promise<StoredJob[]> {
+    const rows = await this.db.job.findMany({ orderBy: { id: 'desc' }, take: limit });
+    return rows.map(toStored);
+  }
+
   async findById(id: number): Promise<StoredJob | null> {
     const row = await this.db.job.findUnique({ where: { id } });
     return row ? toStored(row) : null;

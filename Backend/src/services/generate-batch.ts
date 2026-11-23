@@ -4,6 +4,7 @@ import { GENRES } from '../domain/rubric.js';
 import type { ProviderRegistry } from '../providers/registry.js';
 import type { GenerationRepository } from '../repositories/generation.repository.js';
 import type { JobRepository, StoredJob } from '../repositories/job.repository.js';
+import type { StoredPromptTemplate } from '../repositories/prompt-template.repository.js';
 import type { ProviderModelRepository } from '../repositories/provider-model.repository.js';
 import { runBatchLanes, type BatchItem } from './batch-lanes.js';
 import type { GenerationService } from './generation.service.js';
@@ -49,6 +50,38 @@ export interface EnqueueGenerateBatchDeps {
   templates: PromptTemplateService;
 }
 
+/** Eklemeden önce hesaplanan plan: sabitlenecek şablon, kırpılmış konular ve toplam öğe sayısı. */
+export interface PreparedGenerateBatch {
+  payload: Record<string, unknown>;
+  total: number;
+  template: StoredPromptTemplate;
+  topics: { genre: (typeof GENRES)[number]; theme: string }[];
+  modelIds: number[];
+  replicates: number;
+}
+
+/** Üretim işini hazırlar ve doğrular, **hiçbir şey yazmaz** (plan gösterimi ve ekleme aynı hesabı kullanır). */
+export async function prepareGenerateBatch(
+  templates: PromptTemplateService,
+  raw: unknown,
+): Promise<PreparedGenerateBatch> {
+  const input = inputSchema.parse(raw);
+  // Tema, üretim kaydındaki gibi kırpılmış hâliyle saklanır: biten öğeleri tanımak için aynı biçim gerekir.
+  const topics = input.topics.map((t) => ({
+    genre: t.genre,
+    theme: generationVars(t.genre, t.theme).tema as string,
+  }));
+  const template = await templates.getLatest('generate');
+  return {
+    payload: { ...input, topics, templateId: template.id },
+    total: topics.length * input.modelIds.length * input.replicates,
+    template,
+    topics,
+    modelIds: input.modelIds,
+    replicates: input.replicates,
+  };
+}
+
 /**
  * Toplu üretim işi ekler. En son üretim şablonu işe **sabitlenir**: iş sürerken şablon değişirse devam
  * edilmez, böylece bir veri setinin içinde iki farklı komutla üretilmiş metin karışmaz.
@@ -57,17 +90,11 @@ export async function enqueueGenerateBatch(
   deps: EnqueueGenerateBatchDeps,
   raw: unknown,
 ): Promise<StoredJob> {
-  const input = inputSchema.parse(raw);
-  // Tema, üretim kaydındaki gibi kırpılmış hâliyle saklanır: biten öğeleri tanımak için aynı biçim gerekir.
-  const topics = input.topics.map((t) => ({
-    genre: t.genre,
-    theme: generationVars(t.genre, t.theme).tema as string,
-  }));
-  const template = await deps.templates.getLatest('generate');
+  const prepared = await prepareGenerateBatch(deps.templates, raw);
   return deps.jobs.enqueue({
     type: GENERATE_BATCH,
-    payload: { ...input, topics, templateId: template.id },
-    total: topics.length * input.modelIds.length * input.replicates,
+    payload: prepared.payload,
+    total: prepared.total,
   });
 }
 

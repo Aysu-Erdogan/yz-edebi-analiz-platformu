@@ -39,6 +39,8 @@ export interface JobProgress {
 export interface JobRepository {
   enqueue(input: EnqueueJob): Promise<StoredJob>;
   findById(id: number): Promise<StoredJob | null>;
+  /** En son eklenen `limit` iş, en yenisi önce (durum ekranı için). */
+  list(limit: number): Promise<StoredJob[]>;
   /**
    * Sıradaki (en eski) bekleyen işi tek adımda sahiplenir: çalışıyor olur, deneme sayısı artar.
    * `types` verilirse yalnızca o türler alınır; yoksa ya da bekleyen kalmadıysa null.

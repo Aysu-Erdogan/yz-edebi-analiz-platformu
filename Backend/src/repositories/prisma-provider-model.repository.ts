@@ -6,7 +6,30 @@ import type { ProviderModelRecord, ProviderModelRepository } from './provider-mo
 const isProviderId = (value: string): value is ProviderId =>
   (PROVIDER_IDS as readonly string[]).includes(value);
 
-/** MySQL (Prisma) model deposu. Bozuk kayıt (bilinmeyen sağlayıcı, geçersiz ayar) sessizce geçilmez, hata verir. */
+type ModelRow = Awaited<ReturnType<Db['providerModel']['findFirstOrThrow']>>;
+
+/** Bozuk kayıt (bilinmeyen sağlayıcı, geçersiz ayar) sessizce geçilmez, hata verir. */
+function toRecord(row: ModelRow): ProviderModelRecord {
+  if (!isProviderId(row.provider)) {
+    throw new Error(`Model ${row.id}: bilinmeyen sağlayıcı "${row.provider}"`);
+  }
+  const params = modelParamsSchema.safeParse(row.defaultParams ?? {});
+  if (!params.success) {
+    throw new Error(`Model ${row.id} (${row.modelId}): varsayılan ayarlar geçersiz`, {
+      cause: params.error,
+    });
+  }
+  return {
+    id: row.id,
+    provider: row.provider,
+    modelId: row.modelId,
+    displayName: row.displayName,
+    active: row.active,
+    params: params.data,
+  };
+}
+
+/** MySQL (Prisma) model deposu. */
 export class PrismaProviderModelRepository implements ProviderModelRepository {
   constructor(private readonly db: Db) {}
 
@@ -15,24 +38,14 @@ export class PrismaProviderModelRepository implements ProviderModelRepository {
       where: { id: { in: ids } },
       orderBy: { id: 'asc' },
     });
-    return rows.map((row) => {
-      if (!isProviderId(row.provider)) {
-        throw new Error(`Model ${row.id}: bilinmeyen sağlayıcı "${row.provider}"`);
-      }
-      const params = modelParamsSchema.safeParse(row.defaultParams ?? {});
-      if (!params.success) {
-        throw new Error(`Model ${row.id} (${row.modelId}): varsayılan ayarlar geçersiz`, {
-          cause: params.error,
-        });
-      }
-      return {
-        id: row.id,
-        provider: row.provider,
-        modelId: row.modelId,
-        displayName: row.displayName,
-        active: row.active,
-        params: params.data,
-      };
+    return rows.map(toRecord);
+  }
+
+  async findByModelIds(modelIds: string[]): Promise<ProviderModelRecord[]> {
+    const rows = await this.db.providerModel.findMany({
+      where: { modelId: { in: modelIds } },
+      orderBy: { id: 'asc' },
     });
+    return rows.map(toRecord);
   }
 }
