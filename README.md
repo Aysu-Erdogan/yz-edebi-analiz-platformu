@@ -115,6 +115,7 @@ Kök dizinden:
 | `npm run llm:smoke`              | Anahtarı olan sağlayıcılara (Claude, Gemini, OpenAI) **gerçek** iki küçük istek atar (kuruşluk). Anahtarları `.env`'den okur, yazmaz. Model: `-- --claude <model> --gemini <model> --openai <model>` |
 | `npm run judge:smoke`            | Anahtarı olan hakem modellere **gerçek** puanlama isteği atar: iki örnek metin, taslak şiir rubriği, `judge-v1` komutu (**ücretli**, birkaç sent). Veritabanına yazmaz. Model ve süre: `-- --claude <model> --gemini <model> --openai <model> --timeout <sn>` |
 | `npm run batch -- <komut>` | Toplu **üretim** (`uret`) ve **puanlama** (`puanla`); `devam` yarım kalan işi sürdürür, `durum` işleri gösterir. Varsayılan olarak yalnızca **plan** gösterir (çağrı ve harcama yok, tahmini süre ve maliyet dahil); `--calistir` ile işi ekler ve **gerçek, ücretli** çağrılarla çalıştırır. Ctrl+C düzgün durdurur. Kullanım özeti: komutsuz çalıştırın (`npm run batch`) |
+| `npm run export -- csv --cikti <dosya>` | Puanlama kayıtlarını dosyaya yazar (yalnızca okur, ücretsiz). `csv` sayısal analiz için (kriter başına bir satır), `json` metin ve gerekçelerle tam kayıt. Türkçe Excel'de çift tıklayarak açmak için `--excel`. Örnek: `npm run export -- csv --cikti exports/puanlar.csv --excel` (`Backend/exports/` git'e girmez) |
 
 Her commit öncesi değişen dosyalar otomatik biçimlendirilir (Husky + lint-staged). Her push ve PR'da GitHub Actions biçim, tip, lint, test, derleme, migration ve Docker açılışını doğrular.
 

@@ -407,9 +407,9 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 - [x] Toplu üretim ve toplu puanlama işleri. _(İşleyiciler hazır: sağlayıcı başına paralel şerit, çalışırken bütçe sınırı, kaldığı yerden devam, komut/rubrik sabitleme. Toplu puanlamada varsayılan: tüm hakemler puanlar, kendi-puanı analizde işaretlenir; `excludeSelf` ile kendi ailesinin metnini dışlama seçilebilir. Komut satırı hazır: `npm run batch -- uret|puanla|devam|durum`, varsayılan plan (harcamaz), `--calistir` ile gerçek çalıştırma.)_
 - [ ] Çoklu yargıç, tekrarlı puanlama, kararlılık ölçümü.
 - [ ] İstatistik modülü (betimsel, Mann-Whitney, Kruskal-Wallis, etki büyüklüğü).
-- [ ] CSV/JSON dışa aktarım (UTF-8, BOM seçeneği).
+- [x] CSV/JSON dışa aktarım (UTF-8, BOM seçeneği). _(Komut satırı: `npm run export -- csv|json --cikti <dosya>`; CSV'de kriter başına bir satır, `--bom`, Türkçe Excel için `--excel`; formül enjeksiyonuna karşı önlem; her kayıtta rubrik notu ("taslak, uzman doğrulaması yok" uyarısı). Web ucu F4'te.)_
 - [ ] İnsan puanı için veri modeli hazır, **ama uç kapalı** (etik kurul).
-- [ ] Testler T13–T21, T36–T37. _(T13–T19 ve T37 yazıldı ve geçti; T20, T21, T36 kalan adımlarla)_
+- [ ] Testler T13–T21, T36–T37. _(T13–T19 ve T37 yazıldı ve geçti; T36 yazıldı ve geçti (komut satırı düzeyinde); T20, T21 kalan adımlarla)_
 
 ### F3 — Frontend (H7–H10)
 - [ ] Proje iskeleti: TS, Router, TanStack Query, API istemcisi (tip güvenli), hata sınırları. _(Kısmen F0'da yapıldı, hata sınırları kaldı)_

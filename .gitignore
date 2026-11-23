@@ -16,6 +16,8 @@ Thumbs.db
 # Üretilen dosyalar
 **/src/generated/
 coverage/
+# Dışa aktarılan veri (npm run export): yapay zekâ metinlerini içerir, yanlışlıkla commit'lenmesin
+Backend/exports/
 *.tsbuildinfo
 
 # Kişisel geliştirme aracı ayarı (MCP bağlantıları)
