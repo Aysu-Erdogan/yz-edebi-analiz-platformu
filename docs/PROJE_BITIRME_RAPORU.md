@@ -27,6 +27,7 @@
 | 21 Kas 2026           | F1 (backend çekirdeği) birleşti (PR #10, `464cd3f`)                                        |
 | 22 Kas 2026           | OpenAI adaptörü, GPT-6.2 Sol, Gemini 4 Hydrogen, ADR 0010 birleşti (PR #12, `4c273e1`)      |
 | 22-23 Kas 2026        | F2 altyapısı (hakem motoru, puan kaydı, iş kuyruğu, toplu üretim ve puanlama, komut satırı) PR #14'te taslak olarak birikiyor, `main`'e birleşmedi |
+| 23 Kas 2026           | İlk gerçek toplu üretim (3 şiir) ve puanlama (9 puanlama) çalıştırıldı (bölüm 4.7) |
 | 10 Ocak 2027          | Yazılım dondurma                                                                           |
 | 31 Ocak 2027          | TÜBİTAK bitiş                                                                              |
 | Şubat / Mayıs 2027    | Bitirme raporu / sunum                                                                     |
@@ -234,7 +235,7 @@ Kriterler komuta şu biçimde yazılır (düzeyler küçükten büyüğe): `- an
 **[Karar, kullanıcı onayıyla, 22 Kas 2026] Neden "kendini dışlamak" yerine "işaretlemek"?** İş planındaki çapraz yargıç ilkesi (7.3) bir modelin kendi metnini puanlamamasını önerir. Bunu varsayılan yapsaydık her modelin metni **farklı bir hakem takımından** geçerdi (Claude'un metnini Hydrogen ve GPT, GPT'nin metnini Claude ve Hydrogen puanlardı). Hakem smoke'ta hakemlerin sertliği çok farklı çıktığı için (4.6, gözlem 3: aynı güçlü şiire 70 / 90 / 90), bu tasarımda **hakem sertliği farkı model farkıyla karışırdı**. Bunun yerine her hakem her metni puanlar (dengeli tasarım). Kendi ailesinin metnini puanlayan puanlar, metnin yazarı (üretim kaydı) ile hakemin sağlayıcısı karşılaştırılarak **analizde işaretlenir**; ek sütun gerekmedi. İsteyen `--kendini-disla` (`excludeSelf: true`) ile dışlamayı seçebilir.
 
 - **[Yorum]** Bu tasarımda kendini kayırma (self-preference) **ölçülebilir** (kendi-puanı ile diğer-puan farkı); dışlama tasarımında ölçülemezdi.
-- **[Hesap, kaba tahmin]** Bedel: 27 metin × 3 hakem × 3 tekrar = 243 puanlama (dışlamayla 162). Hakem smoke'taki 6 çağrının ortalaması ($0,0089, 4.6; iki kısa örnek şiir) ile fark yaklaşık 81 puanlama ≈ **$0,7**. Bu rakam ölçülmedi: gerçek metinler daha uzun olabilir, düşünen modellerin çıkış tokeni değişkendir. **[TODO]** İlk gerçek puanlamadan sonra, kendi-puanı işaretli kayıtların gerçek maliyeti (kayıtlardaki token sayıları × o günün fiyatı) toplanıp bu tahmin gerçek değerle değiştirilecek. Dışlama varyantını ayrıca çalıştırmak gerekmez, çünkü fark zaten işaretli kayıtların toplamıdır.
+- **[Hesap, kaba tahmin]** Bedel: 27 metin × 3 hakem × 3 tekrar = 243 puanlama (dışlamayla 162). Hakem smoke'taki 6 çağrının ortalaması ($0,0089, 4.6; iki kısa örnek şiir) ile fark yaklaşık 81 puanlama ≈ **$0,7**. Bu rakam smoke örneklerine dayanır. **[Veri/Hesap, 23 Kas 2026]** İlk gerçek puanlamada (bölüm 4.7, 3 şiir × 3 hakem) kendi-puanı işaretli 3 kaydın gerçek maliyeti **$0,0351**'dir (toplam $0,1020'nin %34'ü; çağrı başına $0,0117, tüm çağrılarda ortalama $0,0113). Aynı ortalamayla 81 ek puanlama ≈ **$0,9** (kaba: şiirler kısa, hikâye ve denemelerde artabilir). **[TODO]** Gerçek veri setinde (27 metin) aynı toplama yeniden yapılacak. Dışlama varyantını ayrıca çalıştırmak gerekmez, çünkü fark zaten işaretli kayıtların toplamıdır.
 - **Sınır:** "aile" sağlayıcı bazlıdır; aynı sağlayıcının farklı modeli de "kendi" sayılır. Yazarı bilinmeyen (elle girilen) metinde kimse dışlanmaz ya da işaretlenmez.
 
 **Adım 7: komut satırı (`npm run batch -- uret|puanla|devam|durum`)**
@@ -250,10 +251,11 @@ Kriterler komuta şu biçimde yazılır (düzeyler küçükten büyüğe): `- an
 
 **[Veri] Bu adımların sınırlılıkları:**
 
-- Toplu üretim ve puanlama işleri **gerçek servisle henüz çalıştırılmadı**; gerçek veritabanında yalnızca plan modu denendi (harcama yok). İlk küçük gerçek deneme sonrası tahmini süre ve maliyet dolacak **[TODO]**.
-- **En kötü durum üst sınırı çok kaba:** çıktı tam `maxTokens` kabul edilir, giriş tokeni karakter sayısından (karakter/4) × 2,5 ile tahmin edilir. Sabit katsayı sağlayıcıya göre ayrılmaz; oysa aynı metin için giriş tokeni sağlayıcılar arasında farklıdır (4.6, gözlem 5: 2338 / 1496 / 1150). Karar için "beklenen maliyet" (geçmiş çağrılardan) kullanılmalıdır.
+- Toplu üretim ve puanlama işleri gerçek servisle **yalnızca küçük bir denemede** çalıştırıldı (bölüm 4.7: 3 şiir, 9 puanlama). Büyük ölçek, bütçe sınırının devreye girmesi ve Ctrl+C ile kesme gerçek servisle denenmedi.
+- **En kötü durum üst sınırı çok kaba:** çıktı tam `maxTokens` kabul edilir, giriş tokeni karakter sayısından (karakter/4) × 2,5 ile tahmin edilir. Sabit katsayı sağlayıcıya göre ayrılmaz; oysa aynı metin için giriş tokeni sağlayıcılar arasında farklıdır (4.6, gözlem 5: 2338 / 1496 / 1150). Karar için "beklenen maliyet" (geçmiş çağrılardan) kullanılmalıdır. **[Hesap, 23 Kas 2026]** İlk gerçek çalıştırmada gerçek harcama üst sınırın yaklaşık %15'iydi (üretim $0,0331 / $0,2255; puanlama $0,1020 / $0,7043; bölüm 4.7).
 - **Bütçe her çalıştırma için ayrı sayılır:** çökme sonrası `devam` bütçeyi sıfırdan sayar; toplam harcama bu belgede ayrıca izlenir.
 - **Tek işçi:** aynı anda tek süreç çalışacak şekilde tasarlandı; çoklu işçi için ek tablo alanı ve canlılık sinyali gerekir.
+- **Plan, daha önce biten öğeleri düşmeden gösteriyor (gözlem, 23 Kas 2026):** başarısız tek puanlamayı yeniden denerken plan 9 öğe ve beklenen maliyet $0,1008 yazdı; gerçekte yalnızca 1 öğe çalıştı ($0,0155). İş biten öğeleri atlar, yalnızca plan ekranı yanıltıcıdır. Kod ayrıca incelenmedi **[TODO]**.
 
 ---
 
@@ -328,7 +330,7 @@ Kod sürümü: R1-R2 `ddfda94` / `2fb47db` (`--timeout` seçeneği henüz yoktu,
 
 ### 4.5 Maliyet tahmini
 
-**[Hesap]** Bir metin için **en kötü durum** üst sınırı (çıktının tam `maxTokens` = 8192 olduğu varsayımıyla, girdi ihmal edilebilir): Claude Sonnet 5.5 yaklaşık $0,082; GPT-6.2 Sol yaklaşık $0,082; Gemini 4 Hydrogen yaklaşık $0,061; üç modelin bir metni için üst sınır yaklaşık **$0,225**. Gerçek çıktı çok daha kısa olacağı için gerçek maliyet bunun çok altındadır; **[TODO]** ilk gerçek üretimde ölçülecek (bir şiir/hikâye için gerçek çıkış tokeni ve süre).
+**[Hesap]** Bir metin için **en kötü durum** üst sınırı (çıktının tam `maxTokens` = 8192 olduğu varsayımıyla, girdi ihmal edilebilir): Claude Sonnet 5.5 yaklaşık $0,082; GPT-6.2 Sol yaklaşık $0,082; Gemini 4 Hydrogen yaklaşık $0,061; üç modelin bir metni için üst sınır yaklaşık **$0,225**. Gerçek çıktı çok daha kısa olacağı için gerçek maliyet bunun çok altındadır; **[Veri, 23 Kas 2026]** İlk gerçek üretimde şiir başına gerçek maliyet $0,0022 (GPT-6.2 Sol) ile $0,0163 (Gemini 4 Hydrogen) arasında çıktı (bölüm 4.7); hikâye ve deneme **[TODO]** ölçülecek.
 
 **[Hesap]** ADR 0010'daki eski "100 metin için kabaca bir dolar altı" tahmini iki model içindi; üç model için yeniden hesaplanacak.
 
@@ -364,6 +366,60 @@ Kod sürümü: R1-R2 `ddfda94` / `2fb47db` (`--timeout` seçeneği henüz yoktu,
 - Puanların "doğru" olup olmadığı değerlendirilmedi (insan puanı yok, etik kurul bekleniyor); yalnızca sıranın makul olduğuna bakıldı.
 - **Enjeksiyon direnci ölçülmedi** (iş planında ayrı madde).
 - Taslak rubrik ve komut kullanıldı.
+
+### 4.7 İlk gerçek toplu üretim ve puanlama (F2, 23 Kas 2026)
+
+**[Veri]** Komutlar (`Backend/scripts/batch.ts`, commit `5cf2ea4`; koşuları yapay zekâ asistanı kullanıcı onayıyla çalıştırdı, koşu numaraları **R10-R12**, ham çıktı Ek A):
+
+- **R10, iş #1:** `npm run batch -- uret --konular "siir:Sonbahar" --modeller claude-sonnet-5-5,gemini-4-hydrogen,gpt-6.2-sol --tekrar 1 --butce 0.5 --calistir`
+- **R11, iş #2:** `npm run batch -- puanla --metinler hepsi --hakemler claude-sonnet-5-5,gemini-4-hydrogen,gpt-6.2-sol --tekrar 1 --butce 0.5 --calistir`
+- **R12, iş #3:** R11'in aynı komutu; başarısız tek puanlamayı yeniden dener, biten 8 öğeyi atlar.
+
+Üretim komutu şablonu v1, rubrik taslak şiir v0.1, hakem şablonu `judge-v1`. Her şey geliştirme veritabanına yazıldı. **Bu bir deneme verisidir** (tek tür, tek tema, tek tekrar, 3 metin); nihai veri seti değildir ve ondan ayrılmalıdır.
+
+**Üretim (R10):** 3 öğenin 3'ü başarılı, toplam maliyet $0,0331.
+
+| Model               | Süre (sn) | Giriş / çıkış token | Maliyet ($) | Metin (karakter / satır) |
+| ------------------- | --------- | ------------------- | ----------- | ------------------------ |
+| `claude-sonnet-5-5` | 14,2      | 121 / 1432          | 0,0146      | 566 / 19                 |
+| `gemini-4-hydrogen` | 164,1     | 94 / 2161           | 0,0163      | 544 / 19                 |
+| `gpt-6.2-sol`       | 9,0       | 72 / 205            | 0,0022      | 525 / 19                 |
+
+**Puanlama (R11 ve R12):** 10 kayıt, 9'u başarılı. Kayıt 9 başarısız (HTTP 503), kayıt 10 onun yeniden denemesidir. Kriter sırası: imge, ritim, duygu, özgünlük, anlam (4.6'daki gibi). Maliyet, token sayısı × model kaydındaki fiyat **[Hesap]**.
+
+| Kayıt | Hakem               | Şiirin yazarı       | Toplam | Kriterler | Süre (sn) | Giriş / çıkış | Maliyet ($) | Kendi-puanı |
+| ----- | ------------------- | ------------------- | ------ | --------- | --------- | ------------- | ----------- | ----------- |
+| 1     | `gpt-6.2-sol`       | `gpt-6.2-sol`       | 95     | 5,4,5,5,5 | 11,7      | 1232 / 483    | 0,0073      | evet        |
+| 2     | `gemini-4-hydrogen` | `gpt-6.2-sol`       | 95     | 5,4,5,5,5 | 65,1      | 1578 / 2119   | 0,0183      |             |
+| 3     | `claude-sonnet-5-5` | `gpt-6.2-sol`       | 70     | 4,3,4,4,4 | 7,7       | 2485 / 712    | 0,0121      |             |
+| 4     | `claude-sonnet-5-5` | `claude-sonnet-5-5` | 60     | 3,4,3,3,4 | 7,4       | 2501 / 736    | 0,0124      | evet        |
+| 5     | `gpt-6.2-sol`       | `claude-sonnet-5-5` | 75     | 4,4,4,3,5 | 8,7       | 1259 / 461    | 0,0071      |             |
+| 6     | `claude-sonnet-5-5` | `gemini-4-hydrogen` | 55     | 2,4,3,2,5 | 7,1       | 2503 / 708    | 0,0121      |             |
+| 7     | `gpt-6.2-sol`       | `gemini-4-hydrogen` | 70     | 3,4,4,3,5 | 8,9       | 1244 / 436    | 0,0068      |             |
+| 8     | `gemini-4-hydrogen` | `claude-sonnet-5-5` | 75     | 4,4,4,3,5 | 18,4      | 1607 / 1063   | 0,0104      |             |
+| 9     | `gemini-4-hydrogen` | `gemini-4-hydrogen` | yok    | yok       | yok       | yok           | yok         | evet        |
+| 10    | `gemini-4-hydrogen` | `gemini-4-hydrogen` | 60     | 3,4,3,2,5 | 10,9      | 1598 / 1743   | 0,0155      | evet        |
+
+Kayıt 9'un hatası: `server_error: HTTP 503: This model is currently experiencing high demand` (geçici hata sınıfı). Başarısız kayıt silinmedi, `failed` olarak durur; puan satırı yoktur (ADR 0004).
+
+**Gözlemler:**
+
+1. **[Veri]** Üç şiir benzer uzunlukta (525-566 karakter, 19 satır) ama **çıkış tokeni çok farklı:** GPT 205, Claude 1432, Hydrogen 2161. **[Yorum]** Claude ve Hydrogen düşünme tokeni harcıyor görünüyor (bölüm 6, sınırlılık 2); GPT'nin çıkışı neredeyse yalnızca metin. Sağlayıcıdan düşünme tokeni ayrı alınmadı, bu bir çıkarımdır. Maliyet farkı buradan gelir: GPT şiir başına Claude'un yaklaşık 6,6'da biri.
+2. **[Veri]** **Hydrogen üretimi 164,1 sn** sürdü: süre sınırının (300 sn) yaklaşık %55'i; Claude'dan yaklaşık 12, GPT'den yaklaşık 18 kat yavaş. Tek örnek. Hakem smoke'ta aynı model JSON için 60-70 sn almıştı (4.6). Daha uzun hikâye ve denemelerde sınırın aşılıp aşılmayacağı **[TODO]** ölçülecek.
+3. **[Veri]** Giriş tokeni aynı komut için 72 (GPT), 94 (Hydrogen), 121 (Claude); sağlayıcılar arası token sayıları karşılaştırılamaz (4.6, gözlem 5 ile uyumlu).
+4. **[Veri]** **Hata:** 12 ilk çalıştırma öğesinden (3 üretim, 9 puanlama) 1'i başarısız. Başarısız olan Hydrogen'in 5 çağrısından 1'i (%20); Claude ve GPT'nin 4'er çağrısında hata yok. Yeniden denemede (R12) iş yalnızca eksik öğeyi çalıştırdı ve başarılı oldu.
+5. **[Veri]** **Hakem sertliği 4.6 ile tutarlı:** Claude hakem her üç şiirde de en düşük puanı verdi; GPT hakemden 25, 15 ve 15 puan düşük (GPT şiiri 70/95, Claude şiiri 60/75, Hydrogen şiiri 55/70). Tek tekrar, 3 şiir: genelleme yapılamaz.
+6. **[Veri]** **Süre değişkenliği:** Hydrogen hakem süresi 10,9-65,1 sn (ortalama 31,5), Claude 7,1-7,7, GPT 8,7-11,7. Hydrogen'in süresi **yalnızca çıkış tokeniyle açıklanmıyor:** 1743 çıkış tokeni 10,9 sn'de, 1063 token 18,4 sn'de üretildi. **[Yorum]** Sunucu yoğunluğu da etkili olabilir; ölçülmedi.
+7. **[Hesap]** **Maliyet:** 9 başarılı puanlamanın toplamı $0,1020 ($0,0865 + yeniden deneme $0,0155); çağrı başına $0,0068-0,0183, ortalama $0,0113 (hakem smoke'ta $0,0089, 4.6). Hakem başına toplam: Claude $0,0365, GPT $0,0213, Hydrogen $0,0441 (üçer çağrı).
+8. **[Hesap]** **Kendi-puanı** (yazar ve hakem aynı sağlayıcı: kayıt 1, 4, 10): maliyet $0,0351, toplamın %34'ü. Kendi şiirine verilen puan, diğer iki hakemin ortalamasına göre: GPT +12,5 (95 / 82,5), Claude −15 (60 / 75), Hydrogen −2,5 (60 / 62,5). **[Yorum]** Yön tutarsız; 3 şiir ve tek tekrarla kendini kayırma hakkında bir şey söylenemez. Claude'un kendi şiirine düşük vermesi hakem sertliğiyle uyumlu.
+9. **[Hesap]** **Üst sınır ile gerçek:** plan "en kötü durum" olarak üretimde $0,2255, puanlamada $0,7043 göstermişti; gerçek harcama bunların yaklaşık %15'i (üretim $0,0331, puanlama $0,1020). **[Veri]** Plan, ilk çalıştırmadan sonra tahmini süre ve maliyeti geçmiş ortalamalardan verdi (üretim: 2 dk 44 sn, $0,0331); bu tahmin tek örnekten hesaplandığı için gerçekle örtüşmesi doğaldır, doğruluğu henüz sınanmadı.
+
+**Sınırlılıklar (bu denemeye özgü):**
+
+- Tek tür (şiir), tek tema (Sonbahar), tek tekrar, 3 metin: **duman testidir**, model karşılaştırması ya da hakem güvenilirliği kanıtı değildir.
+- Taslak rubrik ve komut.
+- Bu deneme verisi geliştirme veritabanında durur; nihai veri setinden ayrılması gerekir **[TODO]**.
+- Şiirlerin içeriği bu adımda değerlendirilmedi (nitel inceleme yapılmadı).
 
 ## 5. Sağlayıcı fiyat ve model envanteri
 
@@ -408,18 +464,18 @@ Her biri raporda/makalede ayrıca yazılmalıdır:
 2. **Düşünen modeller.** Düşünme miktarı modele göre farklıdır ve ölçülmesi/kısıtlanması zordur (4.4-1).
 3. **Sınıf eşleştirmesi araştırmacının kararıdır** (fiyata göre). Hydrogen, Sonnet ve Sol'dan biraz ucuzdur (3.1).
 4. **Model sürümleri ve fiyatlar zamanla değişir**; sonuçlar belirli bir tarih ve model sürümüne aittir. Üretim sırasındaki model kimliği ve tarih her kayıtla saklanmalıdır.
-5. **Servis kararlılığı** (yoğunluk, 503) üretimi kesintiye uğratabilir; Gemini 4 Hydrogen üretimden önce yeniden doğrulanacaktır.
+5. **Servis kararlılığı** (yoğunluk, 503) üretimi kesintiye uğratabilir; Gemini 4 Hydrogen üretimden önce yeniden doğrulanacaktır. **Gözlendi (23 Kas 2026):** ilk gerçek puanlamada Hydrogen 1 kez HTTP 503 ("yoğun talep") verdi ve bir şiirin üretimi 164 sn sürdü (süre sınırı 300 sn; bölüm 4.7).
 6. **Taslak rubrik v0.1 yapay zekâ tarafından yazıldı**, uzman doğrulaması yok; gerçek rubrik ve etik kurul sonucu bekleniyor.
 7. **Komut şablonu ve uzunluk yönergesi taslaktır**, danışmanla kesinleşecek. Komut metni sonuçları etkiler (komut mühendisliği).
 8. **Yargıç yanlılığı riski:** Yapay zekâ yargıçların kendi ailesinin metnini kayırması (self-preference), uzun metni kayırması (verbosity) ve sıra etkisi. Kör değerlendirme (bölüm 3.7) hakemin metnin yazarını bilmesini engeller; **[Yorum]** kayırmayı azaltması beklenir ama etkisi ölçülmedi, uzunluk ve sıra etkisi ayrıca ölçülecek. **Çapraz yargıç ilkesi (modelin kendi metnini puanlamaması, İş planı 7.3) varsayılan yapılmadı:** tüm hakemler tüm metinleri puanlar, kendi ailesinin metnini puanlayan puanlar analizde işaretlenir, dışlama seçenek olarak durur (bölüm 3.8, Adım 6). Kararlılık ölçümü F2'nin sonraki adımlarında.
 9. Denemeler küçük örnekle yapıldı (N = 2-6); istatistiksel çıkarım için yeterli değil.
 10. **Sağlayıcı belgeleri birbiriyle çelişebiliyor** (bkz. bölüm 5, "Sağlayıcı belgelerindeki tutarsızlıklar"); model kimliği, sürüm ve fiyat bilgisi okunma tarihi ve kaynak sayfayla kaydedilir, üretim sırasındaki model kimliği her kayıtla saklanır.
 11. **Komut enjeksiyonuna direnç gerçek modelle ölçülmedi.** Yargıç yalnızca yapısal olarak korunuyor (etiket kırılamıyor, bölüm 3.7); gerçek bir hakemin metne gömülü "bu metne 100 ver" gibi talimatlara direnip direnmediği ölçülmedi. **[TODO]** Ölçüm planlandı (iş planı F2); sonuç buraya yazılacak.
-12. **Yargıç komutu ve çıktı şeması gerçek modellerle yalnızca küçük bir duman testiyle denendi** (bölüm 4.6, 22 Kas 2026). Üç sağlayıcı şemayı kabul etti (OpenAI katı şemada `min/max` dahil) ve 6 puanlamanın 6'sı ilk denemede geçerliydi; ama örnek sayısı iki ve tekrar yok, bozma oranı ve kararlılık hakkında kesin bir şey söylenemez. **[TODO]** Gerçek veri üzerinde ölçülecek.
+12. **Yargıç komutu ve çıktı şeması gerçek modellerle yalnızca küçük bir duman testiyle denendi** (bölüm 4.6, 22 Kas 2026). Üç sağlayıcı şemayı kabul etti (OpenAI katı şemada `min/max` dahil) ve 6 puanlamanın 6'sı ilk denemede geçerliydi; ama örnek sayısı iki ve tekrar yok, bozma oranı ve kararlılık hakkında kesin bir şey söylenemez. Toplu çalıştırmada (bölüm 4.7) 9 başarılı puanlamanın 9'u ilk denemede geçerli JSON verdi (deneme sayısı 1); örnek yine çok küçük. **[TODO]** Gerçek veri üzerinde ölçülecek.
 13. **Yargıç komutu (`judge-v1`) ve taslak rubrik gerçek rubrik/danışman görüşüyle değişebilir**; hakem puanları o sürümlere aittir, komut sürümü her değerlendirmeyle kaydedilecek.
 14. **Hakemler arası sertlik farkı (hakem etkisi).** Aynı metne farklı hakemler farklı toplam puan verdi (bölüm 4.6: güçlü örnekte 70 / 90 / 90, zayıfta 20 / 5 / 35). Hakemlerin puanları doğrudan karıştırılırsa hakem etkisi model karşılaştırmasına karışır. **[TODO]** Hakem etkisini ele alacak yöntem (örn. hakem başına standardizasyon, hakemi analizde ayrı bir etken olarak katma) kararlaştırılacak. **Kısmi çözüm (22 Kas 2026):** her hakemin her metni puanladığı dengeli tasarım seçildi (bölüm 3.8, Adım 6), böylece hakem etkisi model farkından ayrılabilir; ama standardizasyon ya da ayrı etken yöntemi henüz seçilmedi.
 15. **Platform gerçek kullanıma açılmayacak** (kapsam, bölüm 1). Sonuçlar bir araştırma düzeninin çıktısıdır; üretim ölçeğinde kararlılık, çok kullanıcılı erişim ve sürekli işletme denenmedi ve hedeflenmedi. Toplu işler tek işçi ve her çalıştırma için ayrı bütçe sayımıyla çalışır (bölüm 3.8, sınırlılıklar).
-16. **Toplu üretim ve puanlama altyapısı gerçek servisle henüz denenmedi** (yalnızca sahte sağlayıcı ve gerçek MySQL ile test edildi; gerçek veritabanında yalnızca plan modu). **[TODO]** İlk küçük gerçek deneme sonrası süre ve maliyet tahmini ile üst sınırın ne kadar kaba olduğu ölçülecek.
+16. **Toplu üretim ve puanlama altyapısı gerçek servisle yalnızca küçük bir denemede çalıştırıldı** (bölüm 4.7: 1 tür, 1 tema, 3 model, tek tekrar; 3 şiir, 9 puanlama). Hikâye ve deneme, uzun metin, çok tekrar, bütçe sınırının devreye girmesi ve Ctrl+C ile kesme gerçek servisle denenmedi. Deneme verisi geliştirme veritabanında durur; nihai veri setinden ayrılacak **[TODO]**.
 
 ## 7. Etik, gizlilik ve şeffaflık
 
@@ -461,7 +517,7 @@ Bu liste, tipik bir karşılaştırmalı değerlendirme makalesinde beklenen uns
 - **Kanıt:** 329 otomatik test (22 Kas 2026; F2 dalında 415, 23 Kas 2026), yaklaşık %96 kapsam (F2 dalında %97), her PR'da dört otomatik kontrol; planlanan 38 test senaryosundan T01-T12, T22, T27-T28 yazıldı ve geçti (kaynak: GitHub issue #3, `docs/IS_PLANI.md`).
 - **Süreç:** Faz başına GitHub milestone ve issue (F0 #2, F1 #3 kapalı); her kararın gerekçesi `docs/adr/` altında 10 karar kaydıyla belgelendi; PR #1, #10, #12 birleşti.
 - **Risk yönetimi:** Sessiz yedek yok, maliyet sınırı, anahtar güvenliği, bakiye/kota hataları, servis yoğunluğu (Gemini).
-- **Bütçe/harcama:** Tüm gerçek servis denemeleri toplam yaklaşık **$0,0597** [Hesap]: `llm:smoke` koşuları yaklaşık $0,0065 (4.2) ve `judge:smoke` $0,0532 (4.6). **[TODO]** Gerçek üretim ve yargıç çalışması maliyeti eklenecek.
+- **Bütçe/harcama:** Tüm gerçek servis denemeleri toplam yaklaşık **$0,1948** [Hesap]: `llm:smoke` koşuları yaklaşık $0,0065 (4.2), `judge:smoke` $0,0532 (4.6), toplu üretim $0,0331 ve toplu puanlama $0,1020 (4.7; $0,0865 + yeniden deneme $0,0155). **[TODO]** Nihai veri setinin üretim ve puanlama maliyeti eklenecek.
 - **Arayüz tasarımı:** Renk dili kullanıcı kararıyla Kum (%60) / Kakao (%30) / Mavi (%10), Inter yazı tipi, hap biçimli düğmeler (ADR 0008); arayüz kodlaması F3'te.
 - **[TODO]** Kalan fazlar (F2-F7) tamamlandıkça bu bölüm güncellenecek.
 
@@ -495,6 +551,7 @@ Hepsi **22 Kasım 2026**'da okundu (fiyat ve model adları sonradan değişebili
 
 | Tarih       | Değişiklik                                                                                                  |
 | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| 23 Kas 2026 | Bölüm 4.7 (ilk gerçek toplu üretim ve puanlama R10-R12: süre, maliyet, 503, hakem sertliği, kendi-puanı maliyeti), Ek A'ya R10-R12, sınırlılık 5/12/16 güncellendi, bölüm 3.8 maliyet tahmini gerçek değerle güncellendi, toplam harcama $0,1948. |
 | 23 Kas 2026 | Bölüm 3.8 (F2 Adım 2-7: puan kaydı, iş kuyruğu, toplu üretim ve puanlama, komut satırı; "kendini dışlamak yerine işaretlemek" gerekçesi, 125 bozma, 415 test), kapsam notu (bölüm 1, "gerçek kullanıma açılmayacak"), sınırlılık 8 ve 14 güncellendi, 15-16 eklendi, bölüm 2 ve 9 güncellendi. |
 | 22 Kas 2026 | Sağlayıcı belge tutarsızlıkları (bölüm 5) ve sınırlılık 10 eklendi. |
 | 22 Kas 2026 | Bölüm 4.6 (hakem smoke R9: 6/6 başarılı, sertlik ve süre farkları, maliyet), sınırlılık 12 güncellendi ve 14 eklendi, Ek A'ya R9, test sayısı 329, toplam harcama $0,0597. |
@@ -504,7 +561,7 @@ Hepsi **22 Kasım 2026**'da okundu (fiyat ve model adları sonradan değişebili
 
 ---
 
-## Ek A: ham `llm:smoke` ve `judge:smoke` çıktı satırları
+## Ek A: ham `llm:smoke`, `judge:smoke` ve `batch` çıktı satırları
 
 Yalnızca ekranda görülen satırlar, düzenlenmeden (ileti metni kısaltılmış satırlar hariç). Koşu numaraları 4.2'deki gibidir.
 
@@ -586,4 +643,81 @@ R9 (22 Kas, judge:smoke, süre sınırı 300 sn; hakem denemesi, bölüm 4.6)
     puanlar: imgeGucu 1, ritimAhenk 3, duyguAktarimi 2, ozgunluk 2, anlamButunlugu 4
   → OpenAI güçlü ve zayıf örneği ayırt etti (90.0 > 35.0)
 Toplam yaklaşık maliyet: $0.05319
+```
+
+**R10-R12 (23 Kas, `npm run batch`, bölüm 4.7).** Yalnızca ekranda görülen satırlar (başlıktaki `npm` satırları hariç; R11 ve R12'de yinelenen plan satırları kısaltıldı). Ardından, veritabanından okunan kayıtlar (geçici, yalnızca okuyan bir inceleme betiğiyle; betik silindi, metin içeriği yazılmadı).
+
+```
+R10 (iş #1, uret ... --calistir)
+Plan: toplu üretim (generate_batch), gerçek çağrı yapılmadı
+  Konu: 1 (siir:Sonbahar) · Model: 3 (claude-sonnet-5-5, gemini-4-hydrogen, gpt-6.2-sol) · Tekrar: 1
+  Toplam öğe: 3
+  Komut şablonu: v1 (işe sabitlenecek)
+  Şerit anthropic: 1 öğe (claude-sonnet-5-5: 1); geçmiş yok
+  Şerit google: 1 öğe (gemini-4-hydrogen: 1); geçmiş yok
+  Şerit openai: 1 öğe (gpt-6.2-sol: 1); geçmiş yok
+  Tahmini toplam süre: bilinmiyor (geçmiş veri yok)
+  Beklenen maliyet: bilinmiyor (geçmiş veri yok ya da fiyat bilgisi eksik)
+  En kötü durum üst sınırı: $0.2255 (her çağrının çıktısı maxTokens kadar olsaydı; gerçekte çok daha düşük olur)
+  Bütçe sınırı: $0.5 (çalışırken uygulanır, dolunca iş durur)
+İş #1 eklendi (3 öğe), çalıştırılıyor. Durdurmak için Ctrl+C (kaldığı yerden devam edilebilir).
+[iş #1] 0/3 tamam, 0 başarısız
+[iş #1] 1/3 tamam, 0 başarısız
+[iş #1] 2/3 tamam, 0 başarısız
+İş #1 bitti: 3/3 tamam, 0 başarısız, harcanan ≈ $0.0331
+
+R10 sonrası aynı plan (--calistir olmadan)
+  Şerit anthropic: 1 öğe (claude-sonnet-5-5: 1); geçmiş: ortalama 14.2 sn/öğe, ≈ $0.0146/öğe → ≈ 14 sn
+  Şerit google: 1 öğe (gemini-4-hydrogen: 1); geçmiş: ortalama 164.1 sn/öğe, ≈ $0.0163/öğe → ≈ 2 dk 44 sn
+  Şerit openai: 1 öğe (gpt-6.2-sol: 1); geçmiş: ortalama 9.0 sn/öğe, ≈ $0.0022/öğe → ≈ 9 sn
+  Tahmini toplam süre: 2 dk 44 sn (şeritler paralel, en yavaş şerit belirler)
+  Beklenen maliyet: $0.0331 (geçmiş ortalamalardan)
+
+R11 (iş #2, puanla ... --calistir)
+Plan: toplu puanlama (evaluate_batch), gerçek çağrı yapılmadı
+  Metin: 3 · Hakem: 3 (claude-sonnet-5-5, gemini-4-hydrogen, gpt-6.2-sol) · Tekrar: 1
+  Toplam öğe: 9
+  Hakem komut şablonu: v1 (işe sabitlenecek)
+  Rubrik: siir 0.1-taslak (işe sabitlenecek)
+  Kendini dışlama yok: tüm hakemler her metni puanlar; kendi-puanı analizde yazar ve hakem ailesinden işaretlenir.
+  Tahmini toplam süre: bilinmiyor (geçmiş veri yok)
+  Beklenen maliyet: bilinmiyor (geçmiş veri yok ya da fiyat bilgisi eksik)
+  En kötü durum üst sınırı: $0.7043 (her çağrının çıktısı maxTokens kadar olsaydı; gerçekte çok daha düşük olur)
+  Bütçe sınırı: $0.5 (çalışırken uygulanır, dolunca iş durur)
+İş #2 eklendi (9 öğe), çalıştırılıyor. Durdurmak için Ctrl+C (kaldığı yerden devam edilebilir).
+[iş #2] 0/9 tamam, 0 başarısız
+[iş #2] 1/9 tamam, 0 başarısız
+[iş #2] 2/9 tamam, 0 başarısız
+[iş #2] 3/9 tamam, 0 başarısız
+[iş #2] 5/9 tamam, 0 başarısız
+[iş #2] 6/9 tamam, 0 başarısız
+[iş #2] 7/9 tamam, 0 başarısız
+[iş #2] 8/9 tamam, 0 başarısız
+İş #2 bitti: 8/9 tamam, 1 başarısız, harcanan ≈ $0.0865
+
+R12 (iş #3, aynı puanla komutu)
+  Şerit anthropic: 3 öğe (claude-sonnet-5-5: 3); geçmiş: ortalama 7.4 sn/öğe, ≈ $0.0122/öğe → ≈ 22 sn
+  Şerit google: 3 öğe (gemini-4-hydrogen: 3); geçmiş: ortalama 41.8 sn/öğe, ≈ $0.0143/öğe → ≈ 2 dk 5 sn
+  Şerit openai: 3 öğe (gpt-6.2-sol: 3); geçmiş: ortalama 9.8 sn/öğe, ≈ $0.0071/öğe → ≈ 29 sn
+  Beklenen maliyet: $0.1008 (geçmiş ortalamalardan)
+İş #3 eklendi (9 öğe), çalıştırılıyor. Durdurmak için Ctrl+C (kaldığı yerden devam edilebilir).
+[iş #3] 8/9 tamam, 0 başarısız
+İş #3 bitti: 9/9 tamam, 0 başarısız, harcanan ≈ $0.0155
+
+Veritabanından okunan üretim kayıtları
+{"id":1,"model":"google/gemini-4-hydrogen","tur":"siir","tema":"Sonbahar","durum":"succeeded","giris":94,"cikis":2161,"ms":164145,"karakter":544,"satir":19}
+{"id":2,"model":"anthropic/claude-sonnet-5-5","tur":"siir","tema":"Sonbahar","durum":"succeeded","giris":121,"cikis":1432,"ms":14189,"karakter":566,"satir":19}
+{"id":3,"model":"openai/gpt-6.2-sol","tur":"siir","tema":"Sonbahar","durum":"succeeded","giris":72,"cikis":205,"ms":9020,"karakter":525,"satir":19}
+
+Veritabanından okunan puanlama kayıtları
+{"id":1,"hakem":"openai/gpt-6.2-sol","yazar":"openai/gpt-6.2-sol","durum":"succeeded","toplam":95,"puanlar":"5,4,5,5,5","deneme":1,"giris":1232,"cikis":483,"ms":11710}
+{"id":2,"hakem":"google/gemini-4-hydrogen","yazar":"openai/gpt-6.2-sol","durum":"succeeded","toplam":95,"puanlar":"5,4,5,5,5","deneme":1,"giris":1578,"cikis":2119,"ms":65108}
+{"id":3,"hakem":"anthropic/claude-sonnet-5-5","yazar":"openai/gpt-6.2-sol","durum":"succeeded","toplam":70,"puanlar":"4,3,4,4,4","deneme":1,"giris":2485,"cikis":712,"ms":7742}
+{"id":4,"hakem":"anthropic/claude-sonnet-5-5","yazar":"anthropic/claude-sonnet-5-5","durum":"succeeded","toplam":60,"puanlar":"3,4,3,3,4","deneme":1,"giris":2501,"cikis":736,"ms":7370}
+{"id":5,"hakem":"openai/gpt-6.2-sol","yazar":"anthropic/claude-sonnet-5-5","durum":"succeeded","toplam":75,"puanlar":"4,4,4,3,5","deneme":1,"giris":1259,"cikis":461,"ms":8747}
+{"id":6,"hakem":"anthropic/claude-sonnet-5-5","yazar":"google/gemini-4-hydrogen","durum":"succeeded","toplam":55,"puanlar":"2,4,3,2,5","deneme":1,"giris":2503,"cikis":708,"ms":7099}
+{"id":7,"hakem":"openai/gpt-6.2-sol","yazar":"google/gemini-4-hydrogen","durum":"succeeded","toplam":70,"puanlar":"3,4,4,3,5","deneme":1,"giris":1244,"cikis":436,"ms":8887}
+{"id":8,"hakem":"google/gemini-4-hydrogen","yazar":"anthropic/claude-sonnet-5-5","durum":"succeeded","toplam":75,"puanlar":"4,4,4,3,5","deneme":1,"giris":1607,"cikis":1063,"ms":18408}
+{"id":9,"hakem":"google/gemini-4-hydrogen","yazar":"google/gemini-4-hydrogen","durum":"failed","toplam":null,"puanlar":"","hata":"server_error: HTTP 503: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."}
+{"id":10,"hakem":"google/gemini-4-hydrogen","yazar":"google/gemini-4-hydrogen","durum":"succeeded","toplam":60,"puanlar":"3,4,3,2,5","giris":1598,"cikis":1743,"ms":10904}
 ```
