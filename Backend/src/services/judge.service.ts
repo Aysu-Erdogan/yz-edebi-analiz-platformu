@@ -5,7 +5,7 @@ import { normalizeScore } from '../domain/scoring.js';
 import { ProviderError, type LLMProvider, type ProviderErrorKind } from '../providers/provider.js';
 
 /** Düşünen modellerde düşünme tokenleri de sınıra dahildir; çıktı kısa olsa bile geniş tutulur. */
-const DEFAULT_MAX_TOKENS = 4096;
+export const DEFAULT_MAX_TOKENS = 4096;
 /** Bozuk cevapta toplam deneme sayısı: ilk deneme + bir yeniden deneme (T14). */
 const MAX_ATTEMPTS = 2;
 
