@@ -8,7 +8,8 @@ import { runExportCli } from '../src/services/export-cli.js';
 
 /**
  * `npm run export -- <csv|json> --cikti <dosya>`: puanlama kayıtlarını dosyaya yazar (yalnızca okur, ücretsiz).
- * Dosyayı biz yazarız (PowerShell'in `>` yönlendirmesi Türkçe karakterleri UTF-16'ya çevirip bozar).
+ * Dosyayı biz yazarız: kabuk yönlendirmesinin (`>`) kodlaması kabuğa ve sürüme göre değişir (bu bilgisayarda
+ * PowerShell 5.1 UTF-8 BOM yazdı); böylece kodlama ve BOM seçeneği bizim denetimimizde olur.
  */
 async function main(): Promise<void> {
   const env = loadEnv();

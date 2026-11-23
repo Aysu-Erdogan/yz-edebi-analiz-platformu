@@ -116,6 +116,7 @@ Kök dizinden:
 | `npm run judge:smoke`            | Anahtarı olan hakem modellere **gerçek** puanlama isteği atar: iki örnek metin, taslak şiir rubriği, `judge-v1` komutu (**ücretli**, birkaç sent). Veritabanına yazmaz. Model ve süre: `-- --claude <model> --gemini <model> --openai <model> --deepseek <model> --timeout <sn>` |
 | `npm run batch -- <komut>` | Toplu **üretim** (`uret`) ve **puanlama** (`puanla`); `devam` yarım kalan işi sürdürür, `durum` işleri gösterir. Varsayılan olarak yalnızca **plan** gösterir (çağrı ve harcama yok, tahmini süre ve maliyet dahil); `--calistir` ile işi ekler ve **gerçek, ücretli** çağrılarla çalıştırır. Ctrl+C düzgün durdurur. Kullanım özeti: komutsuz çalıştırın (`npm run batch`) |
 | `npm run export -- csv --cikti <dosya>` | Puanlama kayıtlarını dosyaya yazar (yalnızca okur, ücretsiz). `csv` sayısal analiz için (kriter başına bir satır), `json` metin ve gerekçelerle tam kayıt. Türkçe Excel'de çift tıklayarak açmak için `--excel`. Örnek: `npm run export -- csv --cikti exports/puanlar.csv --excel` (`Backend/exports/` git'e girmez) |
+| `npm run stability` | Tekrar kararlılığı: aynı metne aynı hakemin tekrar puanları arasındaki sapmayı (s_r, aralık, tamamen aynı çıkan oran, kriter düzeyi) ekrana yazar; `-- --cikti <dosya.json>` ile JSON da yazar (yalnızca okur, ücretsiz). Tek tekrarlı gruplar "ölçülemedi" sayılır |
 
 Her commit öncesi değişen dosyalar otomatik biçimlendirilir (Husky + lint-staged). Her push ve PR'da GitHub Actions biçim, tip, lint, test, derleme, migration ve Docker açılışını doğrular.
 

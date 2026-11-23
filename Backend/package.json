@@ -24,6 +24,7 @@
     "judge:smoke": "tsx scripts/judge-smoke.ts",
     "batch": "tsx scripts/batch.ts",
     "export": "tsx scripts/export.ts",
+    "stability": "tsx scripts/stability.ts",
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

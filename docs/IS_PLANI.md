@@ -360,10 +360,10 @@ Kısıtlar: **TÜBİTAK çalışması Ocak 2027 sonunda bitmeli**, bitirme rapor
 
 ### Mayıs'a kadar SONRAYA bırakılanlar (bitirme için cila)
 
-- Tekrarlı puanlamayla kararlılık raporu (tek sabit hakemle; isteğe bağlı ikinci hakemle karşılaştırma).
+- Tekrarlı puanlamayla kararlılık raporu: hesap ve komut F2'de yapıldı (`npm run stability`, 23 Kas 2026); kalan: isteğe bağlı ikinci hakemle karşılaştırma.
 - Mann-Whitney ve etki büyüklüğü, ısı tablosu.
 - İnsan puanı girişi ve uyum metrikleri (kappa/ICC); etik kurul izniyle.
-- Kalan 10 senaryo (P2): T20, T21, T23, T30, T32, T33, T34, T35, T37, T38.
+- Kalan 8 senaryo (P2): T21, T23, T30, T32, T33, T34, T35, T38 (T20 ve T37 F2'de yazıldı ve geçti).
 - Erişilebilirlik cilası (axe/Lighthouse), mobil düzen, yük testi.
 - i18n altyapısı, ek grafikler, OpenAPI cilası.
 
@@ -406,11 +406,11 @@ Her cuma çalışan bir sürüm ve kısa durum notu. Kapsamın daralması gereki
 - [x] DB tabanlı iş kuyruğu + işçi döngüsü, ilerleme, yeniden başlatma sonrası devam. _(Çekirdek hazır: `jobs` tablosu, sıradakini tek adımda sahiplenme, ilerleme sayaçları, açılışta yarım kalanı geri alma, düzgün kapanma. Tek işçi için tasarlandı, migration yok. Toplu üretim/puanlama işleyicileri Adım 4.)_
 - [x] Toplu üretim ve toplu puanlama işleri. _(İşleyiciler hazır: sağlayıcı başına paralel şerit, çalışırken bütçe sınırı, kaldığı yerden devam, komut/rubrik sabitleme. Toplu puanlamada varsayılan: tüm hakemler puanlar, kendi-puanı analizde işaretlenir; `excludeSelf` ile kendi ailesinin metnini dışlama seçilebilir. Komut satırı hazır: `npm run batch -- uret|puanla|devam|durum`, varsayılan plan (harcamaz), `--calistir` ile gerçek çalıştırma. **23 Kas 2026:** hakem artık tek ve sabit (DeepSeek Flash, ADR 0011); çoklu hakem desteği kodda duruyor.)_
 - [x] **Tek sabit hakem: DeepSeek adaptörü** (ADR 0011). _(Yapıldı, 23 Kas 2026: Chat Completions adaptörü, düşünme kapalı, puanlamada sıcaklık 0, model kaydı `deepseek-flash`; 24 test, 24/24 bozma yakalandı; gerçek smoke (güçlü 75, zayıf 15) ve 3 şiir × 3 tekrarlık pilot, 9/9 geçerli, ≈ $0,0097; ayrıntı: proje bitirme raporu belgesi bölüm 3.9 ve 4.8.)_ Açık: danışman teyidi (formda yok), insan puanıyla uyum, DeepSeek hizmet şartları, `batch puanla` için varsayılan hakem.
-- [ ] Tekrarlı puanlama ve kararlılık ölçümü (tek sabit hakemle; ikinci hakemle karşılaştırma isteğe bağlı). _(İlk gözlem pilotta: 3 şiirin 2'sinde üç tekrar aynı, birinde 90-80-80; ölçüm modülü ve rapor henüz yok.)_
+- [x] Tekrarlı puanlama ve kararlılık ölçümü (T20). _(Yapıldı, 23 Kas 2026: `npm run stability [-- --cikti dosya.json]`; aynı metin, hakem, rubrik ve komut sürümü grubunda tekrar sapması s_r (ISO 5725 tarzı birleşik), aralık, tamamen aynı çıkan oran ve kriter düzeyi; tek tekrarlı gruplar "ölçülemedi" sayılır, eşik koyulmaz; 46 bozmanın 46'sı yakalandı. Pilotta DeepSeek: s_r 3,33, en büyük aralık 10, 3 metnin 2'sinde tamamen aynı, kriter hücrelerinin 13/15'i aynı. İsteğe bağlı ikinci hakemle karşılaştırma yapılmadı.)_
 - [ ] İstatistik modülü (betimsel, Mann-Whitney, Kruskal-Wallis, etki büyüklüğü).
 - [x] CSV/JSON dışa aktarım (UTF-8, BOM seçeneği). _(Komut satırı: `npm run export -- csv|json --cikti <dosya>`; CSV'de kriter başına bir satır, `--bom`, Türkçe Excel için `--excel`; formül enjeksiyonuna karşı önlem; her kayıtta rubrik notu ("taslak, uzman doğrulaması yok" uyarısı). Web ucu F4'te.)_
 - [ ] İnsan puanı için veri modeli hazır, **ama uç kapalı** (etik kurul).
-- [ ] Testler T13–T21, T36–T37. _(T13–T19 ve T37 yazıldı ve geçti; T36 yazıldı ve geçti (komut satırı düzeyinde); T20, T21 kalan adımlarla)_
+- [ ] Testler T13–T21, T36–T37. _(T13–T19 ve T37 yazıldı ve geçti; T36 yazıldı ve geçti (komut satırı düzeyinde); T20 yazıldı ve geçti (`npm run stability`); T21 kalan adımlarla)_
 
 ### F3 — Frontend (H7–H10)
 - [ ] Proje iskeleti: TS, Router, TanStack Query, API istemcisi (tip güvenli), hata sınırları. _(Kısmen F0'da yapıldı, hata sınırları kaldı)_
