@@ -17,6 +17,8 @@
 
 **[Veri]** Teknoloji: TypeScript 6.0, Node 22, Express 5, Prisma 7 (MySQL 8), zod 4, vitest 5; arayüz React + Vite + Tailwind (henüz kodlanmadı). Mimari: `routes → services → repositories`. Kaynak: `Backend/package.json`, ADR 0001-0006.
 
+**[Karar, 23 Kas 2026]** **Kapsam:** Platform **gerçek kullanıma açılmayacak**; bitirme raporu ve makale yazıldıktan sonra GitHub deposunda araştırma çalışması olarak kalacak (kaynak: kullanıcı kararı, 23 Kas 2026). Bu yüzden üretim ölçeği, çok kullanıcılı işletme ve sürekli çalışma bir tasarım hedefi değildir; hedef, rapor ve makalenin ihtiyaç duyduğu veriyi **güvenilir ve tekrarlanabilir** biçimde üretmektir. Maliyet de yalnızca bu veriyi üretmek için harcanan sınırlı API ücretidir (plan modu ve bütçe sınırıyla izlenir).
+
 ## 2. Takvim ve ilerleme
 
 | Tarih                 | Olay                                                                                       |
@@ -24,13 +26,14 @@
 | 19 Kas 2026           | F0 (hazırlık ve iskelet) tamamlandı, `main`'e birleşti (PR #1)                             |
 | 21 Kas 2026           | F1 (backend çekirdeği) birleşti (PR #10, `464cd3f`)                                        |
 | 22 Kas 2026           | OpenAI adaptörü, GPT-6.2 Sol, Gemini 4 Hydrogen, ADR 0010 birleşti (PR #12, `4c273e1`)      |
+| 22-23 Kas 2026        | F2 altyapısı (hakem motoru, puan kaydı, iş kuyruğu, toplu üretim ve puanlama, komut satırı) PR #14'te taslak olarak birikiyor, `main`'e birleşmedi |
 | 10 Ocak 2027          | Yazılım dondurma                                                                           |
 | 31 Ocak 2027          | TÜBİTAK bitiş                                                                              |
 | Şubat / Mayıs 2027    | Bitirme raporu / sunum                                                                     |
 
 **[Veri]** F1 planı 23 Kas-6 Ara 2026 arasındaydı; plan başlamadan, 21 Kas'ta birleşti (kaynak: `docs/IS_PLANI.md`). Fazlar F0-F7; sırada F2 (yargıç motoru, iş kuyruğu, istatistik, dışa aktarma).
 
-**[Veri]** Yazılım doğrulama ilerlemesi (otomatik test sayısı): 56 (ilk adım) → 91 → 107 → 129 → 142 → 191 → 204 → 225 → 256 → 275 → 301 → 316 → **329** (22 Kas 2026; 275 OpenAI/model birleşmesi, 301 F2 Adım 1 yargıç motoru, 316 Adım 2 puan kaydı, 329 Adım 3 judge:smoke). Kod kapsamı yaklaşık %96. Her PR'da dört otomatik kontrol (biçim, backend, frontend, Docker Compose) çalışır; PR #10 ve #12 hepsini geçti. Kaynak: oturum kayıtları, GitHub Actions.
+**[Veri]** Yazılım doğrulama ilerlemesi (otomatik test sayısı): 56 (ilk adım) → 91 → 107 → 129 → 142 → 191 → 204 → 225 → 256 → 275 → 301 → 316 → **329** (22 Kas 2026; 275 OpenAI/model birleşmesi, 301 F2 Adım 1 yargıç motoru, 316 Adım 2 puan kaydı, 329 Adım 3 judge:smoke) → **415** (23 Kas 2026, F2 Adım 7 komut satırı; PR #14'te, `main`'e henüz birleşmedi). Kod kapsamı yaklaşık %96 (F2 dalında yaklaşık %97). Her PR'da dört otomatik kontrol (biçim, backend, frontend, Docker Compose) çalışır; PR #10 ve #12 hepsini geçti. Kaynak: oturum kayıtları, GitHub Actions.
 
 ## 3. Yöntem
 
@@ -184,7 +187,73 @@ Kriterler komuta şu biçimde yazılır (düzeyler küçükten büyüğe): `- an
 - Yargıç komutu ve çıktı şeması gerçek modellerle **yalnızca küçük bir duman testiyle** denendi (bölüm 4.6): üç sağlayıcı şemayı kabul etti, 6/6 puanlama ilk denemede geçerliydi; ama iki kısa örnek ve tek tekrar güvenilirlik kanıtı değildir.
 - Hakemin gördüğü metin, nadir durumda (metnin kendisi etiket biçimli parça içeriyorsa) saklanan metinden o parçada farklıdır.
 - Yeniden denenen bozuk cevabın token sayısı sağlayıcıdan gelmediği için kaydedilmez; maliyet o kadar eksik kalır.
-- Çapraz yargıç, çoklu hakem, tekrarlı puanlama ve kararlılık ölçümü henüz yok (F2'nin sonraki adımları).
+- Kararlılık ölçümü (hakemler arası uyum, tekrarlar arası tutarlılık) henüz yok. Çoklu hakem ve tekrarlı puanlama için toplu altyapı bölüm 3.8'dedir.
+
+### 3.8 Puan kaydı, iş kuyruğu ve toplu çalıştırma: F2 Adım 2-7
+
+**[Karar, 22-23 Kas 2026]** Kaynak: PR #14 (taslak, `main`'e birleşmedi), commit `258bd84` (Adım 2), `b636095` (Adım 3), `e0a68dc` (Adım 4), `d9e232a` (Adım 5), `7c03feb` (Adım 6), `5cf2ea4` (Adım 7); kod `Backend/src/services/`. Bu adımlar 3.7'deki hakem motorunu kalıcı, tekrarlanabilir ve toplu çalıştırılabilir hâle getirir.
+
+**Adım 2: hakem puanı kaydı (`EvaluationService`)**
+
+| Karar                                                                                                                                         | Gerekçe                                                                                                      |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Çağrıdan **önce** doğrulama: metin, açık hakem model, sağlayıcı anahtarı, yargıç şablonu, etkin rubrik. Eksikse kayıt açılmaz, çağrı yapılmaz | Yarım kayıt ve boşa ücret olmasın                                                                            |
+| Rubrik **ilk hakem çağrısında "kullanıldı"** olur, çağrı başarısız olsa bile; sonra içeriği değiştirilemez                                     | ADR 0003: puanı alınmış bir rubriğin sonradan değişip eski puanları anlamsızlaştırmaması                      |
+| Başarılıda tek işlemde toplam ve kriter puanları; başarısızda `failed` + neden, **puan satırı yok**                                            | ADR 0004: uydurma puan yok                                                                                   |
+| Hakem (`sağlayıcı/model`), komut ve rubrik sürümü, doğrulanmış ham cevap, deneme sayısı, token ve süre kayda `rawResponse` JSON alanında yazılır (migration yok) | Tekrarlanabilirlik: hangi puan hangi koşulda alındı                                                          |
+
+**Adım 3:** `npm run judge:smoke` (gerçek hakem denemesi) bölüm 4.6'dadır.
+
+**Adım 4: iş kuyruğu (`jobs` tablosu, `createJobRunner`)**
+
+| Karar                                                                                                                      | Gerekçe                                                                      |
+| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Sıradaki işi **tek adımda sahiplenme** (koşullu güncelleme)                                                                 | Aynı iş iki kez çalışıp iki kez ücretlenmesin                                |
+| **Hata yalıtımı:** işleyici hata fırlatırsa yalnızca o iş `failed` olur, sıradaki iş çalışır                                | Bir işin hatası toplu çalışmayı durdurmasın                                  |
+| **Yeniden başlatma (T37):** açılışta yarım kalan işler bekleyene döner; sayaçlar ve ilk başlama zamanı korunur              | Bilgisayar kapanırsa ya da süreç çökerse kaldığı yerden devam                |
+| **Düzgün kapanma:** çalışan öğe biter, iş bekleyene döner; kapatma istenmeden "yarım kaldım" diyen iş `failed` olur          | Sonsuz yeniden başlatma döngüsüne karşı koruma                               |
+
+**Adım 5: toplu üretim işi (`generate_batch`)**
+
+| Karar                                                                                                                                         | Gerekçe                                                                                  |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| İş eklenirken **en son üretim şablonu işe sabitlenir**; sürerken şablon değişirse iş `failed` olur                                             | Bir veri setinde iki farklı komut karışmasın (yöntem geçerliliği)                         |
+| **Sağlayıcı başına paralel şerit:** her sağlayıcıya aynı anda tek istek, şeritler birbirinden bağımsız                                         | Yavaş sağlayıcı (Hydrogen, 4.6: 60-70 sn) hızlıları bekletmesin                           |
+| **Çalışırken bütçe:** her çağrının gerçek token maliyeti toplanır, sınıra ulaşınca iş durur ve neden yazılır; fiyatı olmayan modelle bütçe baştan reddedilir | Sınır yalnızca baştan tahmin değil, gerçek harcamaya göre uygulansın                      |
+| **Kaldığı yerden devam:** biten öğeler atlanır; çökmede yarım kalan kayıt `failed` ("sunucu kapandı, yarım kaldı") olur, öğe yeni kayıtla yeniden üretilir | Biteni yeniden üretip ücret ödememek; yarım kaydın izi silinmez                           |
+| Sağlayıcı hatası yalnızca o öğeyi `failed` yapar (T09)                                                                                         | Bir modelin hatası diğer modellerin üretimini durdurmasın                                |
+
+**Adım 6: toplu puanlama işi (`evaluate_batch`)**
+
+| Karar                                                                                                                              | Gerekçe                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| İş eklenirken hakem şablonu ve her türün etkin rubriği işe sabitlenir; sürerken değişirse iş `failed` olur                           | Aynı veri setinde tek komut ve tek rubrik sürümü                  |
+| Hakeme metnin yazarı söylenmez (kör); yazar yalnızca isteğe bağlı dışlama için okunur                                              | Kör değerlendirme ilkesi (3.7)                                    |
+| **Varsayılan: tüm hakemler her metni puanlar; kendi-puanı dışlanmaz, analizde işaretlenir** (aşağıda)                               | Hakem etkisini model farkından ayırabilmek                        |
+
+**[Karar, kullanıcı onayıyla, 22 Kas 2026] Neden "kendini dışlamak" yerine "işaretlemek"?** İş planındaki çapraz yargıç ilkesi (7.3) bir modelin kendi metnini puanlamamasını önerir. Bunu varsayılan yapsaydık her modelin metni **farklı bir hakem takımından** geçerdi (Claude'un metnini Hydrogen ve GPT, GPT'nin metnini Claude ve Hydrogen puanlardı). Hakem smoke'ta hakemlerin sertliği çok farklı çıktığı için (4.6, gözlem 3: aynı güçlü şiire 70 / 90 / 90), bu tasarımda **hakem sertliği farkı model farkıyla karışırdı**. Bunun yerine her hakem her metni puanlar (dengeli tasarım). Kendi ailesinin metnini puanlayan puanlar, metnin yazarı (üretim kaydı) ile hakemin sağlayıcısı karşılaştırılarak **analizde işaretlenir**; ek sütun gerekmedi. İsteyen `--kendini-disla` (`excludeSelf: true`) ile dışlamayı seçebilir.
+
+- **[Yorum]** Bu tasarımda kendini kayırma (self-preference) **ölçülebilir** (kendi-puanı ile diğer-puan farkı); dışlama tasarımında ölçülemezdi.
+- **[Hesap, kaba tahmin]** Bedel: 27 metin × 3 hakem × 3 tekrar = 243 puanlama (dışlamayla 162). Hakem smoke'taki 6 çağrının ortalaması ($0,0089, 4.6; iki kısa örnek şiir) ile fark yaklaşık 81 puanlama ≈ **$0,7**. Bu rakam ölçülmedi: gerçek metinler daha uzun olabilir, düşünen modellerin çıkış tokeni değişkendir. **[TODO]** İlk gerçek puanlamadan sonra, kendi-puanı işaretli kayıtların gerçek maliyeti (kayıtlardaki token sayıları × o günün fiyatı) toplanıp bu tahmin gerçek değerle değiştirilecek. Dışlama varyantını ayrıca çalıştırmak gerekmez, çünkü fark zaten işaretli kayıtların toplamıdır.
+- **Sınır:** "aile" sağlayıcı bazlıdır; aynı sağlayıcının farklı modeli de "kendi" sayılır. Yazarı bilinmeyen (elle girilen) metinde kimse dışlanmaz ya da işaretlenmez.
+
+**Adım 7: komut satırı (`npm run batch -- uret|puanla|devam|durum`)**
+
+| Karar                                                                                                                                                         | Gerekçe                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Varsayılan yalnızca plan** (öğe sayısı, şeritler, sabitlenecek şablon ve rubrik sürümü, tahmini süre ve maliyet, en kötü durum üst sınırı); gerçek çalıştırma için `--calistir` gerekir | Yanlışlıkla ücretli çalıştırmayı önlemek; onay öncesi ne olacağını göstermek          |
+| **Bitmemiş iş varken yeni iş eklenmez** (önce `devam`)                                                                                                         | Eski bir işin habersizce ücretli çalışmasını önlemek                                  |
+| Tahmini süre ve maliyet **geçmiş çağrılardan** hesaplanır; geçmiş yoksa "bilinmiyor" yazılır                                                                    | Uydurma tahmin yok (ADR 0004 ilkesinin devamı)                                        |
+| Ctrl+C düzgün durdurur; çıkış kodu 0 (tamam) / 1 (iş durdu ya da bazı öğeler başarısız) / 2 (hatalı kullanım)                                                    | Kesintide veri kaybı olmaması, betikten çağrılabilirlik                               |
+
+**[Veri] Doğrulama:** Adım 2-7'de toplam **125 bozma** uygulandı (16, 12, 19, 24, 32, 22); 124'ü bir testi kırmızıya çevirdi, 1'i eşdeğer çıktı (Adım 6). Bozma yöntemi bu adımlarda gerçek test zayıflıkları buldu: sağlayıcı anahtarı kontrolünün baştan yapılmadığı (test iki sağlayıcıyla güçlendirildi), metin yokken açık hata verilmediği (test eklendi) ve kullanım istatistiğinin başarısız çağrıları da saydığı (depo testi eklendi). Otomatik test sayısı **329 → 415** (gerçek MySQL testleri dahil, kapsam yaklaşık %97). Hepsi sahte hakem ve sahte sağlayıcıyla; gerçek servis çağrısı ve ücret yok.
+
+**[Veri] Bu adımların sınırlılıkları:**
+
+- Toplu üretim ve puanlama işleri **gerçek servisle henüz çalıştırılmadı**; gerçek veritabanında yalnızca plan modu denendi (harcama yok). İlk küçük gerçek deneme sonrası tahmini süre ve maliyet dolacak **[TODO]**.
+- **En kötü durum üst sınırı çok kaba:** çıktı tam `maxTokens` kabul edilir, giriş tokeni karakter sayısından (karakter/4) × 2,5 ile tahmin edilir. Sabit katsayı sağlayıcıya göre ayrılmaz; oysa aynı metin için giriş tokeni sağlayıcılar arasında farklıdır (4.6, gözlem 5: 2338 / 1496 / 1150). Karar için "beklenen maliyet" (geçmiş çağrılardan) kullanılmalıdır.
+- **Bütçe her çalıştırma için ayrı sayılır:** çökme sonrası `devam` bütçeyi sıfırdan sayar; toplam harcama bu belgede ayrıca izlenir.
+- **Tek işçi:** aynı anda tek süreç çalışacak şekilde tasarlandı; çoklu işçi için ek tablo alanı ve canlılık sinyali gerekir.
 
 ---
 
@@ -342,13 +411,15 @@ Her biri raporda/makalede ayrıca yazılmalıdır:
 5. **Servis kararlılığı** (yoğunluk, 503) üretimi kesintiye uğratabilir; Gemini 4 Hydrogen üretimden önce yeniden doğrulanacaktır.
 6. **Taslak rubrik v0.1 yapay zekâ tarafından yazıldı**, uzman doğrulaması yok; gerçek rubrik ve etik kurul sonucu bekleniyor.
 7. **Komut şablonu ve uzunluk yönergesi taslaktır**, danışmanla kesinleşecek. Komut metni sonuçları etkiler (komut mühendisliği).
-8. **Yargıç yanlılığı riski:** Yapay zekâ yargıçların kendi ailesinin metnini kayırması (self-preference), uzun metni kayırması (verbosity) ve sıra etkisi; **çapraz yargıç ilkesiyle** (modelin kendi metnini kendisinin puanlamaması, İş planı 7.3) azaltılması planlanıyor. Kör değerlendirme uygulandı (bölüm 3.7); çapraz yargıç ve kararlılık ölçümü F2'nin sonraki adımlarında.
+8. **Yargıç yanlılığı riski:** Yapay zekâ yargıçların kendi ailesinin metnini kayırması (self-preference), uzun metni kayırması (verbosity) ve sıra etkisi. Kör değerlendirme (bölüm 3.7) hakemin metnin yazarını bilmesini engeller; **[Yorum]** kayırmayı azaltması beklenir ama etkisi ölçülmedi, uzunluk ve sıra etkisi ayrıca ölçülecek. **Çapraz yargıç ilkesi (modelin kendi metnini puanlamaması, İş planı 7.3) varsayılan yapılmadı:** tüm hakemler tüm metinleri puanlar, kendi ailesinin metnini puanlayan puanlar analizde işaretlenir, dışlama seçenek olarak durur (bölüm 3.8, Adım 6). Kararlılık ölçümü F2'nin sonraki adımlarında.
 9. Denemeler küçük örnekle yapıldı (N = 2-6); istatistiksel çıkarım için yeterli değil.
 10. **Sağlayıcı belgeleri birbiriyle çelişebiliyor** (bkz. bölüm 5, "Sağlayıcı belgelerindeki tutarsızlıklar"); model kimliği, sürüm ve fiyat bilgisi okunma tarihi ve kaynak sayfayla kaydedilir, üretim sırasındaki model kimliği her kayıtla saklanır.
 11. **Komut enjeksiyonuna direnç gerçek modelle ölçülmedi.** Yargıç yalnızca yapısal olarak korunuyor (etiket kırılamıyor, bölüm 3.7); gerçek bir hakemin metne gömülü "bu metne 100 ver" gibi talimatlara direnip direnmediği ölçülmedi. **[TODO]** Ölçüm planlandı (iş planı F2); sonuç buraya yazılacak.
 12. **Yargıç komutu ve çıktı şeması gerçek modellerle yalnızca küçük bir duman testiyle denendi** (bölüm 4.6, 22 Kas 2026). Üç sağlayıcı şemayı kabul etti (OpenAI katı şemada `min/max` dahil) ve 6 puanlamanın 6'sı ilk denemede geçerliydi; ama örnek sayısı iki ve tekrar yok, bozma oranı ve kararlılık hakkında kesin bir şey söylenemez. **[TODO]** Gerçek veri üzerinde ölçülecek.
 13. **Yargıç komutu (`judge-v1`) ve taslak rubrik gerçek rubrik/danışman görüşüyle değişebilir**; hakem puanları o sürümlere aittir, komut sürümü her değerlendirmeyle kaydedilecek.
-14. **Hakemler arası sertlik farkı (hakem etkisi).** Aynı metne farklı hakemler farklı toplam puan verdi (bölüm 4.6: güçlü örnekte 70 / 90 / 90, zayıfta 20 / 5 / 35). Hakemlerin puanları doğrudan karıştırılırsa hakem etkisi model karşılaştırmasına karışır. **[TODO]** Hakem etkisini ele alacak yöntem (örn. hakem başına standardizasyon, hakemi analizde ayrı bir etken olarak katma) kararlaştırılacak.
+14. **Hakemler arası sertlik farkı (hakem etkisi).** Aynı metne farklı hakemler farklı toplam puan verdi (bölüm 4.6: güçlü örnekte 70 / 90 / 90, zayıfta 20 / 5 / 35). Hakemlerin puanları doğrudan karıştırılırsa hakem etkisi model karşılaştırmasına karışır. **[TODO]** Hakem etkisini ele alacak yöntem (örn. hakem başına standardizasyon, hakemi analizde ayrı bir etken olarak katma) kararlaştırılacak. **Kısmi çözüm (22 Kas 2026):** her hakemin her metni puanladığı dengeli tasarım seçildi (bölüm 3.8, Adım 6), böylece hakem etkisi model farkından ayrılabilir; ama standardizasyon ya da ayrı etken yöntemi henüz seçilmedi.
+15. **Platform gerçek kullanıma açılmayacak** (kapsam, bölüm 1). Sonuçlar bir araştırma düzeninin çıktısıdır; üretim ölçeğinde kararlılık, çok kullanıcılı erişim ve sürekli işletme denenmedi ve hedeflenmedi. Toplu işler tek işçi ve her çalıştırma için ayrı bütçe sayımıyla çalışır (bölüm 3.8, sınırlılıklar).
+16. **Toplu üretim ve puanlama altyapısı gerçek servisle henüz denenmedi** (yalnızca sahte sağlayıcı ve gerçek MySQL ile test edildi; gerçek veritabanında yalnızca plan modu). **[TODO]** İlk küçük gerçek deneme sonrası süre ve maliyet tahmini ile üst sınırın ne kadar kaba olduğu ölçülecek.
 
 ## 7. Etik, gizlilik ve şeffaflık
 
@@ -386,7 +457,8 @@ Bu liste, tipik bir karşılaştırmalı değerlendirme makalesinde beklenen uns
 ## 9. TÜBİTAK sonuç raporu için hazır parçalar
 
 - **Yapılan iş (F0-F1):** Katmanlı backend; sürümlü ve değişmez rubrik modülü (içe/dışa aktarma, etkinleştirme, JSON gidiş-dönüş); üç sağlayıcı için ortak sözleşme (`LLMProvider`) ve adaptörler (Claude, Gemini, GPT) ile sahte sağlayıcı; ortak hata ve yeniden deneme katmanı; sürümlü komut şablonu; üretim servisi (hata izolasyonu, maliyet sınırı, kayıt); gerçek MySQL ile veritabanı katmanı; sürekli entegrasyon.
-- **Kanıt:** 329 otomatik test (22 Kas 2026), yaklaşık %96 kapsam, her PR'da dört otomatik kontrol; planlanan 38 test senaryosundan T01-T12, T22, T27-T28 yazıldı ve geçti (kaynak: GitHub issue #3, `docs/IS_PLANI.md`).
+- **Yapılan iş (F2, devam ediyor; PR #14 taslak, `main`'e birleşmedi):** Doğrulamalı, kör, enjeksiyona dayanıklı yargıç motoru; hakem puanı kaydı (rubrik sürümü, komut sürümü, token, süre); `judge:smoke` ile gerçek hakem denemesi; veritabanı tabanlı iş kuyruğu (yeniden başlatmada kaldığı yerden devam); toplu üretim ve toplu puanlama işleri (sağlayıcı başına şerit, çalışırken bütçe, kendi-puanı işaretleme); `npm run batch` komut satırı (varsayılan plan, `--calistir` ile gerçek çalıştırma). Kalan: çoklu hakem kararlılığı, istatistik, dışa aktarma, enjeksiyon direnci ve ilk gerçek veri seti.
+- **Kanıt:** 329 otomatik test (22 Kas 2026; F2 dalında 415, 23 Kas 2026), yaklaşık %96 kapsam (F2 dalında %97), her PR'da dört otomatik kontrol; planlanan 38 test senaryosundan T01-T12, T22, T27-T28 yazıldı ve geçti (kaynak: GitHub issue #3, `docs/IS_PLANI.md`).
 - **Süreç:** Faz başına GitHub milestone ve issue (F0 #2, F1 #3 kapalı); her kararın gerekçesi `docs/adr/` altında 10 karar kaydıyla belgelendi; PR #1, #10, #12 birleşti.
 - **Risk yönetimi:** Sessiz yedek yok, maliyet sınırı, anahtar güvenliği, bakiye/kota hataları, servis yoğunluğu (Gemini).
 - **Bütçe/harcama:** Tüm gerçek servis denemeleri toplam yaklaşık **$0,0597** [Hesap]: `llm:smoke` koşuları yaklaşık $0,0065 (4.2) ve `judge:smoke` $0,0532 (4.6). **[TODO]** Gerçek üretim ve yargıç çalışması maliyeti eklenecek.
@@ -423,6 +495,7 @@ Hepsi **22 Kasım 2026**'da okundu (fiyat ve model adları sonradan değişebili
 
 | Tarih       | Değişiklik                                                                                                  |
 | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| 23 Kas 2026 | Bölüm 3.8 (F2 Adım 2-7: puan kaydı, iş kuyruğu, toplu üretim ve puanlama, komut satırı; "kendini dışlamak yerine işaretlemek" gerekçesi, 125 bozma, 415 test), kapsam notu (bölüm 1, "gerçek kullanıma açılmayacak"), sınırlılık 8 ve 14 güncellendi, 15-16 eklendi, bölüm 2 ve 9 güncellendi. |
 | 22 Kas 2026 | Sağlayıcı belge tutarsızlıkları (bölüm 5) ve sınırlılık 10 eklendi. |
 | 22 Kas 2026 | Bölüm 4.6 (hakem smoke R9: 6/6 başarılı, sertlik ve süre farkları, maliyet), sınırlılık 12 güncellendi ve 14 eklendi, Ek A'ya R9, test sayısı 329, toplam harcama $0,0597. |
 | 22 Kas 2026 | Bölüm 3.7 (yargıç/hakem yöntemi, `judge-v1` komutu, bozma yöntemiyle bulunan hata), sınırlılık 11-13, makale kontrol listesine hakem smoke ve enjeksiyon maddeleri, test sayısı 301 eklendi. |
