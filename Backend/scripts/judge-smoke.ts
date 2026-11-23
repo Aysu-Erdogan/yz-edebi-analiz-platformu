@@ -90,7 +90,7 @@ export async function judgeSmoke(
 ): Promise<boolean> {
   if (targets.length === 0) {
     log(
-      'Denenecek hakem yok: .env içinde Claude, Gemini ya da OpenAI API anahtarı (ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY) tanımlı değil.',
+      'Denenecek hakem yok: .env içinde Claude, Gemini, OpenAI ya da DeepSeek API anahtarı (ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY) tanımlı değil.',
     );
     return false;
   }
@@ -166,6 +166,7 @@ async function main(): Promise<void> {
       claude: option('--claude') ?? 'claude-sonnet-5-5',
       gemini: option('--gemini') ?? 'gemini-4-hydrogen',
       openai: option('--openai') ?? 'gpt-6.2-sol',
+      deepseek: option('--deepseek') ?? 'deepseek-flash',
     },
     timeoutMs(300),
   );

@@ -5,10 +5,16 @@ import { createProviderRegistry } from '../src/providers/registry.js';
 
 describe('sağlayıcı seçimi', () => {
   it('anahtarı tanımlı sağlayıcıları verir', () => {
-    const registry = createProviderRegistry({ anthropicKey: 'a', googleKey: 'g', openaiKey: 'o' });
+    const registry = createProviderRegistry({
+      anthropicKey: 'a',
+      googleKey: 'g',
+      openaiKey: 'o',
+      deepseekKey: 'd',
+    });
     expect(registry.get('anthropic').id).toBe('anthropic');
     expect(registry.get('google').id).toBe('google');
     expect(registry.get('openai').id).toBe('openai');
+    expect(registry.get('deepseek').id).toBe('deepseek');
   });
 
   it('verilen Mock sağlayıcıyı aynen döner', () => {
@@ -18,7 +24,7 @@ describe('sağlayıcı seçimi', () => {
 
   it('anahtarı olmayan sağlayıcı sessizce başka şeye düşmez, açık hata (503) verir', () => {
     const registry = createProviderRegistry({ anthropicKey: 'a' });
-    for (const id of ['google', 'openai', 'mock'] as const) {
+    for (const id of ['google', 'openai', 'deepseek', 'mock'] as const) {
       expect(() => registry.get(id), id).toThrow(AppError);
       expect(() => registry.get(id)).toThrow(/kullanılamıyor/);
     }
@@ -30,8 +36,13 @@ describe('sağlayıcı seçimi', () => {
   });
 
   it('boş ya da yalnızca boşluktan oluşan anahtar tanımsız sayılır', () => {
-    const registry = createProviderRegistry({ anthropicKey: '', googleKey: '   ', openaiKey: '' });
-    for (const id of ['anthropic', 'google', 'openai'] as const) {
+    const registry = createProviderRegistry({
+      anthropicKey: '',
+      googleKey: '   ',
+      openaiKey: '',
+      deepseekKey: ' ',
+    });
+    for (const id of ['anthropic', 'google', 'openai', 'deepseek'] as const) {
       expect(() => registry.get(id), id).toThrow(/kullanılamıyor/);
     }
   });

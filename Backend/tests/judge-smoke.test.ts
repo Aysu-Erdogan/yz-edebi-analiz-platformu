@@ -187,24 +187,40 @@ describe('judge:smoke (gerçek hakem denemesi)', () => {
     expect(PRICES['claude-sonnet-5-5']).toEqual([2, 10]);
     expect(PRICES['gemini-4-hydrogen']).toEqual([1.5, 7.5]);
     expect(PRICES['gpt-6.2-sol']).toEqual([2, 10]);
+    // DeepSeek belgesi (23 Kas 2026): yoğun saat fiyatı, tahmin üst sınırdır.
+    expect(PRICES['deepseek-flash']).toEqual([0.3, 1.2]);
   });
 
   it('providerTargets: yalnızca anahtarı tanımlı sağlayıcıları kurar, fiyatı tablodan alır, bilinmeyen modele fiyat koymaz', () => {
-    const names = ['ANTHROPIC_API_KEY', 'GEMINI_API_KEY', 'OPENAI_API_KEY'] as const;
+    const names = [
+      'ANTHROPIC_API_KEY',
+      'GEMINI_API_KEY',
+      'OPENAI_API_KEY',
+      'DEEPSEEK_API_KEY',
+    ] as const;
     const saved = names.map((n) => process.env[n]);
     try {
       process.env.ANTHROPIC_API_KEY = 'claude-anahtar';
       process.env.GEMINI_API_KEY = '';
       process.env.OPENAI_API_KEY = '  gpt-anahtar  ';
+      process.env.DEEPSEEK_API_KEY = 'deepseek-anahtar';
       const targets = providerTargets(
-        { claude: 'claude-sonnet-5-5', gemini: 'gemini-4-hydrogen', openai: 'yeni-model' },
+        {
+          claude: 'claude-sonnet-5-5',
+          gemini: 'gemini-4-hydrogen',
+          openai: 'yeni-model',
+          deepseek: 'deepseek-flash',
+        },
         1000,
       );
-      expect(targets.map((t) => t.label)).toEqual(['Claude', 'OpenAI']); // Gemini anahtarı boş
+      // Gemini anahtarı boş
+      expect(targets.map((t) => t.label)).toEqual(['Claude', 'OpenAI', 'DeepSeek']);
       expect(targets[0]).toMatchObject({ model: 'claude-sonnet-5-5', price: [2, 10] });
       expect(targets[0]?.secret).toBe('claude-anahtar');
       expect(targets[1]?.secret).toBe('gpt-anahtar'); // boşluklar kırpılır
       expect(targets[1]).not.toHaveProperty('price');
+      expect(targets[2]).toMatchObject({ model: 'deepseek-flash', price: [0.3, 1.2] });
+      expect(targets[2]?.secret).toBe('deepseek-anahtar');
     } finally {
       names.forEach((n, i) => {
         if (saved[i] === undefined) delete process.env[n];

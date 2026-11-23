@@ -33,9 +33,21 @@ describe('parseEnv (T27: eksik yapılandırmada açık hata)', () => {
   });
 
   it('boş bırakılmış anahtarı tanımsız sayar', () => {
-    const env = parseEnv({ NODE_ENV: 'test', OPENAI_API_KEY: '   ', GEMINI_API_KEY: '' });
+    const env = parseEnv({
+      NODE_ENV: 'test',
+      OPENAI_API_KEY: '   ',
+      GEMINI_API_KEY: '',
+      DEEPSEEK_API_KEY: '  ',
+    });
     expect(env.OPENAI_API_KEY).toBeUndefined();
     expect(env.GEMINI_API_KEY).toBeUndefined();
+    expect(env.DEEPSEEK_API_KEY).toBeUndefined();
+  });
+
+  it('DeepSeek anahtarı tanımlıysa okunur', () => {
+    expect(parseEnv({ NODE_ENV: 'test', DEEPSEEK_API_KEY: 'sk-deneme' }).DEEPSEEK_API_KEY).toBe(
+      'sk-deneme',
+    );
   });
 
   it('CORS kaynaklarını virgülle ayırır', () => {

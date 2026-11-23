@@ -1,5 +1,6 @@
 import { AppError } from '../lib/errors.js';
 import { AnthropicProvider } from './anthropic-provider.js';
+import { DeepSeekProvider } from './deepseek-provider.js';
 import { GoogleProvider } from './google-provider.js';
 import { OpenAIProvider } from './openai-provider.js';
 import type { LLMProvider, ProviderId } from './provider.js';
@@ -9,6 +10,7 @@ export interface ProviderConfig {
   anthropicKey?: string | undefined;
   googleKey?: string | undefined;
   openaiKey?: string | undefined;
+  deepseekKey?: string | undefined;
   /** Test ve geliştirme için sahte sağlayıcı; verilmezse kullanılamaz. */
   mock?: LLMProvider;
   /** Testlerde sahte HTTP vermek için. */
@@ -35,6 +37,9 @@ export function createProviderRegistry(config: ProviderConfig): ProviderRegistry
   }
   if (config.openaiKey?.trim()) {
     available.set('openai', new OpenAIProvider({ apiKey: config.openaiKey, ...fetchOption }));
+  }
+  if (config.deepseekKey?.trim()) {
+    available.set('deepseek', new DeepSeekProvider({ apiKey: config.deepseekKey, ...fetchOption }));
   }
   if (config.mock) available.set('mock', config.mock);
 

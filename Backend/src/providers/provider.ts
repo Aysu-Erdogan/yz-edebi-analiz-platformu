@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 
-export const PROVIDER_IDS = ['openai', 'anthropic', 'google', 'mock'] as const;
+export const PROVIDER_IDS = ['openai', 'anthropic', 'google', 'deepseek', 'mock'] as const;
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 
 export interface GenerateRequest {
@@ -33,7 +33,7 @@ export interface JsonResult<T> extends Usage {
   data: T;
 }
 
-/** Tüm sağlayıcı adaptörlerinin (Claude, Gemini, OpenAI, Mock) uyduğu ortak sözleşme. */
+/** Tüm sağlayıcı adaptörlerinin (Claude, Gemini, OpenAI, DeepSeek, Mock) uyduğu ortak sözleşme. */
 export interface LLMProvider {
   readonly id: ProviderId;
   generateText(request: GenerateRequest): Promise<GenerateResult>;

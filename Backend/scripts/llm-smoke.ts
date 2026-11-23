@@ -27,7 +27,7 @@ const MAX_TOKENS = 1024; // düşünen modellerde düşünme tokenleri de sını
 export async function smoke(targets: SmokeTarget[], log: (line: string) => void): Promise<boolean> {
   if (targets.length === 0) {
     log(
-      'Denenecek sağlayıcı yok: .env içinde Claude, Gemini ya da OpenAI API anahtarı (ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY) tanımlı değil.',
+      'Denenecek sağlayıcı yok: .env içinde Claude, Gemini, OpenAI ya da DeepSeek API anahtarı (ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY) tanımlı değil.',
     );
     return false;
   }
@@ -89,6 +89,7 @@ async function main(): Promise<void> {
       claude: option('--claude') ?? 'claude-haiku-5-5',
       gemini: option('--gemini') ?? 'gemini-3.5-flash-lite',
       openai: option('--openai') ?? 'gpt-6-luna',
+      deepseek: option('--deepseek') ?? 'deepseek-flash',
     },
     timeoutMs(30),
   );

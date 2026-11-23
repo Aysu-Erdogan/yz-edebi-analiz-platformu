@@ -1,5 +1,6 @@
 import { EnvError, loadEnv } from '../src/config/env.js';
 import { AnthropicProvider } from '../src/providers/anthropic-provider.js';
+import { DeepSeekProvider } from '../src/providers/deepseek-provider.js';
 import { GoogleProvider } from '../src/providers/google-provider.js';
 import { OpenAIProvider } from '../src/providers/openai-provider.js';
 import type { LLMProvider } from '../src/providers/provider.js';
@@ -30,6 +31,8 @@ export const PRICES: Readonly<Record<string, [number, number]>> = {
   'gpt-6-luna': [0.1, 0.5],
   'gpt-6.1-terra': [1, 5],
   'gpt-6.2-sol': [2, 10],
+  // DeepSeek belgesi (23 Kas 2026): yoğun saat fiyatı; yoğun olmayan saatte yarısı, önbellek isabeti çok daha ucuz. Tahmin üst sınırdır.
+  'deepseek-flash': [0.3, 1.2],
 };
 
 export const HINTS: Record<string, string> = {
@@ -72,7 +75,7 @@ export function loadSmokeEnv(): void {
  * olduğu gibi görünsün; her istek `timeout` ms içinde bitmek zorunda.
  */
 export function providerTargets(
-  models: { claude: string; gemini: string; openai: string },
+  models: { claude: string; gemini: string; openai: string; deepseek: string },
   timeout: number,
 ): SmokeTarget[] {
   const safe = (p: LLMProvider) => withResilience(p, { maxAttempts: 1, timeoutMs: timeout });
@@ -103,5 +106,11 @@ export function providerTargets(
   );
   add('Gemini', key('GEMINI_API_KEY'), models.gemini, (apiKey) => new GoogleProvider({ apiKey }));
   add('OpenAI', key('OPENAI_API_KEY'), models.openai, (apiKey) => new OpenAIProvider({ apiKey }));
+  add(
+    'DeepSeek',
+    key('DEEPSEEK_API_KEY'),
+    models.deepseek,
+    (apiKey) => new DeepSeekProvider({ apiKey }),
+  );
   return targets;
 }

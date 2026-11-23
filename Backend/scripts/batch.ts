@@ -43,6 +43,7 @@ async function main(): Promise<void> {
           anthropicKey: env.ANTHROPIC_API_KEY,
           googleKey: env.GEMINI_API_KEY,
           openaiKey: env.OPENAI_API_KEY,
+          deepseekKey: env.DEEPSEEK_API_KEY,
         }),
       },
       console.log,

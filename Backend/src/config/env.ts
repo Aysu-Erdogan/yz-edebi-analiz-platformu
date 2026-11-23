@@ -28,6 +28,7 @@ const schema = z
     GEMINI_API_KEY: optionalString,
     ANTHROPIC_API_KEY: optionalString,
     OPENAI_API_KEY: optionalString,
+    DEEPSEEK_API_KEY: optionalString,
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'test' && !env.DATABASE_URL) {
