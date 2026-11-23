@@ -31,13 +31,14 @@
 | 22-23 Kas 2026        | F2 altyapısı (hakem motoru, puan kaydı, iş kuyruğu, toplu üretim ve puanlama, komut satırı) PR #14'te taslak olarak birikiyor, `main`'e birleşmedi |
 | 23 Kas 2026           | İlk gerçek toplu üretim (3 şiir) ve puanlama (9 puanlama) çalıştırıldı (bölüm 4.7) |
 | 23 Kas 2026           | Puanlama kararı değişti: yazarlar yalnızca yazar, tek sabit hakem DeepSeek Flash; DeepSeek adaptörü yazıldı, gerçek smoke ve 3 şiirlik pilot çalıştırıldı (bölüm 3.9, 4.8) |
+| 23 Kas 2026           | Tekrar kararlılığı ölçümü (T20, `npm run stability`) yazıldı ve pilot verisinde denendi: s_r 3,33 (bölüm 3.10, 4.8) |
 | 10 Ocak 2027          | Yazılım dondurma                                                                           |
 | 31 Ocak 2027          | TÜBİTAK bitiş                                                                              |
 | Şubat / Mayıs 2027    | Bitirme raporu / sunum                                                                     |
 
 **[Veri]** F1 planı 23 Kas-6 Ara 2026 arasındaydı; plan başlamadan, 21 Kas'ta birleşti (kaynak: `docs/IS_PLANI.md`). Fazlar F0-F7; sırada F2 (yargıç motoru, iş kuyruğu, istatistik, dışa aktarma).
 
-**[Veri]** Yazılım doğrulama ilerlemesi (otomatik test sayısı): 56 (ilk adım) → 91 → 107 → 129 → 142 → 191 → 204 → 225 → 256 → 275 → 301 → 316 → **329** (22 Kas 2026; 275 OpenAI/model birleşmesi, 301 F2 Adım 1 yargıç motoru, 316 Adım 2 puan kaydı, 329 Adım 3 judge:smoke) → **415** (23 Kas 2026, F2 Adım 7 komut satırı) → **448** (23 Kas 2026, F2 Adım 8 dışa aktarma; PR #14'te, `main`'e henüz birleşmedi) → **472** (23 Kas 2026, DeepSeek adaptörü, `1ffb853`; PR #14'te). Kod kapsamı yaklaşık %96 (F2 dalında yaklaşık %97). Her PR'da dört otomatik kontrol (biçim, backend, frontend, Docker Compose) çalışır; PR #10 ve #12 hepsini geçti. Kaynak: oturum kayıtları, GitHub Actions.
+**[Veri]** Yazılım doğrulama ilerlemesi (otomatik test sayısı): 56 (ilk adım) → 91 → 107 → 129 → 142 → 191 → 204 → 225 → 256 → 275 → 301 → 316 → **329** (22 Kas 2026; 275 OpenAI/model birleşmesi, 301 F2 Adım 1 yargıç motoru, 316 Adım 2 puan kaydı, 329 Adım 3 judge:smoke) → **415** (23 Kas 2026, F2 Adım 7 komut satırı) → **448** (23 Kas 2026, F2 Adım 8 dışa aktarma; PR #14'te, `main`'e henüz birleşmedi) → **472** (23 Kas 2026, DeepSeek adaptörü, `1ffb853`; PR #14'te) → **504** (23 Kas 2026, kararlılık ölçümü T20, `1feff47`; PR #14'te). Kod kapsamı yaklaşık %96 (F2 dalında yaklaşık %97). Her PR'da dört otomatik kontrol (biçim, backend, frontend, Docker Compose) çalışır; PR #10 ve #12 hepsini geçti. Kaynak: oturum kayıtları, GitHub Actions.
 
 ## 3. Yöntem
 
@@ -191,7 +192,7 @@ Kriterler komuta şu biçimde yazılır (düzeyler küçükten büyüğe): `- an
 - Yargıç komutu ve çıktı şeması gerçek modellerle **yalnızca küçük bir duman testiyle** denendi (bölüm 4.6): üç sağlayıcı şemayı kabul etti, 6/6 puanlama ilk denemede geçerliydi; ama iki kısa örnek ve tek tekrar güvenilirlik kanıtı değildir.
 - Hakemin gördüğü metin, nadir durumda (metnin kendisi etiket biçimli parça içeriyorsa) saklanan metinden o parçada farklıdır.
 - Yeniden denenen bozuk cevabın token sayısı sağlayıcıdan gelmediği için kaydedilmez; maliyet o kadar eksik kalır.
-- Kararlılık ölçümü (hakemler arası uyum, tekrarlar arası tutarlılık) henüz yok. Çoklu hakem ve tekrarlı puanlama için toplu altyapı bölüm 3.8'dedir.
+- Kararlılık ölçümü (hakemler arası uyum, tekrarlar arası tutarlılık) henüz yok. **[23 Kas 2026]** Tekrarlar arası tutarlılık artık ölçülüyor (bölüm 3.10); hakemler arası uyum tek hakem kararıyla (bölüm 3.9) gündem dışıdır. Çoklu hakem ve tekrarlı puanlama için toplu altyapı bölüm 3.8'dedir.
 
 ### 3.8 Puan kaydı, iş kuyruğu, toplu çalıştırma ve dışa aktarma: F2 Adım 2-8
 
@@ -309,6 +310,21 @@ Kriterler komuta şu biçimde yazılır (düzeyler küçükten büyüğe): `- an
 | **Model kaydı** `deepseek-flash`, fiyat 0,30 / 1,20 $ (yoğun saat fiyatı)                                                                           | Maliyet tahmini bu yüzden üst sınırdır (bölüm 5)                                                                                                                                                                                  |
 
 **[Veri] Doğrulama:** 24 yeni otomatik test (sahte HTTP; gerçek servis çağrısı yok). 24 bozmanın 24'ü bir testi kırmızıya çevirdi (düşünme satırı, sıcaklık varsayılanı, dört bitiş nedeni eşlemesi, anahtar başlığı, JSON kipi, şema temizliği, okunamayan gövde, sistem komutu, token alanı, boş cevap, uç nokta yolu, iptal sinyali, düşünme içeriğinin karışması, kayıt defteri, smoke ve ayar). Test sayısı **448 → 472**, `npm run verify` geçti. Gerçek servis denemesi: bölüm 4.8.
+
+### 3.10 Tekrar kararlılığı ölçümü: F2, 23 Kas 2026
+
+**[Karar]** Test senaryosu T20: "aynı metne tekrar puanlamada sapma hesaplanır ve raporlanır". Komut `npm run stability [-- --cikti dosya.json]` (`Backend/src/domain/stability.ts`, `Backend/src/services/stability-cli.ts`, commit `1feff47`). Dışa aktarmanın okuduğu puanlama kayıtlarını kullanır; yalnızca okur, ücretsizdir, veritabanı şeması değişmedi. Kullanıcı planı onayladı (23 Kas 2026).
+
+| Karar                                                                                                                                                                                                | Gerekçe                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Grup:** aynı metin, aynı hakem, aynı rubrik sürümü, aynı hakem komutu sürümü. **Koşul:** aynı hakem, tür, rubrik ve komut sürümü                                                                    | Farklı rubrik ya da komutla alınan puanlar birbirinin tekrarı sayılmaz. Kriterler türe göre değiştiği için tür ayrı koşuldur                                                                                    |
+| **Tek (ya da hiç) başarılı tekrarı olan grup "ölçülemedi"** sayılır; sapma 0 yazılmaz, JSON'da `null`                                                                                                  | Tek puandan sapma bilinemez; 0 yazmak hakemi olduğundan kararlı gösterirdi                                                                                                                                      |
+| **Başarısız puanlamalar hesaba girmez**, yalnızca sayılır                                                                                                                                              | Uydurma puan yok (ADR 0004); hata oranı yine görünür                                                                                                                                                            |
+| **Tekrar sapması s_r** = karekök(Σ (n_i − 1)·s_i² / Σ (n_i − 1)): grup varyanslarının serbestlik dereceleriyle ağırlıklı ortalamasının karekökü; her grubun s_i'si örneklem standart sapması (n − 1)         | ISO 5725'teki tekrarlanabilirlik standart sapması biçimi; farklı tekrar sayılı gruplar adil birleşir. Bu yöntem seçimi araştırmacıya aittir **[Yorum]**                                                          |
+| Yanında **ortalama aralık, en büyük aralık, tamamen aynı çıkan metin sayısı** ve kriter düzeyinde **tamamen aynı çıkan hücre sayısı ile kriter başına s_r**                                            | Sapmanın nerede (hangi kriterde) toplandığı görünsün                                                                                                                                                            |
+| **Eşik koyulmaz; ICC ve Krippendorff α hesaplanmaz**; kayan nokta gürültüsü (1e-9) "aynı" sayılır                                                                                                      | "Şu kadar sapma kabul edilebilir" demek için kanıt yok. ICC iş planında hakem güvenilirliği içindi; tek hakemle yalnızca tekrar uyumu anlamlı, insan puanı gelince birlikte ele alınır                              |
+
+**[Veri] Doğrulama:** 32 yeni otomatik test; elle hesaplanmış örnekler (`[90, 80, 80]` → ortalama 83,33, aralık 10, SD 5,77; ağırlıklı birleştirme `[10, 20]` ve `[1, 2, 3]` → s_r 4,16). Test sayısı **472 → 504**, `npm run verify` geçti. **46 bozmanın 46'sı yakalandı;** ilk turda 41 bozmanın 2'si kaçtı ve ikisi de gerçek test eksiği gösterdi: (1) bir kriteri yalnızca tek tekrarda bulunan hücrenin ölçülmediği sınanmamıştı; (2) pilot verisinde s_r ile ortalama aralık tesadüfen aynı sayı (3,33) çıktığı için bu iki alanın karışması testlerde görünmüyordu. Alanları farklı değer veren bir veri seti ve yeni testler eklendi, bozmalar yeniden denendi ve yakalandı. Gerçek sonuç bölüm 4.8'de ve Ek A'da (R15); elle hesaplanan beklenti ve ham dışa aktarma dosyasından koddan bağımsız ayrı bir betikle hesaplanan değerlerle birebir aynı çıktı (betik saklanmadı).
 
 ---
 
@@ -517,7 +533,7 @@ Aynı üç şiirin dört hakemden aldığı toplam puanlar (DeepSeek: üç tekra
 
 1. **[Veri]** **Sıra aynı:** dört hakemin hepsi GPT şiirini en yüksek, Hydrogen şiirini en düşük puanladı (GPT şiiri > Claude şiiri > Hydrogen şiiri). DeepSeek hiçbir şiirde bu sırayı bozmadı.
 2. **[Veri]** **Puan seviyesi:** DeepSeek, Claude'un sert ve GPT ile Hydrogen'in cömert uçları arasında kaldı: GPT şiirinde 83,3 (70 ile 95 arası), Claude şiirinde 70 (60 ile 75 arası), Hydrogen şiirinde 55 (Claude hakemle aynı). **[Yorum]** Üç şiir ve tek hakem: hakemin sertliği hakkında genelleme yapılamaz.
-3. **[Veri]** **Tekrarlar arası kararlılık** (sıcaklık 0, düşünme kapalı): 3 şiirden ikisinde üç tekrar birebir aynı çıktı (70, 70, 70 ve 55, 55, 55). GPT şiirinde 90, 80, 80 çıktı: ilk tekrarda imge ve duygu kriterleri 5 iken sonraki ikisinde 4 verildi (iki kriterde birer basamak, toplamda 10 puan). **[Yorum]** Sıcaklık 0 tam deterministik değildir; üç tekrarın ortalamasını almak bu yüzden anlamlı. Üç şiir ve tek hakemle sapmanın büyüklüğü hakkında genelleme yapılamaz.
+3. **[Veri]** **Tekrarlar arası kararlılık** (sıcaklık 0, düşünme kapalı): 3 şiirden ikisinde üç tekrar birebir aynı çıktı (70, 70, 70 ve 55, 55, 55). GPT şiirinde 90, 80, 80 çıktı: ilk tekrarda imge ve duygu kriterleri 5 iken sonraki ikisinde 4 verildi (iki kriterde birer basamak, toplamda 10 puan). **[Yorum]** Sıcaklık 0 tam deterministik değildir; üç tekrarın ortalamasını almak bu yüzden anlamlı. Üç şiir ve tek hakemle sapmanın büyüklüğü hakkında genelleme yapılamaz. **[Veri, `npm run stability`, R15, bölüm 3.10]** Aynı sayılar araçla ölçüldü: toplam puanda tekrar sapması **s_r = 3,33**, ortalama aralık 3,33, en büyük aralık 10, 3 metnin 2'sinde tamamen aynı; kriter hücrelerinin **13/15'i (%86,7)** tamamen aynı, oynayanlar imge gücü ve duygu aktarımı (her ikisinin s_r değeri 0,33; yalnızca GPT şiirinde 5, 4, 4). Diğer üç hakemin kayıtları tek tekrarlı olduğu için "ölçülemedi" çıktı.
 4. **[Veri]** **Süre:** çağrı başına 2,4-4,0 sn (pilotta ortalama 3,6 sn, en uzun 4,0 sn). Hydrogen hakemin 10,9-65,1 sn'si (4.7) ile karşılaştırılamayacak kadar hızlı, Claude (7,1-7,7 sn) ve GPT (8,7-11,7 sn) hakemin yaklaşık yarısı ya da daha azı. **[Yorum]** Düşünme kapalı olduğu için çıkış tokeni de az (371-577); bu hızın bir kısmı düşünmenin kapalı olmasından gelir.
 5. **[Hesap]** **Maliyet:** pilotun 9 çağrısı 14.292 giriş ve 4.493 çıkış token, 0,30 / 1,20 $ fiyatıyla ≈ **$0,0097** (çağrı başına ≈ $0,0011); smoke'un 2 çağrısı $0,00192. Üç hakemin ortalama çağrı maliyeti $0,0113 (4.7); farklı token sayıları nedeniyle oran yaklaşık, DeepSeek yaklaşık onda biri. Bu fiyat **yoğun saat** fiyatıdır (bölüm 5); koşular belgedeki yoğun saat penceresinin (hafta içi 01-04 ve 06-10 UTC) dışında yapıldığı için gerçek faturanın tahminin yaklaşık yarısı olması beklenir **[Yorum]**. **[TODO]** DeepSeek panelindeki gerçek harcamayla karşılaştırılacak.
 6. **[Veri]** **Geçerlilik:** 11 puanlamanın 11'i (2 smoke + 9 pilot) ilk denemede geçerli JSON verdi (deneme sayısı 1); hata yok.
@@ -602,6 +618,7 @@ Her biri raporda/makalede ayrıca yazılmalıdır:
 18. **Tek sabit hakem** (bölüm 3.9). Tüm puanlar tek bir yapay zekâ modelinden gelir: hakemin sistematik eğilimleri (sertlik, uzunluk ya da üslup tercihi, Türkçe edebi yargısındaki zayıflıklar) bütün sonuçları aynı yönde etkiler ve bu tasarımla ölçülemez. DeepSeek'in Türkçe edebi metni iyi puanladığı **kanıtlanmadı**; tek denetim 3 şiirlik pilottur (bölüm 4.8: sıra diğer üç hakemle aynı, insan puanıyla uyum ölçülmedi). **[TODO]** İnsan puanı toplanabildiğinde hakem-insan uyumu ölçülecek; ayrıca aynı örneklerle ikinci bir hakemle (örn. Claude Sonnet) karşılaştırma yapılması düşünülebilir.
 19. **Hakemler arası koşul farkı, kararlılık ve model kimliği** (bölüm 4.8). DeepSeek hakemi sıcaklık 0 ve düşünme kapalı çalışır; diğer üç hakem (22-23 Kas verileri) kendi varsayılan örneklemeleriyle ve tek tekrarla puanladı, karşılaştırma bu farkı içerir. Sıcaklık 0'da bile üç tekrarın biri 10 puan saptı; tekrar ortalaması gerekli. DeepSeek `deepseek-flash` takma adıyla çağrılır; sunucuda hangi sürüme yönlendiği DeepSeek'in kararıdır (belge, 23 Kas: `DeepSeek-V4.1-Flash-1017`) ve değişebilir; yanıttaki `model` alanı kaydedilmiyor **[TODO]**. Maliyet tahmini yoğun saat fiyatıyla yapılır (üst sınır); gerçek fatura panelden doğrulanmadı **[TODO]**.
 20. **DeepSeek Çin merkezli bir şirkettir ve başvuru formunda yoktur** (bölüm 3.9). Hakeme yalnızca tür, tema, rubrik ve metin gönderilir; metni hangi modelin yazdığı gitmez ve metinler yapay zekâ üretimidir, kişisel veri içermez. Yine de DeepSeek'in hizmet şartları ve veri saklama / model eğitiminde kullanım koşulları **okunmadı** **[TODO]**; formdan sapma danışmanla teyit edilecek **[TODO]**.
+21. **Tekrar kararlılığı ölçümünün kapsamı** (bölüm 3.10, 4.8). Yalnızca üç metin ve üç tekrar: s_r (3,33) üç şiirin yalnızca birindeki sapmadan (90, 80, 80) geliyor, büyüklüğü hakkında genelleme yapılamaz. Eşik koyulmadığı için "kararlı" ya da "kararsız" yargısı verilmiyor. Ölçüm yalnızca aynı hakemin aynı koşuldaki tekrarlarını kapsar; hakemin ortalamasının doğruluğu ya da yanlılığı hakkında bilgi vermez (sınırlılık 18). Komut tüm kayıtları okur ve deneme verisini nihai veri setinden ayırmaz **[TODO]**. Diğer üç hakemin kayıtları tek tekrarlı olduğu için ölçülemedi (karşılaştırma yok). ICC ve ikinci hakemle karşılaştırma yapılmadı.
 
 ## 7. Etik, gizlilik ve şeffaflık
 
@@ -624,11 +641,12 @@ Bu liste, tipik bir karşılaştırmalı değerlendirme makalesinde beklenen uns
 - [ ] Yargıç tasarımı: hangi modeller, hangi komut, çapraz yargıç, kaç tekrar, sıcaklık yok; yargıç komutu ve çıktı şeması.
 - [x] Hakem smoke sonuçları (22 Kas 2026, 6/6 başarılı; bölüm 4.6). Büyük örnekle yeniden ölçülecek: şema kabulü, süre, bozma oranı.
 - [x] DeepSeek hakem smoke ve 3 şiirlik pilot (23 Kas 2026; bölüm 4.8): 11/11 puanlama ilk denemede geçerli, sıra diğer üç hakemle aynı, toplam ≈ $0,0116. Büyük örnekle yeniden ölçülecek.
+- [x] Tekrar kararlılığı ölçüm aracı (`npm run stability`, T20): hazır ve pilot verisiyle denendi (s_r 3,33; bölüm 3.10, 4.8). Nihai veri setinde yeniden çalıştırılacak, tekrar sayısı ve metin sayısı artınca sonuç raporlanacak.
 - [ ] Tek sabit hakem kararı (bölüm 3.9): danışman teyidi (formda yalnızca Claude, OpenAI ve Gemini var), hakemin başka bir hakemle aynı örneklerde karşılaştırılması, insan puanıyla uyum, DeepSeek hizmet şartları.
 - [x] Dışa aktarma (CSV/JSON, R ve SPSS ile bağımsız doğrulama için): komut hazır, ilk 10 kayıtla denendi (bölüm 3.8, Adım 8). Üretim süresi ve maliyeti dahil, büyük örnekle yeniden yapılacak.
 - [ ] Hakem etkisi (sertlik farkı) analizi: hakem başına puan dağılımı, hakemler arası kalibrasyon ya da standardizasyon yöntemi.
 - [ ] Enjeksiyon direnci sonuçları: kontrol metnine karşı saldırı metinlerinin puan farkı, hakem başına, tekrarlarla (gerçek model, ücretli).
-- [ ] Yargıç güvenilirliği: yargıçlar arası ve aynı yargıcın tekrarları arası uyum (örn. Krippendorff α / ICC / Cohen κ).
+- [ ] Yargıç güvenilirliği: yargıçlar arası ve aynı yargıcın tekrarları arası uyum (örn. Krippendorff α / ICC / Cohen κ). **[23 Kas 2026]** Tekrar sapması (s_r) ölçüldü (bölüm 3.10, 4.8); ICC ve yargıçlar arası uyum yapılmadı (tek hakem).
 - [ ] İnsan puanı (etik kurul sonrası): insan-YZ uyumu, korelasyon, hata analizi.
 - [ ] Puan dağılımları (ham ve normalleştirilmiş 0-100), kriter bazında ortalama ve yayılım.
 - [ ] İstatistiksel karşılaştırma: uygun testler (örn. eşleştirilmiş/sıralı testler, karma etkili modeller), etki büyüklüğü, güven aralıkları, çoklu karşılaştırma düzeltmesi.
@@ -642,8 +660,8 @@ Bu liste, tipik bir karşılaştırmalı değerlendirme makalesinde beklenen uns
 ## 9. TÜBİTAK sonuç raporu için hazır parçalar
 
 - **Yapılan iş (F0-F1):** Katmanlı backend; sürümlü ve değişmez rubrik modülü (içe/dışa aktarma, etkinleştirme, JSON gidiş-dönüş); üç sağlayıcı için ortak sözleşme (`LLMProvider`) ve adaptörler (Claude, Gemini, GPT) ile sahte sağlayıcı; ortak hata ve yeniden deneme katmanı; sürümlü komut şablonu; üretim servisi (hata izolasyonu, maliyet sınırı, kayıt); gerçek MySQL ile veritabanı katmanı; sürekli entegrasyon.
-- **Yapılan iş (F2, devam ediyor; PR #14 taslak, `main`'e birleşmedi):** Doğrulamalı, kör, enjeksiyona dayanıklı yargıç motoru; hakem puanı kaydı (rubrik sürümü, komut sürümü, token, süre); `judge:smoke` ile gerçek hakem denemesi; veritabanı tabanlı iş kuyruğu (yeniden başlatmada kaldığı yerden devam); toplu üretim ve toplu puanlama işleri (sağlayıcı başına şerit, çalışırken bütçe, kendi-puanı işaretleme); `npm run batch` komut satırı (varsayılan plan, `--calistir` ile gerçek çalıştırma); `npm run export` ile CSV/JSON dışa aktarma; tek sabit hakem kararı (DeepSeek Flash), DeepSeek adaptörü, gerçek smoke ve 3 şiirlik pilot (bölüm 3.9, 4.8). Kalan: hakem kararlılığı (tekrarlar), istatistik, enjeksiyon direnci ve ilk gerçek veri seti.
-- **Kanıt:** 329 otomatik test (22 Kas 2026; F2 dalında 472, 23 Kas 2026), yaklaşık %96 kapsam (F2 dalında %97), her PR'da dört otomatik kontrol; planlanan 38 test senaryosundan T01-T12, T22, T27-T28 yazıldı ve geçti (F2 dalında T13-T19, T36 ve T37 de eklendi) (kaynak: GitHub issue #3, `docs/IS_PLANI.md`).
+- **Yapılan iş (F2, devam ediyor; PR #14 taslak, `main`'e birleşmedi):** Doğrulamalı, kör, enjeksiyona dayanıklı yargıç motoru; hakem puanı kaydı (rubrik sürümü, komut sürümü, token, süre); `judge:smoke` ile gerçek hakem denemesi; veritabanı tabanlı iş kuyruğu (yeniden başlatmada kaldığı yerden devam); toplu üretim ve toplu puanlama işleri (sağlayıcı başına şerit, çalışırken bütçe, kendi-puanı işaretleme); `npm run batch` komut satırı (varsayılan plan, `--calistir` ile gerçek çalıştırma); `npm run export` ile CSV/JSON dışa aktarma; tek sabit hakem kararı (DeepSeek Flash), DeepSeek adaptörü, gerçek smoke ve 3 şiirlik pilot (bölüm 3.9, 4.8); `npm run stability` ile tekrar kararlılığı ölçümü (bölüm 3.10). Kalan: istatistik, enjeksiyon direnci ve ilk gerçek veri seti.
+- **Kanıt:** 329 otomatik test (22 Kas 2026; F2 dalında 504, 23 Kas 2026), yaklaşık %96 kapsam (F2 dalında %97), her PR'da dört otomatik kontrol; planlanan 38 test senaryosundan T01-T12, T22, T27-T28 yazıldı ve geçti (F2 dalında T13-T20, T36 ve T37 de eklendi) (kaynak: GitHub issue #3, `docs/IS_PLANI.md`).
 - **Süreç:** Faz başına GitHub milestone ve issue (F0 #2, F1 #3 kapalı); her kararın gerekçesi `docs/adr/` altında 10 karar kaydıyla belgelendi; PR #1, #10, #12 birleşti.
 - **Risk yönetimi:** Sessiz yedek yok, maliyet sınırı, anahtar güvenliği, bakiye/kota hataları, servis yoğunluğu (Gemini).
 - **Bütçe/harcama:** Tüm gerçek servis denemeleri toplam yaklaşık **$0,2064** [Hesap]: `llm:smoke` koşuları yaklaşık $0,0065 (4.2), `judge:smoke` $0,0532 (4.6), toplu üretim $0,0331 ve toplu puanlama $0,1020 (4.7; $0,0865 + yeniden deneme $0,0155), DeepSeek smoke $0,0019 ve pilot $0,0097 (4.8; yoğun saat fiyatıyla tahmin, gerçek fatura panelden doğrulanmadı). **[TODO]** Nihai veri setinin üretim ve puanlama maliyeti eklenecek.
@@ -686,6 +704,7 @@ Hepsi **22 Kasım 2026**'da okundu (fiyat ve model adları sonradan değişebili
 
 | Tarih       | Değişiklik                                                                                                  |
 | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| 23 Kas 2026 | Bölüm 3.10 (tekrar kararlılığı ölçümü T20: grup ve koşul, s_r, ölçülemedi kuralı, eşik yok, 46 bozma ve yakalanan iki test eksiği), bölüm 4.8'e araçla ölçülen kararlılık (s_r 3,33, 13/15 hücre aynı), Ek A'ya R15, sınırlılık 21, kontrol listesi, bölüm 2, 3.7 ve 9 güncellendi, test sayısı 504. |
 | 23 Kas 2026 | Bölüm 3.9 (tek sabit hakem kararı, TÜBİTAK formuyla ilişki, DeepSeek adaptörü kararları, 24 bozma), bölüm 4.8 (DeepSeek smoke R13 ve 3 şiirlik pilot R14: sıra, seviye, kararlılık, süre, maliyet), bölüm 5'e DeepSeek fiyatları, Ek A'ya R13-R14, sınırlılık 18-20 eklendi, 1/8/14 güncellendi, bölüm 1, 2, 3.7, 3.8, 7, 8, 9, 10, 11 güncellendi, test sayısı 472, toplam harcama $0,2064. |
 | 23 Kas 2026 | Bölüm 3.8'e Adım 8 (CSV/JSON dışa aktarma: uzun biçim, başarısız kayıtlar, kendi-puanı sütunu, rubrik notu, formül önlemi, `--excel`), 36 bozma ve yakalanan test eksiği, test sayısı 448, sınırlılık 17, kontrol listesi ile bölüm 2 ve 9 güncellendi. |
 | 23 Kas 2026 | Bölüm 4.7 (ilk gerçek toplu üretim ve puanlama R10-R12: süre, maliyet, 503, hakem sertliği, kendi-puanı maliyeti), Ek A'ya R10-R12, sınırlılık 5/12/16 güncellendi, bölüm 3.8 maliyet tahmini gerçek değerle güncellendi, toplam harcama $0,1948. |
@@ -901,4 +920,34 @@ Dışa aktarma çıktısından okunan DeepSeek puanlama kayıtları (R14)
 {"id":17,"hakem":"deepseek/deepseek-flash","yazar":"google/gemini-4-hydrogen","durum":"succeeded","toplam":55,"puanlar":"3,4,3,2,4","deneme":1,"giris":1583,"cikis":407,"ms":2638}
 {"id":18,"hakem":"deepseek/deepseek-flash","yazar":"google/gemini-4-hydrogen","durum":"succeeded","toplam":55,"puanlar":"3,4,3,2,4","deneme":1,"giris":1583,"cikis":492,"ms":3700}
 {"id":19,"hakem":"deepseek/deepseek-flash","yazar":"google/gemini-4-hydrogen","durum":"succeeded","toplam":55,"puanlar":"3,4,3,2,4","deneme":1,"giris":1583,"cikis":492,"ms":3432}
+```
+
+**R15 (23 Kas, tekrar kararlılığı, bölüm 3.10 ve 4.8).** `npm run stability -- --cikti exports/kararlilik.json` çıktısı (yalnızca ekranda görülen satırlar; yalnızca okur, ücretsiz), ardından koddan bağımsız doğrulama: ham dışa aktarma dosyasından (`exports/pilot.json`, DeepSeek'in başarılı 9 kaydı) ayrı bir betikle hesaplanan değerler (betik saklanmadı).
+
+```
+R15 (23 Kas, npm run stability)
+Tekrar kararlılığı: aynı metin, aynı hakem, aynı rubrik ve komut sürümü
+Koşul: anthropic/claude-sonnet-5-5 · siir · rubrik 0.1-taslak · hakem komutu v1
+  Metin: 3 (ölçülebilen 0, ölçülemeyen 3) · başarısız puanlama: 0
+  Sapma ölçülemedi: hiçbir metinde en az 2 başarılı tekrar yok.
+Koşul: deepseek/deepseek-flash · siir · rubrik 0.1-taslak · hakem komutu v1
+  Metin: 3 (ölçülebilen 3, ölçülemeyen 0) · başarısız puanlama: 0
+  Toplam puan: tekrar sapması (s_r) 3.33 · ortalama aralık 3.33 · en büyük aralık 10.00 · tamamen aynı çıkan metin 2/3
+  Kriterler: tamamen aynı çıkan hücre 13/15 (%86.7)
+    imgeGucu: s_r 0.33, tamamen aynı 2/3
+    ritimAhenk: s_r 0.00, tamamen aynı 3/3
+    duyguAktarimi: s_r 0.33, tamamen aynı 2/3
+    ozgunluk: s_r 0.00, tamamen aynı 3/3
+    anlamButunlugu: s_r 0.00, tamamen aynı 3/3
+Koşul: google/gemini-4-hydrogen · siir · rubrik 0.1-taslak · hakem komutu v1
+  Metin: 3 (ölçülebilen 0, ölçülemeyen 3) · başarısız puanlama: 1
+  Sapma ölçülemedi: hiçbir metinde en az 2 başarılı tekrar yok.
+Koşul: openai/gpt-6.2-sol · siir · rubrik 0.1-taslak · hakem komutu v1
+  Metin: 3 (ölçülebilen 0, ölçülemeyen 3) · başarısız puanlama: 0
+  Sapma ölçülemedi: hiçbir metinde en az 2 başarılı tekrar yok.
+Sonuç yazıldı (json): exports/kararlilik.json
+
+Bağımsız doğrulama (ham dışa aktarmadan, ayrı betik)
+s_r 3.3333 ortAralik 3.3333 enBuyuk 10 ayni 2/3 hucre 13/15
+arac cikti 3.3333 3.3333 10 2/3
 ```
