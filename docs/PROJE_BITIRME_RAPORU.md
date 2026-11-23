@@ -19,6 +19,8 @@
 
 **[Karar, 23 Kas 2026]** **Kapsam:** Platform **gerçek kullanıma açılmayacak**; bitirme raporu ve makale yazıldıktan sonra GitHub deposunda araştırma çalışması olarak kalacak (kaynak: kullanıcı kararı, 23 Kas 2026). Bu yüzden üretim ölçeği, çok kullanıcılı işletme ve sürekli çalışma bir tasarım hedefi değildir; hedef, rapor ve makalenin ihtiyaç duyduğu veriyi **güvenilir ve tekrarlanabilir** biçimde üretmektir. Maliyet de yalnızca bu veriyi üretmek için harcanan sınırlı API ücretidir (plan modu ve bütçe sınırıyla izlenir).
 
+**[Karar, 23 Kas 2026]** **Puanlama:** Claude, Gemini ve GPT yalnızca **yazar** modellerdir; rubrik puanını sistemin **tek ve sabit bir yapay zekâ hakemi** verir. Hakem **DeepSeek Flash**'tır (`deepseek-flash`; modeli kullanıcı seçti, ayrıntı ve gerekçe bölüm 3.9). Bu karar 22 Kas'taki "üç model de her metni puanlasın" tasarımının yerini alır.
+
 ## 2. Takvim ve ilerleme
 
 | Tarih                 | Olay                                                                                       |
@@ -28,13 +30,14 @@
 | 22 Kas 2026           | OpenAI adaptörü, GPT-6.2 Sol, Gemini 4 Hydrogen, ADR 0010 birleşti (PR #12, `4c273e1`)      |
 | 22-23 Kas 2026        | F2 altyapısı (hakem motoru, puan kaydı, iş kuyruğu, toplu üretim ve puanlama, komut satırı) PR #14'te taslak olarak birikiyor, `main`'e birleşmedi |
 | 23 Kas 2026           | İlk gerçek toplu üretim (3 şiir) ve puanlama (9 puanlama) çalıştırıldı (bölüm 4.7) |
+| 23 Kas 2026           | Puanlama kararı değişti: yazarlar yalnızca yazar, tek sabit hakem DeepSeek Flash; DeepSeek adaptörü yazıldı, gerçek smoke ve 3 şiirlik pilot çalıştırıldı (bölüm 3.9, 4.8) |
 | 10 Ocak 2027          | Yazılım dondurma                                                                           |
 | 31 Ocak 2027          | TÜBİTAK bitiş                                                                              |
 | Şubat / Mayıs 2027    | Bitirme raporu / sunum                                                                     |
 
 **[Veri]** F1 planı 23 Kas-6 Ara 2026 arasındaydı; plan başlamadan, 21 Kas'ta birleşti (kaynak: `docs/IS_PLANI.md`). Fazlar F0-F7; sırada F2 (yargıç motoru, iş kuyruğu, istatistik, dışa aktarma).
 
-**[Veri]** Yazılım doğrulama ilerlemesi (otomatik test sayısı): 56 (ilk adım) → 91 → 107 → 129 → 142 → 191 → 204 → 225 → 256 → 275 → 301 → 316 → **329** (22 Kas 2026; 275 OpenAI/model birleşmesi, 301 F2 Adım 1 yargıç motoru, 316 Adım 2 puan kaydı, 329 Adım 3 judge:smoke) → **415** (23 Kas 2026, F2 Adım 7 komut satırı) → **448** (23 Kas 2026, F2 Adım 8 dışa aktarma; PR #14'te, `main`'e henüz birleşmedi). Kod kapsamı yaklaşık %96 (F2 dalında yaklaşık %97). Her PR'da dört otomatik kontrol (biçim, backend, frontend, Docker Compose) çalışır; PR #10 ve #12 hepsini geçti. Kaynak: oturum kayıtları, GitHub Actions.
+**[Veri]** Yazılım doğrulama ilerlemesi (otomatik test sayısı): 56 (ilk adım) → 91 → 107 → 129 → 142 → 191 → 204 → 225 → 256 → 275 → 301 → 316 → **329** (22 Kas 2026; 275 OpenAI/model birleşmesi, 301 F2 Adım 1 yargıç motoru, 316 Adım 2 puan kaydı, 329 Adım 3 judge:smoke) → **415** (23 Kas 2026, F2 Adım 7 komut satırı) → **448** (23 Kas 2026, F2 Adım 8 dışa aktarma; PR #14'te, `main`'e henüz birleşmedi) → **472** (23 Kas 2026, DeepSeek adaptörü, `1ffb853`; PR #14'te). Kod kapsamı yaklaşık %96 (F2 dalında yaklaşık %97). Her PR'da dört otomatik kontrol (biçim, backend, frontend, Docker Compose) çalışır; PR #10 ve #12 hepsini geçti. Kaynak: oturum kayıtları, GitHub Actions.
 
 ## 3. Yöntem
 
@@ -152,7 +155,7 @@
 | **Cevap biçimi:** JSON; şema rubrikten kurulur: `puanlar → { kriter anahtarı → { puan, gerekce } }`    | Her kriter zorunlu, fazlası yasak, puan ölçek içinde tam sayı. Regex ile JSON ayıklama yok                                                                                                                                               |
 | **Hata davranışı:** bozuk ya da şemaya uymayan cevap bir kez yeniden denenir (en çok 2 deneme), sonra `failed` | **Uydurma puan yok** (ADR 0004). Kalıcı hatalar (yanlış anahtar) yeniden denenmez; geçici hatalar (kota, 5xx, zaman aşımı) koruyucu kılıfla en çok 3 kez denenir                                                                         |
 | **Puan hesabı:** ham puan min-max ile 0-100'e çevrilir (1 → 0, 3 → 50, 5 → 100), ağırlıklı toplam, hesap tek yerde | ADR 0009. En düşük puan geçerli puandır ve 0 olarak korunur                                                                                                                                                                              |
-| **Sıcaklık gönderilmez**, `maxTokens` varsayılanı 4096 (düşünme tokenleri dahil)                      | Modeller sıcaklığı reddedebilir ya da yok sayar (bkz. bölüm 6, sınırlılık 1)                                                                                                                                                             |
+| **Sıcaklık gönderilmez**, `maxTokens` varsayılanı 4096 (düşünme tokenleri dahil)                      | Modeller sıcaklığı reddedebilir ya da yok sayar (bkz. bölüm 6, sınırlılık 1). **23 Kas 2026:** tek istisna DeepSeek adaptörüdür, JSON (puanlama) yolunda sıcaklık 0 gönderir (bölüm 3.9)                                                                                                                                                             |
 | **Komut sürümlü ve değişmez** (`judge-v1`), sürüm her değerlendirmeyle kaydedilecek (F2 Adım 2)        | Tekrarlanabilirlik: hangi puan hangi komutla alındı                                                                                                                                                                                      |
 
 **[Veri]** Yargıç komutu `judge-v1` (taslak; kaynak: `Backend/prisma/seed-data/prompts/judge-v1.json`). `{{...}}` boşlukları çalışma sırasında doldurulur:
@@ -230,9 +233,9 @@ Kriterler komuta şu biçimde yazılır (düzeyler küçükten büyüğe): `- an
 | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | İş eklenirken hakem şablonu ve her türün etkin rubriği işe sabitlenir; sürerken değişirse iş `failed` olur                           | Aynı veri setinde tek komut ve tek rubrik sürümü                  |
 | Hakeme metnin yazarı söylenmez (kör); yazar yalnızca isteğe bağlı dışlama için okunur                                              | Kör değerlendirme ilkesi (3.7)                                    |
-| **Varsayılan: tüm hakemler her metni puanlar; kendi-puanı dışlanmaz, analizde işaretlenir** (aşağıda)                               | Hakem etkisini model farkından ayırabilmek                        |
+| **Varsayılan: tüm hakemler her metni puanlar; kendi-puanı dışlanmaz, analizde işaretlenir** (aşağıda)                               | Hakem etkisini model farkından ayırabilmek. **23 Kas 2026'da değişti:** yazarlar puanlamaya katılmaz, tek sabit hakem kullanılır (bölüm 3.9); kod çoklu hakemi hâlâ destekler                        |
 
-**[Karar, kullanıcı onayıyla, 22 Kas 2026] Neden "kendini dışlamak" yerine "işaretlemek"?** İş planındaki çapraz yargıç ilkesi (7.3) bir modelin kendi metnini puanlamamasını önerir. Bunu varsayılan yapsaydık her modelin metni **farklı bir hakem takımından** geçerdi (Claude'un metnini Hydrogen ve GPT, GPT'nin metnini Claude ve Hydrogen puanlardı). Hakem smoke'ta hakemlerin sertliği çok farklı çıktığı için (4.6, gözlem 3: aynı güçlü şiire 70 / 90 / 90), bu tasarımda **hakem sertliği farkı model farkıyla karışırdı**. Bunun yerine her hakem her metni puanlar (dengeli tasarım). Kendi ailesinin metnini puanlayan puanlar, metnin yazarı (üretim kaydı) ile hakemin sağlayıcısı karşılaştırılarak **analizde işaretlenir**; ek sütun gerekmedi. İsteyen `--kendini-disla` (`excludeSelf: true`) ile dışlamayı seçebilir.
+**[Karar, kullanıcı onayıyla, 22 Kas 2026] Neden "kendini dışlamak" yerine "işaretlemek"?** **[Bu tasarımın yerini 23 Kas 2026'da tek sabit hakem kararı aldı, bölüm 3.9; tarihsel kayıt olarak durur.]** İş planındaki çapraz yargıç ilkesi (7.3) bir modelin kendi metnini puanlamamasını önerir. Bunu varsayılan yapsaydık her modelin metni **farklı bir hakem takımından** geçerdi (Claude'un metnini Hydrogen ve GPT, GPT'nin metnini Claude ve Hydrogen puanlardı). Hakem smoke'ta hakemlerin sertliği çok farklı çıktığı için (4.6, gözlem 3: aynı güçlü şiire 70 / 90 / 90), bu tasarımda **hakem sertliği farkı model farkıyla karışırdı**. Bunun yerine her hakem her metni puanlar (dengeli tasarım). Kendi ailesinin metnini puanlayan puanlar, metnin yazarı (üretim kaydı) ile hakemin sağlayıcısı karşılaştırılarak **analizde işaretlenir**; ek sütun gerekmedi. İsteyen `--kendini-disla` (`excludeSelf: true`) ile dışlamayı seçebilir.
 
 - **[Yorum]** Bu tasarımda kendini kayırma (self-preference) **ölçülebilir** (kendi-puanı ile diğer-puan farkı); dışlama tasarımında ölçülemezdi.
 - **[Hesap, kaba tahmin]** Bedel: 27 metin × 3 hakem × 3 tekrar = 243 puanlama (dışlamayla 162). Hakem smoke'taki 6 çağrının ortalaması ($0,0089, 4.6; iki kısa örnek şiir) ile fark yaklaşık 81 puanlama ≈ **$0,7**. Bu rakam smoke örneklerine dayanır. **[Veri/Hesap, 23 Kas 2026]** İlk gerçek puanlamada (bölüm 4.7, 3 şiir × 3 hakem) kendi-puanı işaretli 3 kaydın gerçek maliyeti **$0,0351**'dir (toplam $0,1020'nin %34'ü; çağrı başına $0,0117, tüm çağrılarda ortalama $0,0113). Aynı ortalamayla 81 ek puanlama ≈ **$0,9** (kaba: şiirler kısa, hikâye ve denemelerde artabilir). **[TODO]** Gerçek veri setinde (27 metin) aynı toplama yeniden yapılacak. Dışlama varyantını ayrıca çalıştırmak gerekmez, çünkü fark zaten işaretli kayıtların toplamıdır.
@@ -275,6 +278,37 @@ Kriterler komuta şu biçimde yazılır (düzeyler küçükten büyüğe): `- an
 - **Puanlayıcı türü yazılmıyor** (yapay zekâ ya da insan); insan puanı etik kurul onayına kadar kapalı, açılınca eklenecek **[TODO]**.
 - **`--excel` kipi gerçek Excel'de denenmedi** **[TODO]**.
 - **Tüm kayıtlar tek seferde belleğe okunur** (yüzlerce kayıt için uygun); binlerce kayıtta sayfalama gerekir. Yalnızca komut satırı; web ucu F4'te.
+
+### 3.9 Tek sabit hakem ve DeepSeek adaptörü: F2, 23 Kas 2026
+
+**[Karar, kullanıcı kararı, 23 Kas 2026] Puanı yazarlar değil, sistemin tek ve sabit bir yapay zekâ hakemi verir.** Claude, Gemini ve GPT yalnızca şiir, hikâye ve deneme **yazar**; puanlamaya karışmaz. Bu karar 22 Kas'taki "tüm hakemler her metni puanlasın" tasarımının (3.8, Adım 6) yerini alır; kod çoklu hakemi hâlâ destekler (`--hakemler`), silinmedi. **Hakem modeli: DeepSeek Flash (`deepseek-flash`).** Modeli kullanıcı seçti ve API'yi kendisi satın aldı. Kaynak: oturum kaydı (kullanıcı, 23 Kas 2026: "Rubrik değerlendirmesini sistem yapacak"; seçenek "Tek, sabit bir yapay zekâ hakem"); kod commit `1ffb853`.
+
+| Konu                  | Bu kararın sonucu                                                                                                                                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Kendi-puanı           | Hakem yazarlardan biri olmadığı için hiçbir puanlama "kendi ailesinin metni" değildir. Adım 6'daki işaretleme ve dışlama kodu duruyor ama bu tasarımda gerekmez                                                         |
+| Hakem etkisi          | Tüm modellerin metni aynı hakemden geçer; hakem sertliği farkı model karşılaştırmasına karışmaz. Bedeli: hakemin kendi sistematik eğilimi ölçülemez ve bütün sonuçları aynı yönde etkiler (sınırlılık 18)              |
+| Maliyet               | Üç hakem yerine bir. 27 metin × 3 tekrar = 81 puanlama, çağrı başına ölçülen ≈ $0,0011 ile yaklaşık **$0,09** **[Hesap]** (üç hakemli tasarımda 27 × 3 × 3 = 243 puanlama, ölçülen ortalama $0,0113 ile ≈ $2,7 olurdu **[Hesap]**). Tam veri setinde ölçülmedi       |
+| Eski deneme verisi    | Üç hakemle alınan puanlar (R9, R11-R12) deneme verisi olarak kalır, nihai veri setine girmez                                                                                                                           |
+| İstatistik tasarımı   | Bu karara göre sadeleşecek (hakem etkisi ayrı etken olmaz); henüz yazılmadı **[TODO]**                                                                                                                                 |
+
+**[Karar, Yorum] Seçimin gerekçesi.** Modeli kullanıcı seçti. Gerekçeler: (a) üç yazar ailesinden biri olmadığı için kendini kayırma doğrudan oluşmaz; (b) ölçülen hız ve maliyet: DeepSeek'te çağrı başına 2,4-4,0 sn ve yaklaşık $0,001 (4.8), diğer hakemlerde 6-70 sn ve $0,006-0,018 (4.6, 4.7). **Kanıtlanmamış olan:** DeepSeek'in Türkçe edebi metni iyi değerlendirdiği. Yapılan web araştırmasında (22-23 Kas 2026; yalnızca arama sonuçları, tam metinler okunmadı) bunu gösteren bir kaynak bulunamadı. Bulunanlar: çok dilli genel modellerin Türkçe'ye özel modellerden genelde iyi olduğunu söyleyen bir çalışma (CETVEL) ve aynı aileden hakemin kendi ailesini kayırdığını belgeleyen çalışmalar; farklı aileden hakemin kanıtlanmış bir üstünlüğü yok **[Yorum]**. Tek denetim bölüm 4.8'deki 3 şiirlik pilottur. Değerlendirilen diğer adaylar Mistral, xAI Grok ve Alibaba Qwen'di; fiyatları doğrulanmamış toplayıcı bloglardan geldiği ve denenmediği için kullanılmadı.
+
+**[Veri] TÜBİTAK 2209-A başvuru formuyla ilişki** (kaynak: kullanıcının başvuru PDF'i, 23 Kas 2026'da okundu). Form, kullanıcı metinleri yükleyip "karşılaştır" deyince **sistemin** rubrik ölçütlerine göre analiz yapacağını söyler (Hedef 1). İş Paketi 1'de "gerekli istatistiksel değerlendirmelerde Claude, OpenAI ve Gemini API servislerinden yararlanılacaktır" yazar; API ücretleri bütçenin "hizmet alımı" kaleminden karşılanır. İş Paketi 6 "metinler rubrik kriterlerine göre puanlanacak" der ve puanlayıcıyı belirtmez. **"Yapay zekâ hakem" ifadesi ve DeepSeek formda geçmez.** **[Yorum]** Tek yapay zekâ hakem yöntemi ve dördüncü bir sağlayıcının kullanımı formdan bir **sapmadır** (teknoloji yığınındaki bilinen sapmaya ek: form Node.js, HTML, CSS, JS ve MySQL yazar, uygulama TypeScript ve React ile yazıldı). **[TODO]** Danışmanla teyit edilecek; sonuç raporunda gerekçesiyle yazılmalı.
+
+**[Veri] DeepSeek adaptörü** (`Backend/src/providers/deepseek-provider.ts`, commit `1ffb853`). DeepSeek'in resmi belgeleri (23 Kas 2026; bölüm 5 ve 10) temel alındı:
+
+| Karar                                                                                                                                              | Gerekçe                                                                                                                                                                                                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Chat Completions** (`https://api.deepseek.com/chat/completions`), anahtar `Authorization` başlığında; OpenAI adaptörü yeniden kullanılmadı        | OpenAI adaptörü `/responses` ve katı JSON şeması kullanır; DeepSeek'in belgelenen yolu `chat/completions` ve yalnızca basit `json_object` kipidir                                                                                  |
+| **JSON cevap:** `response_format: json_object`; şema komutun sistem kısmına yazılır, cevap yine şemayla doğrulanır (`parseStructured`)              | DeepSeek şemayı zorlamaz; belge, komutta "JSON" geçmezse içeriğin boş gelebileceğini söyler. Uymayan cevap `invalid_output` olur, uydurma puan yazılmaz (ADR 0004)                                                                 |
+| **Düşünme (thinking) her zaman kapalı** gönderilir, ayarı yok                                                                                       | Kapalıyken sıcaklık işe yarar; açıkken belge sıcaklığın etkisiz olduğunu söyler ve düşünme tokenlerinin faturada nasıl sayıldığı belgede belirsizdir. Açık hâli denenmedi **[TODO]**                                              |
+| **Puanlamada (JSON yolu) sıcaklık verilmezse 0** gönderilir; metin üretiminde varsayılana dokunulmaz                                                | Hakem kodu sıcaklık göndermiyordu (3.7); DeepSeek'in varsayılanı 1'dir (belge) ve aynı metne her seferinde başka puan verdirir. Diğer sağlayıcılara dokunulmadı, onlar kendi varsayılan örneklemeleriyle çalıştı (sınırlılık 19)   |
+| **Bitiş nedenleri:** `length` → `invalid_output`; `content_filter` → `safety_blocked`; `insufficient_system_resource` ve `aborted` → geçici `server_error` | Kesik cevap tam metin gibi kaydedilmez; güvenlik filtresi kesmesi yeniden denenmez                                                                                                                                                |
+| **402 (bakiye bitti) → kalıcı `auth`**, 429 ve 5xx geçici                                                                                           | Ortak hata eşlemesi; belge 402'yi "Insufficient Balance", 503'ü "Server Overloaded" olarak verir. Bakiye bitince beklemek çözmez                                                                                                  |
+| **Yanıt gövdesi okunurken kopma geçici hata** sayılır; yanıt başındaki boş satırlar yok sayılır                                                     | Belge: yavaş cevapta sunucu bağlantıyı boş satırlarla açık tutar. Gerçek çağrılarda boş satır **gözlenmedi** (yanıtlar 2-4 sn sürdü); bu davranış yalnızca belgeye ve sahte testlere dayanır                                       |
+| **Model kaydı** `deepseek-flash`, fiyat 0,30 / 1,20 $ (yoğun saat fiyatı)                                                                           | Maliyet tahmini bu yüzden üst sınırdır (bölüm 5)                                                                                                                                                                                  |
+
+**[Veri] Doğrulama:** 24 yeni otomatik test (sahte HTTP; gerçek servis çağrısı yok). 24 bozmanın 24'ü bir testi kırmızıya çevirdi (düşünme satırı, sıcaklık varsayılanı, dört bitiş nedeni eşlemesi, anahtar başlığı, JSON kipi, şema temizliği, okunamayan gövde, sistem komutu, token alanı, boş cevap, uç nokta yolu, iptal sinyali, düşünme içeriğinin karışması, kayıt defteri, smoke ve ayar). Test sayısı **448 → 472**, `npm run verify` geçti. Gerçek servis denemesi: bölüm 4.8.
 
 ---
 
@@ -440,6 +474,64 @@ Kayıt 9'un hatası: `server_error: HTTP 503: This model is currently experienci
 - Bu deneme verisi geliştirme veritabanında durur; nihai veri setinden ayrılması gerekir **[TODO]**.
 - Şiirlerin içeriği bu adımda değerlendirilmedi (nitel inceleme yapılmadı).
 
+### 4.8 DeepSeek hakem: smoke ve pilot (F2, 23 Kas 2026)
+
+**[Veri]** Komutlar (koşuları yapay zekâ asistanı kullanıcı onayıyla çalıştırdı; ham çıktı Ek A, koşu numaraları **R13-R14**):
+
+- **R13, smoke:** `npm run judge:smoke -- --deepseek deepseek-flash --timeout 120`. Diğer üç sağlayıcının anahtarları yalnızca bu komutun sürecinde boşaltıldı (`.env` değişmedi) ve hangi hedeflerin kurulacağı çağrıdan önce ağsız doğrulandı: yalnızca DeepSeek çağrıldı. 4.6'daki iki örnek şiir, tek tekrar, veritabanına yazılmadı.
+- **R14, pilot (iş #4):** `npm run batch -- puanla --metinler hepsi --hakemler deepseek-flash --tekrar 3 --calistir`. 3 şiir (4.7'deki üretimler) × 3 tekrar = 9 puanlama; hakem komutu `judge-v1`, rubrik taslak şiir 0.1; veritabanına yazıldı (puanlama kayıtları 11-19). Harcama ≈ $0,0097 (ekranda).
+
+**R13 (smoke).** Kriter sırası: imge, ritim, duygu, özgünlük, anlam.
+
+| Örnek | Toplam | Kriterler | Süre (sn) | Giriş / çıkış token | Maliyet ($) | Deneme |
+| ----- | ------ | --------- | --------- | ------------------- | ----------- | ------ |
+| güçlü | 75,0   | 4,4,4,4,4 | 4,0       | 1477 / 502          | 0,00105     | 1      |
+| zayıf | 15,0   | 1,2,2,1,2 | 2,4       | 1432 / 371          | 0,00087     | 1      |
+
+Toplam $0,00192. Aynı iki örnekte diğer hakemlerin güçlü / zayıf toplamları (4.6): Claude 70 / 20 (fark 50), Hydrogen 90 / 5 (fark 85), GPT 90 / 35 (fark 55). DeepSeek 75 / 15 (fark 60): güçlü örneği zayıftan belirgin yüksek puanladı.
+
+**R14 (pilot).** Kayıtlar (şiirin yazarı = üretim kaydındaki model; kriter sırası aynı):
+
+| Kayıt | Şiirin yazarı       | Tekrar | Toplam | Kriterler | Süre (sn) | Giriş / çıkış |
+| ----- | ------------------- | ------ | ------ | --------- | --------- | ------------- |
+| 11    | `gpt-6.2-sol`       | 1      | 90     | 5,4,5,4,5 | 3,9       | 1578 / 488    |
+| 12    | `gpt-6.2-sol`       | 2      | 80     | 4,4,4,4,5 | 3,6       | 1578 / 431    |
+| 13    | `gpt-6.2-sol`       | 3      | 80     | 4,4,4,4,5 | 3,8       | 1578 / 492    |
+| 14    | `claude-sonnet-5-5` | 1      | 70     | 4,4,4,3,4 | 4,0       | 1603 / 577    |
+| 15    | `claude-sonnet-5-5` | 2      | 70     | 4,4,4,3,4 | 3,7       | 1603 / 538    |
+| 16    | `claude-sonnet-5-5` | 3      | 70     | 4,4,4,3,4 | 3,7       | 1603 / 576    |
+| 17    | `gemini-4-hydrogen` | 1      | 55     | 3,4,3,2,4 | 2,6       | 1583 / 407    |
+| 18    | `gemini-4-hydrogen` | 2      | 55     | 3,4,3,2,4 | 3,7       | 1583 / 492    |
+| 19    | `gemini-4-hydrogen` | 3      | 55     | 3,4,3,2,4 | 3,4       | 1583 / 492    |
+
+Aynı üç şiirin dört hakemden aldığı toplam puanlar (DeepSeek: üç tekrarın ortalaması; diğer üçü tek tekrar, 4.7):
+
+| Hakem               | GPT şiiri         | Claude şiiri | Hydrogen şiiri | Şiirler arası aralık |
+| ------------------- | ----------------- | ------------ | -------------- | -------------------- |
+| `deepseek-flash`    | 83,3 (90, 80, 80) | 70           | 55             | 28,3                 |
+| `claude-sonnet-5-5` | 70                | 60           | 55             | 15                   |
+| `gpt-6.2-sol`       | 95                | 75           | 70             | 25                   |
+| `gemini-4-hydrogen` | 95                | 75           | 60             | 35                   |
+
+**Gözlemler:**
+
+1. **[Veri]** **Sıra aynı:** dört hakemin hepsi GPT şiirini en yüksek, Hydrogen şiirini en düşük puanladı (GPT şiiri > Claude şiiri > Hydrogen şiiri). DeepSeek hiçbir şiirde bu sırayı bozmadı.
+2. **[Veri]** **Puan seviyesi:** DeepSeek, Claude'un sert ve GPT ile Hydrogen'in cömert uçları arasında kaldı: GPT şiirinde 83,3 (70 ile 95 arası), Claude şiirinde 70 (60 ile 75 arası), Hydrogen şiirinde 55 (Claude hakemle aynı). **[Yorum]** Üç şiir ve tek hakem: hakemin sertliği hakkında genelleme yapılamaz.
+3. **[Veri]** **Tekrarlar arası kararlılık** (sıcaklık 0, düşünme kapalı): 3 şiirden ikisinde üç tekrar birebir aynı çıktı (70, 70, 70 ve 55, 55, 55). GPT şiirinde 90, 80, 80 çıktı: ilk tekrarda imge ve duygu kriterleri 5 iken sonraki ikisinde 4 verildi (iki kriterde birer basamak, toplamda 10 puan). **[Yorum]** Sıcaklık 0 tam deterministik değildir; üç tekrarın ortalamasını almak bu yüzden anlamlı. Üç şiir ve tek hakemle sapmanın büyüklüğü hakkında genelleme yapılamaz.
+4. **[Veri]** **Süre:** çağrı başına 2,4-4,0 sn (pilotta ortalama 3,6 sn, en uzun 4,0 sn). Hydrogen hakemin 10,9-65,1 sn'si (4.7) ile karşılaştırılamayacak kadar hızlı, Claude (7,1-7,7 sn) ve GPT (8,7-11,7 sn) hakemin yaklaşık yarısı ya da daha azı. **[Yorum]** Düşünme kapalı olduğu için çıkış tokeni de az (371-577); bu hızın bir kısmı düşünmenin kapalı olmasından gelir.
+5. **[Hesap]** **Maliyet:** pilotun 9 çağrısı 14.292 giriş ve 4.493 çıkış token, 0,30 / 1,20 $ fiyatıyla ≈ **$0,0097** (çağrı başına ≈ $0,0011); smoke'un 2 çağrısı $0,00192. Üç hakemin ortalama çağrı maliyeti $0,0113 (4.7); farklı token sayıları nedeniyle oran yaklaşık, DeepSeek yaklaşık onda biri. Bu fiyat **yoğun saat** fiyatıdır (bölüm 5); koşular belgedeki yoğun saat penceresinin (hafta içi 01-04 ve 06-10 UTC) dışında yapıldığı için gerçek faturanın tahminin yaklaşık yarısı olması beklenir **[Yorum]**. **[TODO]** DeepSeek panelindeki gerçek harcamayla karşılaştırılacak.
+6. **[Veri]** **Geçerlilik:** 11 puanlamanın 11'i (2 smoke + 9 pilot) ilk denemede geçerli JSON verdi (deneme sayısı 1); hata yok.
+7. **[Veri]** **Gerekçe örneği** (kayıt 11, GPT şiiri, imge kriteri, puan 5): "Yağmurun vidaları yoklaması, incir ağacının yaprağını avluya bırakması ve düşmeyen yaprak gibi imgeler özgün ve canlı. İmgeler metnin bütününe yayılıp birbiriyle tutarlı bir sonbahar atmosferi kuruyor." **[Yorum]** Gerekçeler Türkçe ve şiirdeki somut imgelere atıf yapıyor (GPT hakemin gerekçesi de aynı imgeleri anıyor); gerekçeler şiir metniyle satır satır karşılaştırılmadı.
+
+**Sınırlılıklar (bu denemeye özgü):**
+
+- 3 şiir, tek tür (şiir), tek tema (Sonbahar): bir **yoklamadır**, hakem geçerliliği ya da güvenilirliği kanıtı değildir. Sıra uyumu yalnızca üç nokta üzerindedir.
+- **İnsan puanı yok:** puanların "doğru" olup olmadığı bilinmiyor; yalnızca diğer üç hakemle sıra uyumuna bakıldı. DeepSeek'in Türkçe edebi metni diğer hakemler kadar iyi değerlendirdiği **kanıtlanmadı**.
+- **Koşullar eşit değil:** DeepSeek sıcaklık 0 ve düşünme kapalı çalıştı; diğer üç hakem kendi varsayılan örneklemeleriyle ve tek tekrarla puanladı (sınırlılık 19). Aradaki farkın bir kısmı koşul farkından olabilir.
+- Taslak rubrik v0.1 ve taslak hakem komutu kullanıldı; rubrik ya da komut değişirse pilot yinelenmelidir **[TODO]**.
+- Hikâye ve deneme, uzun metin ve çok sayıda metin denenmedi.
+- Bu deneme verisi (kayıt 11-19) geliştirme veritabanında durur; nihai veri setinden ayrılması gerekir **[TODO]**.
+
 ## 5. Sağlayıcı fiyat ve model envanteri
 
 **[Veri]** Fiyatlar milyon token başına, $, girdi / çıktı, standart katman. Kaynaklar belge adresleriyle 10. bölümde. Fiyatlar zamanla değişir; okunma tarihi: Anthropic fiyatları 21 Kas, Google ve OpenAI fiyatları 21-22 Kas 2026.
@@ -461,6 +553,17 @@ Kayıt 9'un hatası: `server_error: HTTP 503: This model is currently experienci
 | OpenAI    | `gpt-6.2-sol`           | 2 / 10                     | **Seçildi (orta sınıf)**; bağlam 1,05 milyon token, en çok 128 bin çıkış token          |
 | OpenAI    | `gpt-6.2-astra`         | 8 / 40                     | Amiral gemisi; (ilk duyuru sayfasında `gpt-6-astra` 10 / 50, güncel sayfa 8 / 40)       |
 
+### DeepSeek (23 Kas 2026)
+
+**[Veri]** Fiyatlar milyon token başına, $. DeepSeek yoğun saatte fiyatı iki katına çıkarır; yoğun saat hafta içi 01:00-04:00 ve 06:00-10:00 UTC, diğer saatler yoğun değildir. Kaynak sayfalar 10. bölümde.
+
+| Aile     | Model             | Girdi (önbellek kaçırma) / çıktı | Önbellek isabeti | Not                                                                                                       |
+| -------- | ----------------- | -------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------- |
+| DeepSeek | `deepseek-flash`  | 0,30 / 1,20 (yoğun), 0,15 / 0,60 (diğer saatler) | 0,006 (yoğun), 0,003 (diğer) | **Seçildi (sabit hakem)**; sunucuda `DeepSeek-V4.1-Flash-1017`; bağlam 1 milyon token; eşzamanlılık sınırı 2500 |
+| DeepSeek | `deepseek-v4-pro` | 1,32 / 3,96 (yoğun), 0,66 / 1,98 (diğer saatler) | 0,044 (yoğun), 0,022 (diğer) | Denenmedi; sunucuda `DeepSeek-V4-Pro-0813`; eşzamanlılık sınırı 500                                       |
+
+**[Veri]** Belge ayrıca eski adların (`deepseek-v4-flash`, `deepseek-v4-flash-vision-exp`) emekli olduğunu ve `deepseek-flash` fiyatından yeni modele yönlendirildiğini, `deepseek-chat` ve `deepseek-reasoner` adlarının okunan sayfalarda geçmediğini söyler. Hata sayfasında 402 "bakiye yetersiz", 429 "hız sınırı", 503 "sunucu aşırı yüklü" yazar; 500 ve 503 için bekleme süresi, `Retry-After` başlığı ve hata gövdesinin JSON biçimi belgede **yoktur**. **[Yorum]** Bu bilgi bir alt ajanın web okuma aracıyla sayfalardan okunup özetlenmesiyle alındı (doğrudan alıntı değil); aynı sağlayıcılar için yazılan uyarı (bu bölümün sonundaki not) burada da geçerlidir. Model kimliği her kayıtla yalnızca çağırdığımız takma adla (`deepseek-flash`) saklanır; yanıttaki gerçek model alanı kaydedilmiyor (sınırlılık 19).
+
 ### Sağlayıcı belgelerindeki tutarsızlıklar (22 Kas 2026)
 
 **[Veri]** Fiyat ve model bilgisini sağlayıcıların belge sayfalarından okurken, aynı sağlayıcının sayfaları birbiriyle çelişti. Bu yüzden her fiyat/model satırı **okunma tarihi ve kaynak sayfayla** kaydedilir (bkz. bölüm 10).
@@ -479,32 +582,35 @@ Kayıt 9'un hatası: `server_error: HTTP 503: This model is currently experienci
 
 Her biri raporda/makalede ayrıca yazılmalıdır:
 
-1. **Sıcaklık sabitlenemiyor.** Modeller kendi varsayılan örnekleme ayarlarıyla çalışır; çıktılar değişkendir, tekrarla (replicate) ele alınır.
+1. **Sıcaklık sabitlenemiyor.** Modeller kendi varsayılan örnekleme ayarlarıyla çalışır; çıktılar değişkendir, tekrarla (replicate) ele alınır. **[23 Kas 2026]** Tek istisna DeepSeek hakemidir: JSON (puanlama) yolunda sıcaklık 0 gönderilir (bölüm 3.9); yine de tekrarlar arasında sapma gözlendi (bölüm 4.8).
 2. **Düşünen modeller.** Düşünme miktarı modele göre farklıdır ve ölçülmesi/kısıtlanması zordur (4.4-1).
 3. **Sınıf eşleştirmesi araştırmacının kararıdır** (fiyata göre). Hydrogen, Sonnet ve Sol'dan biraz ucuzdur (3.1).
 4. **Model sürümleri ve fiyatlar zamanla değişir**; sonuçlar belirli bir tarih ve model sürümüne aittir. Üretim sırasındaki model kimliği ve tarih her kayıtla saklanmalıdır.
 5. **Servis kararlılığı** (yoğunluk, 503) üretimi kesintiye uğratabilir; Gemini 4 Hydrogen üretimden önce yeniden doğrulanacaktır. **Gözlendi (23 Kas 2026):** ilk gerçek puanlamada Hydrogen 1 kez HTTP 503 ("yoğun talep") verdi ve bir şiirin üretimi 164 sn sürdü (süre sınırı 300 sn; bölüm 4.7).
 6. **Taslak rubrik v0.1 yapay zekâ tarafından yazıldı**, uzman doğrulaması yok; gerçek rubrik ve etik kurul sonucu bekleniyor.
 7. **Komut şablonu ve uzunluk yönergesi taslaktır**, danışmanla kesinleşecek. Komut metni sonuçları etkiler (komut mühendisliği).
-8. **Yargıç yanlılığı riski:** Yapay zekâ yargıçların kendi ailesinin metnini kayırması (self-preference), uzun metni kayırması (verbosity) ve sıra etkisi. Kör değerlendirme (bölüm 3.7) hakemin metnin yazarını bilmesini engeller; **[Yorum]** kayırmayı azaltması beklenir ama etkisi ölçülmedi, uzunluk ve sıra etkisi ayrıca ölçülecek. **Çapraz yargıç ilkesi (modelin kendi metnini puanlamaması, İş planı 7.3) varsayılan yapılmadı:** tüm hakemler tüm metinleri puanlar, kendi ailesinin metnini puanlayan puanlar analizde işaretlenir, dışlama seçenek olarak durur (bölüm 3.8, Adım 6). Kararlılık ölçümü F2'nin sonraki adımlarında.
+8. **Yargıç yanlılığı riski:** Yapay zekâ yargıçların kendi ailesinin metnini kayırması (self-preference), uzun metni kayırması (verbosity) ve sıra etkisi. Kör değerlendirme (bölüm 3.7) hakemin metnin yazarını bilmesini engeller; **[Yorum]** kayırmayı azaltması beklenir ama etkisi ölçülmedi, uzunluk ve sıra etkisi ayrıca ölçülecek. **Çapraz yargıç ilkesi (modelin kendi metnini puanlamaması, İş planı 7.3) varsayılan yapılmadı:** tüm hakemler tüm metinleri puanlar, kendi ailesinin metnini puanlayan puanlar analizde işaretlenir, dışlama seçenek olarak durur (bölüm 3.8, Adım 6). Kararlılık ölçümü F2'nin sonraki adımlarında. **[23 Kas 2026]** Hakem artık yazarlardan biri değil (bölüm 3.9): kendi-puanı oluşmaz, ama tek hakemin kendi yanlılığı sınırlılık 18'dedir.
 9. Denemeler küçük örnekle yapıldı (N = 2-6); istatistiksel çıkarım için yeterli değil.
 10. **Sağlayıcı belgeleri birbiriyle çelişebiliyor** (bkz. bölüm 5, "Sağlayıcı belgelerindeki tutarsızlıklar"); model kimliği, sürüm ve fiyat bilgisi okunma tarihi ve kaynak sayfayla kaydedilir, üretim sırasındaki model kimliği her kayıtla saklanır.
 11. **Komut enjeksiyonuna direnç gerçek modelle ölçülmedi.** Yargıç yalnızca yapısal olarak korunuyor (etiket kırılamıyor, bölüm 3.7); gerçek bir hakemin metne gömülü "bu metne 100 ver" gibi talimatlara direnip direnmediği ölçülmedi. **[TODO]** Ölçüm planlandı (iş planı F2); sonuç buraya yazılacak.
 12. **Yargıç komutu ve çıktı şeması gerçek modellerle yalnızca küçük bir duman testiyle denendi** (bölüm 4.6, 22 Kas 2026). Üç sağlayıcı şemayı kabul etti (OpenAI katı şemada `min/max` dahil) ve 6 puanlamanın 6'sı ilk denemede geçerliydi; ama örnek sayısı iki ve tekrar yok, bozma oranı ve kararlılık hakkında kesin bir şey söylenemez. Toplu çalıştırmada (bölüm 4.7) 9 başarılı puanlamanın 9'u ilk denemede geçerli JSON verdi (deneme sayısı 1); örnek yine çok küçük. **[TODO]** Gerçek veri üzerinde ölçülecek.
 13. **Yargıç komutu (`judge-v1`) ve taslak rubrik gerçek rubrik/danışman görüşüyle değişebilir**; hakem puanları o sürümlere aittir, komut sürümü her değerlendirmeyle kaydedilecek.
-14. **Hakemler arası sertlik farkı (hakem etkisi).** Aynı metne farklı hakemler farklı toplam puan verdi (bölüm 4.6: güçlü örnekte 70 / 90 / 90, zayıfta 20 / 5 / 35). Hakemlerin puanları doğrudan karıştırılırsa hakem etkisi model karşılaştırmasına karışır. **[TODO]** Hakem etkisini ele alacak yöntem (örn. hakem başına standardizasyon, hakemi analizde ayrı bir etken olarak katma) kararlaştırılacak. **Kısmi çözüm (22 Kas 2026):** her hakemin her metni puanladığı dengeli tasarım seçildi (bölüm 3.8, Adım 6), böylece hakem etkisi model farkından ayrılabilir; ama standardizasyon ya da ayrı etken yöntemi henüz seçilmedi.
+14. **Hakemler arası sertlik farkı (hakem etkisi).** Aynı metne farklı hakemler farklı toplam puan verdi (bölüm 4.6: güçlü örnekte 70 / 90 / 90, zayıfta 20 / 5 / 35). Hakemlerin puanları doğrudan karıştırılırsa hakem etkisi model karşılaştırmasına karışır. **[TODO]** Hakem etkisini ele alacak yöntem (örn. hakem başına standardizasyon, hakemi analizde ayrı bir etken olarak katma) kararlaştırılacak. **Kısmi çözüm (22 Kas 2026):** her hakemin her metni puanladığı dengeli tasarım seçildi (bölüm 3.8, Adım 6), böylece hakem etkisi model farkından ayrılabilir; ama standardizasyon ya da ayrı etken yöntemi henüz seçilmedi. **[23 Kas 2026]** Tek sabit hakem kararıyla (bölüm 3.9) bu tehdit model karşılaştırması için kalktı: tüm metinler aynı hakemden geçer. Yerine sınırlılık 18 geldi.
 15. **Platform gerçek kullanıma açılmayacak** (kapsam, bölüm 1). Sonuçlar bir araştırma düzeninin çıktısıdır; üretim ölçeğinde kararlılık, çok kullanıcılı erişim ve sürekli işletme denenmedi ve hedeflenmedi. Toplu işler tek işçi ve her çalıştırma için ayrı bütçe sayımıyla çalışır (bölüm 3.8, sınırlılıklar).
 16. **Toplu üretim ve puanlama altyapısı gerçek servisle yalnızca küçük bir denemede çalıştırıldı** (bölüm 4.7: 1 tür, 1 tema, 3 model, tek tekrar; 3 şiir, 9 puanlama). Hikâye ve deneme, uzun metin, çok tekrar, bütçe sınırının devreye girmesi ve Ctrl+C ile kesme gerçek servisle denenmedi. Deneme verisi geliştirme veritabanında durur; nihai veri setinden ayrılacak **[TODO]**.
 17. **Dışa aktarma kapsamı sınırlıdır** (bölüm 3.8, Adım 8): yalnızca puanlama kayıtlarını içerir (üretim süresi ve maliyeti, puanlayıcı türü ve maliyet sütunu yok), `--excel` kipi gerçek Excel'de denenmedi, komut satırından çalışır. Bağımsız doğrulama (R, SPSS) için kullanılacak dosyanın bu kapsamı analiz öncesi gözden geçirilmeli **[TODO]**.
+18. **Tek sabit hakem** (bölüm 3.9). Tüm puanlar tek bir yapay zekâ modelinden gelir: hakemin sistematik eğilimleri (sertlik, uzunluk ya da üslup tercihi, Türkçe edebi yargısındaki zayıflıklar) bütün sonuçları aynı yönde etkiler ve bu tasarımla ölçülemez. DeepSeek'in Türkçe edebi metni iyi puanladığı **kanıtlanmadı**; tek denetim 3 şiirlik pilottur (bölüm 4.8: sıra diğer üç hakemle aynı, insan puanıyla uyum ölçülmedi). **[TODO]** İnsan puanı toplanabildiğinde hakem-insan uyumu ölçülecek; ayrıca aynı örneklerle ikinci bir hakemle (örn. Claude Sonnet) karşılaştırma yapılması düşünülebilir.
+19. **Hakemler arası koşul farkı, kararlılık ve model kimliği** (bölüm 4.8). DeepSeek hakemi sıcaklık 0 ve düşünme kapalı çalışır; diğer üç hakem (22-23 Kas verileri) kendi varsayılan örneklemeleriyle ve tek tekrarla puanladı, karşılaştırma bu farkı içerir. Sıcaklık 0'da bile üç tekrarın biri 10 puan saptı; tekrar ortalaması gerekli. DeepSeek `deepseek-flash` takma adıyla çağrılır; sunucuda hangi sürüme yönlendiği DeepSeek'in kararıdır (belge, 23 Kas: `DeepSeek-V4.1-Flash-1017`) ve değişebilir; yanıttaki `model` alanı kaydedilmiyor **[TODO]**. Maliyet tahmini yoğun saat fiyatıyla yapılır (üst sınır); gerçek fatura panelden doğrulanmadı **[TODO]**.
+20. **DeepSeek Çin merkezli bir şirkettir ve başvuru formunda yoktur** (bölüm 3.9). Hakeme yalnızca tür, tema, rubrik ve metin gönderilir; metni hangi modelin yazdığı gitmez ve metinler yapay zekâ üretimidir, kişisel veri içermez. Yine de DeepSeek'in hizmet şartları ve veri saklama / model eğitiminde kullanım koşulları **okunmadı** **[TODO]**; formdan sapma danışmanla teyit edilecek **[TODO]**.
 
 ## 7. Etik, gizlilik ve şeffaflık
 
 - **[Veri]** Etik kurul sonucu bekleniyor; **onaya kadar insan puanı girişi kapalı**, insan verisi toplanmıyor.
-- **[Veri]** API anahtarları yalnızca kök `.env` dosyasında; koda, commit'e, günlüğe girmez; çıktı ve hata iletilerinden `***` ile gizlenir. Anthropic ve Google anahtarları Kas 2026'da yenilenip 1,5 yıl süreli yapıldı; OpenAI anahtarının süresi **[TODO]**.
+- **[Veri]** API anahtarları yalnızca kök `.env` dosyasında; koda, commit'e, günlüğe girmez; çıktı ve hata iletilerinden `***` ile gizlenir. Anthropic ve Google anahtarları Kas 2026'da yenilenip 1,5 yıl süreli yapıldı; OpenAI anahtarının süresi **[TODO]**. DeepSeek API anahtarı (23 Kas 2026'da kullanıcı tarafından alındı) yalnızca `.env`'de; süresi ve panelde harcama sınırı konup konmadığı **[TODO]**.
 - **[Veri]** Üretilen metinler OpenAI'de saklanmaz (`store: false`).
 - **[Karar]** Gerçek (ücretli) servis çağrıları kullanıcı onayıyla yapılır; her çağrı kuruşluk, toplam harcama bu belgede izlenir.
 - **[TODO] Yapay zekâ kullanımı bildirimi:** Yazılım geliştirmede Claude Code (Anthropic) ile birlikte çalışıldı; taslak rubrik düzey açıklamaları da yapay zekâ tarafından yazıldı. Raporda/makalede bu kullanımın nasıl ve nereye yazılacağı danışmanla kararlaştırılmalı.
-- **[TODO]** Kullanılan modellerin hizmet şartları ve üretilen metinlerin araştırmada kullanımına ilişkin sağlayıcı koşulları gözden geçirilecek.
+- **[TODO]** Kullanılan modellerin hizmet şartları ve üretilen metinlerin araştırmada kullanımına ilişkin sağlayıcı koşulları gözden geçirilecek. Özellikle **DeepSeek** için (Çin merkezli; hakem olarak tür, tema, rubrik ve metin gönderilir, yazar adı gönderilmez): veri saklama ve eğitimde kullanım koşulları.
 
 ## 8. Makale/rapor için eksik veri kontrol listesi
 
@@ -517,6 +623,8 @@ Bu liste, tipik bir karşılaştırmalı değerlendirme makalesinde beklenen uns
 - [ ] Süre (medyan, yüzdelikler) ve maliyet dağılımları; metin başına gerçek maliyet.
 - [ ] Yargıç tasarımı: hangi modeller, hangi komut, çapraz yargıç, kaç tekrar, sıcaklık yok; yargıç komutu ve çıktı şeması.
 - [x] Hakem smoke sonuçları (22 Kas 2026, 6/6 başarılı; bölüm 4.6). Büyük örnekle yeniden ölçülecek: şema kabulü, süre, bozma oranı.
+- [x] DeepSeek hakem smoke ve 3 şiirlik pilot (23 Kas 2026; bölüm 4.8): 11/11 puanlama ilk denemede geçerli, sıra diğer üç hakemle aynı, toplam ≈ $0,0116. Büyük örnekle yeniden ölçülecek.
+- [ ] Tek sabit hakem kararı (bölüm 3.9): danışman teyidi (formda yalnızca Claude, OpenAI ve Gemini var), hakemin başka bir hakemle aynı örneklerde karşılaştırılması, insan puanıyla uyum, DeepSeek hizmet şartları.
 - [x] Dışa aktarma (CSV/JSON, R ve SPSS ile bağımsız doğrulama için): komut hazır, ilk 10 kayıtla denendi (bölüm 3.8, Adım 8). Üretim süresi ve maliyeti dahil, büyük örnekle yeniden yapılacak.
 - [ ] Hakem etkisi (sertlik farkı) analizi: hakem başına puan dağılımı, hakemler arası kalibrasyon ya da standardizasyon yöntemi.
 - [ ] Enjeksiyon direnci sonuçları: kontrol metnine karşı saldırı metinlerinin puan farkı, hakem başına, tekrarlarla (gerçek model, ücretli).
@@ -534,11 +642,11 @@ Bu liste, tipik bir karşılaştırmalı değerlendirme makalesinde beklenen uns
 ## 9. TÜBİTAK sonuç raporu için hazır parçalar
 
 - **Yapılan iş (F0-F1):** Katmanlı backend; sürümlü ve değişmez rubrik modülü (içe/dışa aktarma, etkinleştirme, JSON gidiş-dönüş); üç sağlayıcı için ortak sözleşme (`LLMProvider`) ve adaptörler (Claude, Gemini, GPT) ile sahte sağlayıcı; ortak hata ve yeniden deneme katmanı; sürümlü komut şablonu; üretim servisi (hata izolasyonu, maliyet sınırı, kayıt); gerçek MySQL ile veritabanı katmanı; sürekli entegrasyon.
-- **Yapılan iş (F2, devam ediyor; PR #14 taslak, `main`'e birleşmedi):** Doğrulamalı, kör, enjeksiyona dayanıklı yargıç motoru; hakem puanı kaydı (rubrik sürümü, komut sürümü, token, süre); `judge:smoke` ile gerçek hakem denemesi; veritabanı tabanlı iş kuyruğu (yeniden başlatmada kaldığı yerden devam); toplu üretim ve toplu puanlama işleri (sağlayıcı başına şerit, çalışırken bütçe, kendi-puanı işaretleme); `npm run batch` komut satırı (varsayılan plan, `--calistir` ile gerçek çalıştırma); `npm run export` ile CSV/JSON dışa aktarma. Kalan: çoklu hakem kararlılığı, istatistik, enjeksiyon direnci ve ilk gerçek veri seti.
-- **Kanıt:** 329 otomatik test (22 Kas 2026; F2 dalında 448, 23 Kas 2026), yaklaşık %96 kapsam (F2 dalında %97), her PR'da dört otomatik kontrol; planlanan 38 test senaryosundan T01-T12, T22, T27-T28 yazıldı ve geçti (F2 dalında T13-T19, T36 ve T37 de eklendi) (kaynak: GitHub issue #3, `docs/IS_PLANI.md`).
+- **Yapılan iş (F2, devam ediyor; PR #14 taslak, `main`'e birleşmedi):** Doğrulamalı, kör, enjeksiyona dayanıklı yargıç motoru; hakem puanı kaydı (rubrik sürümü, komut sürümü, token, süre); `judge:smoke` ile gerçek hakem denemesi; veritabanı tabanlı iş kuyruğu (yeniden başlatmada kaldığı yerden devam); toplu üretim ve toplu puanlama işleri (sağlayıcı başına şerit, çalışırken bütçe, kendi-puanı işaretleme); `npm run batch` komut satırı (varsayılan plan, `--calistir` ile gerçek çalıştırma); `npm run export` ile CSV/JSON dışa aktarma; tek sabit hakem kararı (DeepSeek Flash), DeepSeek adaptörü, gerçek smoke ve 3 şiirlik pilot (bölüm 3.9, 4.8). Kalan: hakem kararlılığı (tekrarlar), istatistik, enjeksiyon direnci ve ilk gerçek veri seti.
+- **Kanıt:** 329 otomatik test (22 Kas 2026; F2 dalında 472, 23 Kas 2026), yaklaşık %96 kapsam (F2 dalında %97), her PR'da dört otomatik kontrol; planlanan 38 test senaryosundan T01-T12, T22, T27-T28 yazıldı ve geçti (F2 dalında T13-T19, T36 ve T37 de eklendi) (kaynak: GitHub issue #3, `docs/IS_PLANI.md`).
 - **Süreç:** Faz başına GitHub milestone ve issue (F0 #2, F1 #3 kapalı); her kararın gerekçesi `docs/adr/` altında 10 karar kaydıyla belgelendi; PR #1, #10, #12 birleşti.
 - **Risk yönetimi:** Sessiz yedek yok, maliyet sınırı, anahtar güvenliği, bakiye/kota hataları, servis yoğunluğu (Gemini).
-- **Bütçe/harcama:** Tüm gerçek servis denemeleri toplam yaklaşık **$0,1948** [Hesap]: `llm:smoke` koşuları yaklaşık $0,0065 (4.2), `judge:smoke` $0,0532 (4.6), toplu üretim $0,0331 ve toplu puanlama $0,1020 (4.7; $0,0865 + yeniden deneme $0,0155). **[TODO]** Nihai veri setinin üretim ve puanlama maliyeti eklenecek.
+- **Bütçe/harcama:** Tüm gerçek servis denemeleri toplam yaklaşık **$0,2064** [Hesap]: `llm:smoke` koşuları yaklaşık $0,0065 (4.2), `judge:smoke` $0,0532 (4.6), toplu üretim $0,0331 ve toplu puanlama $0,1020 (4.7; $0,0865 + yeniden deneme $0,0155), DeepSeek smoke $0,0019 ve pilot $0,0097 (4.8; yoğun saat fiyatıyla tahmin, gerçek fatura panelden doğrulanmadı). **[TODO]** Nihai veri setinin üretim ve puanlama maliyeti eklenecek.
 - **Arayüz tasarımı:** Renk dili kullanıcı kararıyla Kum (%60) / Kakao (%30) / Mavi (%10), Inter yazı tipi, hap biçimli düğmeler (ADR 0008); arayüz kodlaması F3'te.
 - **[TODO]** Kalan fazlar (F2-F7) tamamlandıkça bu bölüm güncellenecek.
 
@@ -557,6 +665,12 @@ Hepsi **22 Kasım 2026**'da okundu (fiyat ve model adları sonradan değişebili
 - Google Gemini fiyatlar: https://aistudio.google.com/docs/pricing
 - Anthropic modeller ve fiyatlar: 21 Kas 2026'da belgelerden okundu. **[TODO: adres kayda geçirilmemişti, eklenecek]**
 
+**23 Kasım 2026**'da okunanlar:
+
+- DeepSeek API belgeleri: https://api-docs.deepseek.com/ , https://api-docs.deepseek.com/quick_start/pricing (model ve fiyat), https://api-docs.deepseek.com/api/create-chat-completion (istek ve cevap biçimi), https://api-docs.deepseek.com/quick_start/error_codes/ (hata kodları), https://api-docs.deepseek.com/quick_start/rate_limit/ (hız sınırı). Sayfalar bir alt ajanın web okuma aracıyla okunup özetlendi (doğrudan alıntı değil); fiyatlar ve model adları kullanılacaksa kaynağından yeniden doğrulanmalı.
+- Hakem yanlılığı ve Türkçe başarım literatürü (**yalnızca arama sonuçlarından görüldü, tam metinler okunmadı**; kullanılacaksa kaynağından okunmalı): "Play Favorites" (LLM-as-a-judge kendini kayırma) https://arxiv.org/html/2508.06709v1 ; TR-MMLU https://arxiv.org/html/2501.00593v2 ; TurkBench https://arxiv.org/html/2601.07020v2 ; CETVEL (EACL 2026) https://preview.aclanthology.org/ingest-eacl/2026.eacl-long.46.pdf . Aday modellerin fiyatları (Mistral, xAI Grok, Alibaba Qwen) toplayıcı bloglardan geldi ve doğrulanmadı; bu belgeye alınmadı.
+- TÜBİTAK 2209-A başvuru formu (kullanıcının PDF'i, 10 sayfa): puanlayıcı ve API kullanımı ifadeleri bölüm 3.9'da.
+
 **[Veri]** Not: Bazı fiyatlar (Gemini 3.1 Flash-Lite/Pro, Gemini 2.5 ailesi) belge sayfasının özetinden okundu, doğrudan alıntı değil; raporda kullanılacaksa kaynağından yeniden doğrulanmalı. Bu belgede yalnızca doğrudan okunan satırlar tabloya alındı.
 
 ## 11. Açık sorular
@@ -564,7 +678,7 @@ Hepsi **22 Kasım 2026**'da okundu (fiyat ve model adları sonradan değişebili
 - Gemini 4 Hydrogen üretimde kararlı mı? Üretimden önce yeniden denenecek (yedek: 3.6 Flash, eski nesil).
 - Komut şablonu v1 metni ve uzunluk yönergeleri danışmanla kesinleşecek.
 - Tema listesi sabit mi, serbest mi? (Şimdilik serbest, en çok 32 karakter.)
-- Yargıç yöntemi (F2) ve kullanılacak yargıç modelleri.
+- Yargıç yöntemi (F2) ve kullanılacak yargıç modelleri: **karara bağlandı (23 Kas 2026)**, tek sabit hakem DeepSeek Flash (bölüm 3.9). Açık kalan: danışman teyidi (formda yalnızca Claude, OpenAI ve Gemini var), hakemin insan puanıyla uyumu, DeepSeek hizmet şartları.
 - Gerçek rubrik ve etik kurul sonucu.
 - Ucuz sınıf karşılaştırması eklenecek mi (`claude-haiku-5-5`, `gemini-3.5-flash-lite`, `gpt-6-luna`)?
 
@@ -572,6 +686,7 @@ Hepsi **22 Kasım 2026**'da okundu (fiyat ve model adları sonradan değişebili
 
 | Tarih       | Değişiklik                                                                                                  |
 | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| 23 Kas 2026 | Bölüm 3.9 (tek sabit hakem kararı, TÜBİTAK formuyla ilişki, DeepSeek adaptörü kararları, 24 bozma), bölüm 4.8 (DeepSeek smoke R13 ve 3 şiirlik pilot R14: sıra, seviye, kararlılık, süre, maliyet), bölüm 5'e DeepSeek fiyatları, Ek A'ya R13-R14, sınırlılık 18-20 eklendi, 1/8/14 güncellendi, bölüm 1, 2, 3.7, 3.8, 7, 8, 9, 10, 11 güncellendi, test sayısı 472, toplam harcama $0,2064. |
 | 23 Kas 2026 | Bölüm 3.8'e Adım 8 (CSV/JSON dışa aktarma: uzun biçim, başarısız kayıtlar, kendi-puanı sütunu, rubrik notu, formül önlemi, `--excel`), 36 bozma ve yakalanan test eksiği, test sayısı 448, sınırlılık 17, kontrol listesi ile bölüm 2 ve 9 güncellendi. |
 | 23 Kas 2026 | Bölüm 4.7 (ilk gerçek toplu üretim ve puanlama R10-R12: süre, maliyet, 503, hakem sertliği, kendi-puanı maliyeti), Ek A'ya R10-R12, sınırlılık 5/12/16 güncellendi, bölüm 3.8 maliyet tahmini gerçek değerle güncellendi, toplam harcama $0,1948. |
 | 23 Kas 2026 | Bölüm 3.8 (F2 Adım 2-7: puan kaydı, iş kuyruğu, toplu üretim ve puanlama, komut satırı; "kendini dışlamak yerine işaretlemek" gerekçesi, 125 bozma, 415 test), kapsam notu (bölüm 1, "gerçek kullanıma açılmayacak"), sınırlılık 8 ve 14 güncellendi, 15-16 eklendi, bölüm 2 ve 9 güncellendi. |
@@ -742,4 +857,48 @@ Veritabanından okunan puanlama kayıtları
 {"id":8,"hakem":"google/gemini-4-hydrogen","yazar":"anthropic/claude-sonnet-5-5","durum":"succeeded","toplam":75,"puanlar":"4,4,4,3,5","deneme":1,"giris":1607,"cikis":1063,"ms":18408}
 {"id":9,"hakem":"google/gemini-4-hydrogen","yazar":"google/gemini-4-hydrogen","durum":"failed","toplam":null,"puanlar":"","hata":"server_error: HTTP 503: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."}
 {"id":10,"hakem":"google/gemini-4-hydrogen","yazar":"google/gemini-4-hydrogen","durum":"succeeded","toplam":60,"puanlar":"3,4,3,2,5","giris":1598,"cikis":1743,"ms":10904}
+```
+
+**R13-R14 (23 Kas, DeepSeek hakem, bölüm 4.8).** R13: `judge:smoke`, yalnızca DeepSeek (diğer üç anahtar o sürecin ortamında boşaltıldı; çağrıdan önce ağsız kontrol hedef olarak yalnızca `DeepSeek` gösterdi). R14: `batch puanla`; sonra `npm run export -- json` çıktısından (`Backend/exports/`, git'e girmez) okunan kayıtlar. Yalnızca ekranda görülen satırlar (başlıktaki `npm` satırları hariç).
+
+```
+R13 (23 Kas, judge:smoke, süre sınırı 120 sn)
+Gerçek hakem denemesi (ücretli, birkaç sent): her hakeme 2 örnek metin puanlatılıyor. Anahtarlar yazdırılmaz.
+✔ DeepSeek deepseek-flash [güçlü]: 4.0 sn, 1477 giriş + 502 çıkış token, ≈ $0.00105, 1 deneme, toplam 75.0
+    puanlar: imgeGucu 4, ritimAhenk 4, duyguAktarimi 4, ozgunluk 4, anlamButunlugu 4
+✔ DeepSeek deepseek-flash [zayıf]: 2.4 sn, 1432 giriş + 371 çıkış token, ≈ $0.00087, 1 deneme, toplam 15.0
+    puanlar: imgeGucu 1, ritimAhenk 2, duyguAktarimi 2, ozgunluk 1, anlamButunlugu 2
+  → DeepSeek güçlü ve zayıf örneği ayırt etti (75.0 > 15.0)
+Toplam yaklaşık maliyet: $0.00192
+
+R14 (iş #4, puanla --metinler hepsi --hakemler deepseek-flash --tekrar 3 --calistir)
+Plan: toplu puanlama (evaluate_batch), gerçek çağrı yapılmadı
+  Metin: 3 · Hakem: 1 (deepseek-flash) · Tekrar: 3
+  Toplam öğe: 9
+  Hakem komut şablonu: v1 (işe sabitlenecek)
+  Rubrik: siir 0.1-taslak (işe sabitlenecek)
+  Kendini dışlama yok: tüm hakemler her metni puanlar; kendi-puanı analizde yazar ve hakem ailesinden işaretlenir.
+  Şerit deepseek: 9 öğe (deepseek-flash: 9); geçmiş yok
+  Tahmini toplam süre: bilinmiyor (geçmiş veri yok)
+  Beklenen maliyet: bilinmiyor (geçmiş veri yok ya da fiyat bilgisi eksik)
+  En kötü durum üst sınırı: $0.0931 (her çağrının çıktısı maxTokens kadar olsaydı; gerçekte çok daha düşük olur)
+İş #4 eklendi (9 öğe), çalıştırılıyor. Durdurmak için Ctrl+C (kaldığı yerden devam edilebilir).
+[iş #4] 1/9 tamam, 0 başarısız
+[iş #4] 2/9 tamam, 0 başarısız
+[iş #4] 3/9 tamam, 0 başarısız
+[iş #4] 5/9 tamam, 0 başarısız
+[iş #4] 6/9 tamam, 0 başarısız
+[iş #4] 8/9 tamam, 0 başarısız
+İş #4 bitti: 9/9 tamam, 0 başarısız, harcanan ≈ $0.0097
+
+Dışa aktarma çıktısından okunan DeepSeek puanlama kayıtları (R14)
+{"id":11,"hakem":"deepseek/deepseek-flash","yazar":"openai/gpt-6.2-sol","durum":"succeeded","toplam":90,"puanlar":"5,4,5,4,5","deneme":1,"giris":1578,"cikis":488,"ms":3931}
+{"id":12,"hakem":"deepseek/deepseek-flash","yazar":"openai/gpt-6.2-sol","durum":"succeeded","toplam":80,"puanlar":"4,4,4,4,5","deneme":1,"giris":1578,"cikis":431,"ms":3648}
+{"id":13,"hakem":"deepseek/deepseek-flash","yazar":"openai/gpt-6.2-sol","durum":"succeeded","toplam":80,"puanlar":"4,4,4,4,5","deneme":1,"giris":1578,"cikis":492,"ms":3783}
+{"id":14,"hakem":"deepseek/deepseek-flash","yazar":"anthropic/claude-sonnet-5-5","durum":"succeeded","toplam":70,"puanlar":"4,4,4,3,4","deneme":1,"giris":1603,"cikis":577,"ms":4019}
+{"id":15,"hakem":"deepseek/deepseek-flash","yazar":"anthropic/claude-sonnet-5-5","durum":"succeeded","toplam":70,"puanlar":"4,4,4,3,4","deneme":1,"giris":1603,"cikis":538,"ms":3650}
+{"id":16,"hakem":"deepseek/deepseek-flash","yazar":"anthropic/claude-sonnet-5-5","durum":"succeeded","toplam":70,"puanlar":"4,4,4,3,4","deneme":1,"giris":1603,"cikis":576,"ms":3664}
+{"id":17,"hakem":"deepseek/deepseek-flash","yazar":"google/gemini-4-hydrogen","durum":"succeeded","toplam":55,"puanlar":"3,4,3,2,4","deneme":1,"giris":1583,"cikis":407,"ms":2638}
+{"id":18,"hakem":"deepseek/deepseek-flash","yazar":"google/gemini-4-hydrogen","durum":"succeeded","toplam":55,"puanlar":"3,4,3,2,4","deneme":1,"giris":1583,"cikis":492,"ms":3700}
+{"id":19,"hakem":"deepseek/deepseek-flash","yazar":"google/gemini-4-hydrogen","durum":"succeeded","toplam":55,"puanlar":"3,4,3,2,4","deneme":1,"giris":1583,"cikis":492,"ms":3432}
 ```
