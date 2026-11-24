@@ -1,6 +1,7 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Analysis } from './pages/Analysis';
+import { Compare } from './pages/Compare';
 import { Placeholder } from './pages/Placeholder';
 
 function NotFound() {
@@ -19,15 +20,7 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route
-          index
-          element={
-            <Placeholder
-              title="Karşılaştır"
-              description="Üç metni girin, seçili rubrikle puanlayıp yan yana karşılaştırın."
-            />
-          }
-        />
+        <Route index element={<Compare />} />
         <Route
           path="uretim"
           element={
