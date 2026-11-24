@@ -48,24 +48,31 @@ export function generationVars(genre: Genre, theme: string): Record<string, stri
   return { ...GENRE_PROMPT[genre], tema: themeSchema.parse(theme) };
 }
 
-/** Üretim şablonunda bulunması zorunlu boşluklar (tema yok sayılan bir şablon olmaz). */
-const REQUIRED_PLACEHOLDERS = ['tema', 'tur', 'uzunluk'];
-
 export type PromptKind = 'generate' | 'judge';
 
-/** Şablon kaydı girdisi. Yargıç şablonları F2'de eklenir. */
+/**
+ * Şablonda bulunması zorunlu boşluklar (tema yok sayılan üretim, metni içermeyen yargıç komutu olmaz).
+ * Yargıç boşlukları `domain/judge.ts` içindeki `judgeVars` ile doldurulur.
+ */
+const REQUIRED_PLACEHOLDERS: Record<PromptKind, string[]> = {
+  generate: ['tema', 'tur', 'uzunluk'],
+  judge: ['kriterler', 'metin', 'olcek', 'tema', 'tur'],
+};
+
+/** Şablon kaydı girdisi (üretim ve yargıç). */
 export const promptTemplateInputSchema = z
   .strictObject({
-    kind: z.literal('generate'),
+    kind: z.enum(['generate', 'judge']),
     version: z
       .string()
       .regex(/^[0-9A-Za-z][0-9A-Za-z._-]{0,31}$/, 'Sürüm 1-32 karakter olmalı; boşluk içermemeli'),
     body: z.string().trim().min(1, 'Şablon boş olamaz').max(5000),
   })
   .superRefine((template, ctx) => {
+    const required = REQUIRED_PLACEHOLDERS[template.kind];
     const found = placeholdersOf(template.body);
-    const missing = REQUIRED_PLACEHOLDERS.filter((name) => !found.includes(name));
-    const unknown = found.filter((name) => !REQUIRED_PLACEHOLDERS.includes(name));
+    const missing = required.filter((name) => !found.includes(name));
+    const unknown = found.filter((name) => !required.includes(name));
     if (missing.length > 0) {
       ctx.addIssue({
         code: 'custom',

@@ -91,10 +91,39 @@ describe('şablon kaydı şeması', () => {
       { ...valid, version: 'v 1' },
       { ...valid, body: '' },
       { ...valid, yazimHatasi: 1 },
-      { ...valid, kind: 'judge' }, // yargıç şablonları F2'de
+      { ...valid, kind: 'bilinmeyen' },
     ]) {
       expect(promptTemplateInputSchema.safeParse(bad).success).toBe(false);
     }
+  });
+
+  describe('yargıç şablonu (F2)', () => {
+    const judgeBody =
+      'Tür: {{tur}}\nTema: {{tema}}\nÖlçek: {{olcek}}\n{{kriterler}}\n<metin>{{metin}}</metin>';
+    const judge = { kind: 'judge', version: 'v1', body: judgeBody };
+
+    it('kendi zorunlu boşluklarıyla kabul edilir', () => {
+      expect(promptTemplateInputSchema.safeParse(judge).success).toBe(true);
+    });
+
+    it('metin ya da kriter boşluğu eksikse reddedilir (metni içermeyen yargıç komutu olmaz)', () => {
+      for (const name of ['metin', 'kriterler', 'olcek', 'tema', 'tur']) {
+        const body = judgeBody.replace(`{{${name}}}`, '');
+        const result = promptTemplateInputSchema.safeParse({ ...judge, body });
+        expect(result.success, name).toBe(false);
+        expect(result.error?.issues.map((i) => i.message).join(' ')).toContain(name);
+      }
+    });
+
+    it('üretim şablonunun boşlukları yargıç için tanımsızdır, yargıç boşlukları üretim için de', () => {
+      expect(
+        promptTemplateInputSchema.safeParse({ ...judge, body: `${judgeBody}\n{{uzunluk}}` })
+          .success,
+      ).toBe(false);
+      expect(promptTemplateInputSchema.safeParse({ ...valid, body: judgeBody }).success).toBe(
+        false,
+      );
+    });
   });
 });
 

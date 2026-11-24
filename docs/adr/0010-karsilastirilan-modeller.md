@@ -85,4 +85,4 @@ Karşılaştırma verisi üretilmeden önce Gemini modeli yeniden doğrulanır: 
 ## Sonuçlar
 
 - Karşılaştırma üç aile ve orta sınıfla başlar. "100 metin için kabaca bir dolar altı" tahmini iki model için yapılmıştı; üç model için ilk gerçek üretimde yeniden ölçülür.
-- Çapraz yargıç ilkesi (modelin kendi metnini kendisinin puanlamaması, İş planı 7.3) için üç aileden birer yargıç modeli kullanılabilir.
+- ~~Çapraz yargıç ilkesi (modelin kendi metnini kendisinin puanlamaması, İş planı 7.3) için üç aileden birer yargıç modeli kullanılabilir.~~ **Bu madde 23 Kas 2026'da geçerliliğini yitirdi:** üç model yalnızca yazardır, puanı tek sabit hakem (DeepSeek Flash) verir (ADR 0011). Modellerin seçimi ve sınıf eşitlemesi geçerliliğini korur.

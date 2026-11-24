@@ -3,7 +3,9 @@ import type { Db } from '../lib/prisma.js';
 import type {
   GenerationRepository,
   GenerationSuccess,
+  ModelUsage,
   StartGeneration,
+  SucceededGeneration,
 } from './generation.repository.js';
 
 const MAX_ERROR_LENGTH = 2000;
@@ -52,6 +54,48 @@ export class PrismaGenerationRepository implements GenerationRepository {
       });
       return text.id;
     });
+  }
+
+  async findSucceeded(filter: {
+    promptTemplateId: number;
+    providerModelIds: number[];
+  }): Promise<SucceededGeneration[]> {
+    return this.db.generation.findMany({
+      where: {
+        status: 'succeeded',
+        promptTemplateId: filter.promptTemplateId,
+        providerModelId: { in: filter.providerModelIds },
+      },
+      select: { providerModelId: true, genre: true, theme: true, replicateNo: true },
+    });
+  }
+
+  async usageByModel(providerModelIds: number[]): Promise<ModelUsage[]> {
+    const groups = await this.db.generation.groupBy({
+      by: ['providerModelId'],
+      where: { status: 'succeeded', providerModelId: { in: providerModelIds } },
+      _count: { _all: true },
+      _avg: { inputTokens: true, outputTokens: true, latencyMs: true },
+    });
+    return groups.map((g) => ({
+      providerModelId: g.providerModelId,
+      count: g._count._all,
+      avgInputTokens: g._avg.inputTokens ?? 0,
+      avgOutputTokens: g._avg.outputTokens ?? 0,
+      avgLatencyMs: g._avg.latencyMs ?? 0,
+    }));
+  }
+
+  async failInterrupted(error: string): Promise<number> {
+    const result = await this.db.generation.updateMany({
+      where: { status: 'running' },
+      data: {
+        status: 'failed',
+        error: error.slice(0, MAX_ERROR_LENGTH),
+        completedAt: new Date(),
+      },
+    });
+    return result.count;
   }
 
   async fail(id: number, failure: { error: string; latencyMs: number }): Promise<void> {

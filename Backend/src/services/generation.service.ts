@@ -20,6 +20,8 @@ const requestSchema = z
     theme: z.string(), // geçerliliğini generationVars denetler (tek satır, en çok 32 karakter)
     modelIds: z.array(z.number().int().positive()).min(1).max(20),
     replicates: z.number().int().min(1).max(10).default(1),
+    /** İlk tekrar numarası: toplu iş yeniden başlayınca kaldığı tekrardan devam edebilsin (varsayılan 1). */
+    firstReplicateNo: z.number().int().min(1).default(1),
     /** Tahmini maliyet bunu aşacaksa hiçbir çağrı yapılmadan reddedilir (T12). */
     maxCostUsd: z.number().positive().optional(),
     /** Yalnızca tahmin verir: çağrı ve kayıt yok. */
@@ -37,6 +39,11 @@ export interface GenerationOutcome {
   status: 'succeeded' | 'failed';
   textId: number | null;
   error: string | null;
+  /** Sağlayıcının bildirdiği token sayıları; başarısız çağrıda boş. */
+  inputTokens: number | null;
+  outputTokens: number | null;
+  /** Gerçek maliyet (dolar): tokenler × model fiyatı. Fiyat bilinmiyorsa ya da çağrı başarısızsa boş. */
+  costUsd: number | null;
 }
 
 export interface GenerationRunResult {
@@ -137,7 +144,11 @@ export function createGenerationService(deps: GenerationDeps): GenerationService
         const timeoutMs = model.params.timeoutMs ?? DEFAULT_TIMEOUT_MS;
         const provider = withResilience(providers[index]!, { ...deps.resilience, timeoutMs });
 
-        for (let replicateNo = 1; replicateNo <= request.replicates; replicateNo++) {
+        for (
+          let replicateNo = request.firstReplicateNo;
+          replicateNo < request.firstReplicateNo + request.replicates;
+          replicateNo++
+        ) {
           const generationId = await deps.generations.start({
             providerModelId: model.id,
             promptTemplateId: template.id,
@@ -158,7 +169,20 @@ export function createGenerationService(deps: GenerationDeps): GenerationService
               outputTokens: answer.outputTokens,
               latencyMs: Date.now() - started,
             });
-            result.outcomes.push({ ...outcome, status: 'succeeded', textId, error: null });
+            result.outcomes.push({
+              ...outcome,
+              status: 'succeeded',
+              textId,
+              error: null,
+              inputTokens: answer.inputTokens,
+              outputTokens: answer.outputTokens,
+              costUsd:
+                estimateCostUsd(
+                  answer.inputTokens,
+                  answer.outputTokens,
+                  model.params.priceUsdPerMillion,
+                ) ?? null,
+            });
             result.succeeded++;
           } catch (error) {
             const latencyMs = Date.now() - started;
@@ -166,7 +190,15 @@ export function createGenerationService(deps: GenerationDeps): GenerationService
               // Sağlayıcı hatası: bu kayıt başarısız olur, diğer modeller sürer (T09).
               const message = `${error.kind}: ${error.message}`;
               await deps.generations.fail(generationId, { error: message, latencyMs });
-              result.outcomes.push({ ...outcome, status: 'failed', textId: null, error: message });
+              result.outcomes.push({
+                ...outcome,
+                status: 'failed',
+                textId: null,
+                error: message,
+                inputTokens: null,
+                outputTokens: null,
+                costUsd: null,
+              });
               result.failed++;
               continue;
             }

@@ -59,7 +59,7 @@ enum Role {
 /// Yapılandırılmış YZ modelleri. Model emekli olunca kod değil kayıt güncellenir.
 model ProviderModel {
   id            Int      @id @default(autoincrement())
-  provider      String   @db.VarChar(32) // openai | anthropic | google | mock
+  provider      String   @db.VarChar(32) // openai | anthropic | google | deepseek | mock
   modelId       String   @map("model_id") @db.VarChar(128)
   displayName   String   @map("display_name") @db.VarChar(128)
   active        Boolean  @default(true)

@@ -14,3 +14,4 @@ Her önemli teknik karar burada kısa bir kayıtla tutulur: **bağlam, karar, so
 | 0008 | [Yön C: Kum, Kakao, Mavi](0008-yon-c-kum-kakao-mavi.md)                  | Kabul    |
 | 0009 | [Puan normalleştirme: aralık tabanlı (min-max)](0009-puan-normallestirme-min-max.md) | Kabul    |
 | 0010 | [Karşılaştırılan modeller: orta sınıf (Sonnet 5.5, Gemini 4 Hydrogen, GPT-6.2 Sol)](0010-karsilastirilan-modeller.md) | Kabul    |
+| 0011 | [Puanlamayı tek sabit yapay zekâ hakem yapar (DeepSeek Flash)](0011-tek-sabit-hakem.md) | Kabul    |

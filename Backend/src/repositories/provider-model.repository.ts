@@ -14,4 +14,6 @@ export interface ProviderModelRecord {
 export interface ProviderModelRepository {
   /** Bulunanları döner; olmayan kimlikler listede yer almaz. Kapalı modeller de gelir (`active` alanına bakılır). */
   findByIds(ids: number[]): Promise<ProviderModelRecord[]>;
+  /** Sağlayıcıdaki model adına göre (örn. `claude-sonnet-5-5`); aynı ad iki sağlayıcıda varsa ikisi de gelir. */
+  findByModelIds(modelIds: string[]): Promise<ProviderModelRecord[]>;
 }

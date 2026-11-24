@@ -25,12 +25,13 @@ describe('model listesi (seed verisi)', () => {
     }
   });
 
-  it('ADR 0010: orta sınıf üç model, Claude Sonnet 5.5, Gemini 4 Hydrogen ve GPT-6.2 Sol', () => {
+  it('ADR 0010 yazar modelleri (Claude Sonnet 5.5, Gemini 4 Hydrogen, GPT-6.2 Sol) ve sabit hakem DeepSeek Flash (23 Kas 2026 kararı)', () => {
     const ids = models
       .map((m) => modelSeedSchema.parse(m))
       .map((m) => `${m.provider}/${m.modelId}`);
     expect(ids.sort()).toEqual([
       'anthropic/claude-sonnet-5-5',
+      'deepseek/deepseek-flash',
       'google/gemini-4-hydrogen',
       'openai/gpt-6.2-sol',
     ]);
