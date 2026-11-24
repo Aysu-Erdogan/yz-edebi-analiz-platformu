@@ -66,6 +66,21 @@ describe('Analysis sayfası', () => {
     expect(screen.getByText('deepseek-flash')).toBeInTheDocument();
   });
 
+  it('"Analize giren metin" elle girilen ve ölçülemeyen metinleri saymaz', async () => {
+    const cond = { ...report.kosullar[0]!, metin: 15, elleGirilen: 3, olculemeyen: 1 };
+    mockApi({ stats: () => envelope({ ...report, kosullar: [cond] }) });
+    renderPage();
+    // 15 - 3 (elle girilen: Karşılaştır sayfasından) - 1 (hakem puanlayamadı) = 11
+    expect(await screen.findByText('11')).toBeInTheDocument();
+    expect(screen.getByText('Analize giren metin (3 elle girilen hariç)')).toBeInTheDocument();
+  });
+
+  it('elle girilen metin yoksa etiket yalın kalır', async () => {
+    mockApi({ stats: () => envelope(report) });
+    renderPage();
+    expect(await screen.findByText('Analize giren metin')).toBeInTheDocument();
+  });
+
   it('grafiklerin ekran okuyucu özeti ve aynı veriyi gösteren tablosu vardır', async () => {
     mockApi({ stats: () => envelope(report) });
     renderPage();

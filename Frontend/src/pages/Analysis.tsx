@@ -30,7 +30,11 @@ async function fetchStats(showAll: boolean): Promise<StatsReport> {
 
 function Summary({ condition }: { condition: Condition }) {
   const items = [
-    { value: String(condition.metin), label: 'Puanlanan metin' },
+    {
+      // `metin` elle girilen (Karşılaştır sayfasından) ve ölçülemeyen metinleri de sayar; model analizine girenler ayrı.
+      value: String(condition.metin - condition.elleGirilen - condition.olculemeyen),
+      label: `Analize giren metin${condition.elleGirilen ? ` (${condition.elleGirilen} elle girilen hariç)` : ''}`,
+    },
     { value: String(authorsOf(condition).length), label: 'Karşılaştırılan model' },
     { value: modelName(condition.hakem), label: `Hakem · rubrik ${condition.rubrikSurumu}` },
   ];
