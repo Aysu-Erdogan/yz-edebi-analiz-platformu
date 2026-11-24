@@ -2,6 +2,7 @@ import { createApp } from './app.js';
 import { EnvError, loadEnv } from './config/env.js';
 import { createLogger } from './lib/logger.js';
 import { createDb, pingDb } from './lib/prisma.js';
+import { PrismaExportRepository } from './repositories/prisma-export.repository.js';
 import { PrismaRubricRepository } from './repositories/prisma-rubric.repository.js';
 import { createRubricService } from './services/rubric.service.js';
 
@@ -30,6 +31,7 @@ async function main(): Promise<void> {
     version: VERSION,
     checkDb: db ? () => pingDb(db) : undefined,
     rubrics: db ? createRubricService(new PrismaRubricRepository(db)) : undefined,
+    exports: db ? new PrismaExportRepository(db) : undefined,
   });
 
   const server = app.listen(env.PORT, () => {

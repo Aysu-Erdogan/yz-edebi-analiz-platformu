@@ -6,6 +6,8 @@ import { pinoHttp } from 'pino-http';
 import type { Env } from './config/env.js';
 import type { Logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import type { ExportRepository } from './repositories/export.repository.js';
+import { createAnalyticsRouter } from './routes/analytics.js';
 import { createHealthRouter } from './routes/health.js';
 import { createRubricsRouter } from './routes/rubrics.js';
 import type { RubricService } from './services/rubric.service.js';
@@ -18,10 +20,19 @@ export interface AppDeps {
   checkDb?: () => Promise<void>;
   /** Rubrik servisi. Tanımsızsa (veritabanı yok) rubrik uçları açılmaz. */
   rubrics?: RubricService;
+  /** Puanlama kayıtlarını okuyan depo. Tanımsızsa analiz ve dışa aktarma uçları açılmaz. */
+  exports?: ExportRepository;
 }
 
 /** Express uygulamasını kurar (dinlemez). Böylece testler gerçek porta ihtiyaç duymaz. */
-export function createApp({ env, logger, version = '0.1.0', checkDb, rubrics }: AppDeps): Express {
+export function createApp({
+  env,
+  logger,
+  version = '0.1.0',
+  checkDb,
+  rubrics,
+  exports,
+}: AppDeps): Express {
   const app = express();
   app.disable('x-powered-by');
 
@@ -54,6 +65,7 @@ export function createApp({ env, logger, version = '0.1.0', checkDb, rubrics }: 
   const api = express.Router();
   api.use(createHealthRouter({ version, checkDb }));
   if (rubrics) api.use(createRubricsRouter(rubrics));
+  if (exports) api.use(createAnalyticsRouter(exports));
   app.use('/api/v1', api);
 
   app.use(notFoundHandler);

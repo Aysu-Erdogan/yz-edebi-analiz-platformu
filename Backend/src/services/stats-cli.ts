@@ -1,5 +1,5 @@
 import { parseArgs } from 'node:util';
-import { analysisJson, analyze, formatAnalysis } from '../domain/analysis.js';
+import { analysisJson, analyze, filterThemes, formatAnalysis } from '../domain/analysis.js';
 import type { ExportRepository } from '../repositories/export.repository.js';
 
 export interface StatsCliDeps {
@@ -39,14 +39,8 @@ export async function runStatsCli(
   }
 
   // Deneme verisi (örn. Sonbahar şiirleri) nihai veri setine karışmasın: yalnızca verilen temalar.
-  const themes = parsed.values.tema
-    ?.split(',')
-    .map((t) => t.trim())
-    .filter(Boolean);
-  const records = await deps.exports.listEvaluations();
-  const conditions = analyze(
-    themes?.length ? records.filter((r) => themes.includes(r.theme)) : records,
-  );
+  const records = filterThemes(await deps.exports.listEvaluations(), parsed.values.tema);
+  const conditions = analyze(records);
   for (const line of formatAnalysis(conditions)) log(line);
 
   const path = parsed.values.cikti;

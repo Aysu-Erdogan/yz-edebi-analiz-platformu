@@ -343,18 +343,37 @@ paths:
   /analytics/stats:
     get:
       tags: [Analiz]
-      summary: İstatistik testleri (Kruskal-Wallis vb.)
-      x-status: planned
+      summary: Model karşılaştırması (betimsel değerler, Kruskal-Wallis, Mann-Whitney) ve kriter profili
+      description: >
+        Ölçüm birimi metindir (tekrarlar ortalanır); hakem, rubrik ve komut sürümü ayrı koşuldur.
+        `kirilimlar` tüm türler, tür ve tema bazında betimsel değerleri, `karsilastirmalar`
+        Kruskal-Wallis ve ikili Mann-Whitney sonuçlarını (Holm düzeltmeli, Cliff δ), `profiller`
+        radar grafiği için türe göre yazar başına kriter ortalamalarını verir. Eşik ya da
+        "anlamlı" yargısı yoktur, ham değerler döner.
+      x-status: implemented
       operationId: getAnalyticsStats
+      parameters:
+        - name: tema
+          in: query
+          required: false
+          description: Virgülle ayrılmış temalar; verilmezse tüm temalar (deneme verisi dahil).
+          schema: { type: string }
       responses:
         '200':
-          description: İstatistik sonuçları
+          description: >
+            `{ success, data: { olusturulma, kosullar: [{ hakem, rubrikSurumu, hakemKomutSurumu,
+            metin, elleGirilen, olculemeyen, kirilimlar, karsilastirmalar, profiller }] } }`
+        '400':
+          $ref: '#/components/responses/Error'
   /export:
     get:
       tags: [Analiz]
       summary: Veriyi dışa aktar
-      description: UTF-8 CSV ya da JSON. Taslak rubrikle üretilen sonuçlar işaretlenir.
-      x-status: planned
+      description: >
+        Dosya olarak iner (`puanlar.csv` ya da `puanlar.json`). CSV UTF-8 BOM ile, kriter başına bir
+        satır; JSON metin ve hakem gerekçeleriyle tam kayıt. Her kayıtta rubrik notu (taslak uyarısı)
+        bulunur. Başarılı yanıt zarfsızdır (dosya gövdesi).
+      x-status: implemented
       operationId: exportData
       parameters:
         - name: format
@@ -367,6 +386,8 @@ paths:
           content:
             text/csv: { schema: { type: string } }
             application/json: { schema: { type: object } }
+        '400':
+          $ref: '#/components/responses/Error'
 
   /auth/login:
     post:

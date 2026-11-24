@@ -43,6 +43,21 @@ export interface Comparison {
   notes: string[];
 }
 
+export interface ProfileGroup {
+  key: string;
+  /** Bu yazarın bu kapsamdaki metin sayısı. */
+  n: number;
+  /** Kriter anahtarı → ham puan ortalaması (önce metin içinde tekrarlar, sonra metinler ortalanır). */
+  means: Record<string, number>;
+}
+
+/** Radar grafiği için: bir türde yazar başına kriter ortalamaları (kriterler türe göre farklıdır). */
+export interface Profile {
+  scope: string;
+  criteria: string[];
+  groups: ProfileGroup[];
+}
+
 export interface AnalysisCondition {
   judge: string;
   rubricVersion: string;
@@ -54,6 +69,7 @@ export interface AnalysisCondition {
   unmeasuredTexts: number;
   breakdowns: Breakdown[];
   comparisons: Comparison[];
+  profiles: Profile[];
 }
 
 interface Measured {
@@ -61,6 +77,8 @@ interface Measured {
   theme: string;
   author: string;
   score: number;
+  /** Kriter anahtarı → bu metnin ham puan ortalaması (başarılı tekrarlar üzerinden). */
+  criteria: Record<string, number>;
 }
 
 const MIN_PER_GROUP = 2;
@@ -76,6 +94,23 @@ function groupBy(measured: Measured[]): GroupSummary[] {
     key,
     ...describe(scores),
   }));
+}
+
+function profile(scope: string, measured: Measured[]): Profile {
+  const criteria = [...new Set(measured.flatMap((m) => Object.keys(m.criteria)))];
+  const byAuthor = new Map<string, Measured[]>();
+  for (const m of measured) byAuthor.set(m.author, [...(byAuthor.get(m.author) ?? []), m]);
+  const groups = sortBy([...byAuthor.entries()], ([key]) => key).map(([key, texts]) => ({
+    key,
+    n: texts.length,
+    means: Object.fromEntries(
+      criteria.flatMap((k) => {
+        const values = texts.flatMap((t) => (k in t.criteria ? [t.criteria[k]!] : []));
+        return values.length ? [[k, mean(values)]] : [];
+      }),
+    ),
+  }));
+  return { scope, criteria, groups };
 }
 
 function compare(scope: string, measured: Measured[]): Comparison {
@@ -133,18 +168,26 @@ export function analyze(records: ExportEvaluation[]): AnalysisCondition[] {
           manualTexts++;
           continue;
         }
-        const totals = textRows
-          .filter((r) => r.status === 'succeeded' && r.totalScore !== null)
-          .map((r) => r.totalScore as number);
-        if (totals.length === 0) {
+        const succeeded = textRows.filter((r) => r.status === 'succeeded' && r.totalScore !== null);
+        if (succeeded.length === 0) {
           unmeasuredTexts++;
           continue;
+        }
+        const perCriterion = new Map<string, number[]>();
+        for (const r of succeeded) {
+          for (const s of r.scores) {
+            perCriterion.set(s.criterionKey, [
+              ...(perCriterion.get(s.criterionKey) ?? []),
+              s.score,
+            ]);
+          }
         }
         measured.push({
           genre: head.genre,
           theme: head.theme,
           author: `${head.author.provider}/${head.author.modelId}`,
-          score: mean(totals),
+          score: mean(succeeded.map((r) => r.totalScore as number)),
+          criteria: Object.fromEntries([...perCriterion].map(([k, v]) => [k, mean(v)])),
         });
       }
 
@@ -177,6 +220,12 @@ export function analyze(records: ExportEvaluation[]): AnalysisCondition[] {
             ),
           ),
         ],
+        profiles: genres.map((g) =>
+          profile(
+            `tür ${g}`,
+            measured.filter((m) => m.genre === g),
+          ),
+        ),
       };
     }),
     (c) => `${c.judge}|${c.rubricVersion}|${c.judgeTemplateVersion ?? ''}`,
@@ -237,45 +286,63 @@ const groupJson = (g: GroupSummary) => ({
   enYuksek: g.max,
 });
 
-/** JSON dosyası: Türkçe anahtarlar (dışa aktarma JSON'uyla aynı dil). */
-export function analysisJson(conditions: AnalysisCondition[], now: Date): string {
-  return JSON.stringify(
-    {
-      olusturulma: now.toISOString(),
-      kosullar: conditions.map((c) => ({
-        hakem: c.judge,
-        rubrikSurumu: c.rubricVersion,
-        hakemKomutSurumu: c.judgeTemplateVersion,
-        metin: c.texts,
-        elleGirilen: c.manualTexts,
-        olculemeyen: c.unmeasuredTexts,
-        kirilimlar: c.breakdowns.map((b) => ({
-          etiket: b.label,
-          gruplar: b.groups.map(groupJson),
-        })),
-        karsilastirmalar: c.comparisons.map((cmp) => ({
-          kapsam: cmp.scope,
-          gruplar: cmp.groups.map(groupJson),
-          kruskalWallis: cmp.kruskal && {
-            h: cmp.kruskal.h,
-            sd: cmp.kruskal.df,
-            p: cmp.kruskal.p,
-            epsilonKare: cmp.kruskal.epsilonSquared,
-          },
-          ikililer: cmp.pairs.map((p) => ({
-            a: p.a,
-            b: p.b,
-            u: p.u,
-            p: p.p,
-            pHolm: p.pHolm,
-            cliffDelta: p.cliffsDelta,
-            tam: p.exact,
-          })),
-          notlar: cmp.notes,
-        })),
+/** `--tema` ve `?tema=` süzgeci: virgülle ayrılmış temalar; tanımsız ya da boşsa süzgeç yoktur. */
+export function filterThemes(
+  records: ExportEvaluation[],
+  raw: string | undefined,
+): ExportEvaluation[] {
+  const themes = raw
+    ?.split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
+  return themes?.length ? records.filter((r) => themes.includes(r.theme)) : records;
+}
+
+/** Türkçe anahtarlı rapor nesnesi (dışa aktarma JSON'uyla aynı dil); dosya ve API aynı biçimi kullanır. */
+export function analysisReport(conditions: AnalysisCondition[], now: Date) {
+  return {
+    olusturulma: now.toISOString(),
+    kosullar: conditions.map((c) => ({
+      hakem: c.judge,
+      rubrikSurumu: c.rubricVersion,
+      hakemKomutSurumu: c.judgeTemplateVersion,
+      metin: c.texts,
+      elleGirilen: c.manualTexts,
+      olculemeyen: c.unmeasuredTexts,
+      kirilimlar: c.breakdowns.map((b) => ({
+        etiket: b.label,
+        gruplar: b.groups.map(groupJson),
       })),
-    },
-    null,
-    2,
-  );
+      karsilastirmalar: c.comparisons.map((cmp) => ({
+        kapsam: cmp.scope,
+        gruplar: cmp.groups.map(groupJson),
+        kruskalWallis: cmp.kruskal && {
+          h: cmp.kruskal.h,
+          sd: cmp.kruskal.df,
+          p: cmp.kruskal.p,
+          epsilonKare: cmp.kruskal.epsilonSquared,
+        },
+        ikililer: cmp.pairs.map((p) => ({
+          a: p.a,
+          b: p.b,
+          u: p.u,
+          p: p.p,
+          pHolm: p.pHolm,
+          cliffDelta: p.cliffsDelta,
+          tam: p.exact,
+        })),
+        notlar: cmp.notes,
+      })),
+      profiller: c.profiles.map((p) => ({
+        kapsam: p.scope,
+        kriterler: p.criteria,
+        gruplar: p.groups.map((g) => ({ anahtar: g.key, n: g.n, ortalamalar: g.means })),
+      })),
+    })),
+  };
+}
+
+/** JSON dosyası: `analysisReport` girintili metin olarak. */
+export function analysisJson(conditions: AnalysisCondition[], now: Date): string {
+  return JSON.stringify(analysisReport(conditions, now), null, 2);
 }
