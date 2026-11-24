@@ -1,13 +1,14 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
+import { Analysis } from './pages/Analysis';
 import { Placeholder } from './pages/Placeholder';
 
 function NotFound() {
   return (
-    <section className="rounded-lg border border-line bg-surface p-6">
-      <h1 className="text-2xl font-semibold">Sayfa bulunamadı</h1>
-      <p className="mt-2 text-muted">Aradığınız sayfa yok ya da taşınmış olabilir.</p>
-      <Link to="/" className="mt-4 inline-block text-brand-600 underline">
+    <section className="py-10 text-center">
+      <h1 className="text-4xl sm:text-5xl">Sayfa bulunamadı</h1>
+      <p className="text-muted mt-3 text-lg">Aradığınız sayfa yok ya da taşınmış olabilir.</p>
+      <Link to="/" className="btn btn-primary mt-6">
         Ana sayfaya dön
       </Link>
     </section>
@@ -36,15 +37,7 @@ export default function App() {
             />
           }
         />
-        <Route
-          path="analiz"
-          element={
-            <Placeholder
-              title="Sonuçlar ve Analiz"
-              description="Model, tür ve tema bazında puanları, grafikleri ve istatistikleri görün."
-            />
-          }
-        />
+        <Route path="analiz" element={<Analysis />} />
         <Route
           path="rubrik"
           element={

@@ -13,14 +13,14 @@ export function Layout() {
     <div className="flex min-h-screen flex-col">
       <a
         href="#icerik"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:rounded focus:bg-surface focus:px-3 focus:py-2"
+        className="bg-page sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:rounded focus:px-3 focus:py-2"
       >
         İçeriğe geç
       </a>
 
-      <header className="border-b border-line bg-surface">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <span className="text-lg font-semibold text-brand-700">YZ Edebi Analiz</span>
+      <header>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+          <span className="text-base font-bold tracking-[0.14em] uppercase">YZ Edebi Analiz</span>
           <nav aria-label="Ana menü">
             <ul className="flex flex-wrap gap-1">
               {NAV_ITEMS.map((item) => (
@@ -29,8 +29,10 @@ export function Layout() {
                     to={item.to}
                     end={item.end}
                     className={({ isActive }) =>
-                      `rounded px-3 py-2 text-sm font-medium ${
-                        isActive ? 'bg-brand-50 text-brand-700' : 'text-muted hover:text-ink'
+                      `block border-b-2 px-3 py-2 text-sm no-underline ${
+                        isActive
+                          ? 'border-accent text-ink font-bold'
+                          : 'text-muted hover:text-ink border-transparent'
                       }`
                     }
                   >
@@ -43,12 +45,12 @@ export function Layout() {
         </div>
       </header>
 
-      <main id="icerik" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <main id="icerik" className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
         <Outlet />
       </main>
 
-      <footer className="border-t border-line bg-surface">
-        <div className="mx-auto max-w-6xl px-4 py-3">
+      <footer className="bg-ink text-page">
+        <div className="mx-auto max-w-6xl px-4 py-4">
           <HealthStatus />
         </div>
       </footer>

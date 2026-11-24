@@ -43,7 +43,17 @@ describe('App', () => {
   it('menüden başka sayfaya geçilebilir ve geçerli sayfa işaretlenir', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(() => Promise.resolve(health())),
+      vi.fn((url: string) =>
+        Promise.resolve(
+          url.includes('/analytics/stats')
+            ? new Response(
+                JSON.stringify({ success: true, data: { olusturulma: '', kosullar: [] } }),
+              )
+            : url.includes('/rubrics')
+              ? new Response(JSON.stringify({ success: true, data: [] }))
+              : health(),
+        ),
+      ),
     );
     renderApp();
     await userEvent.click(screen.getByRole('link', { name: 'Sonuçlar ve Analiz' }));
