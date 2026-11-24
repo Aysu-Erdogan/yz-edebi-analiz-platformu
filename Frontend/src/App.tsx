@@ -3,6 +3,7 @@ import { Layout } from './components/Layout';
 import { Analysis } from './pages/Analysis';
 import { Compare } from './pages/Compare';
 import { Placeholder } from './pages/Placeholder';
+import { RubricPage } from './pages/Rubric';
 
 function NotFound() {
   return (
@@ -31,15 +32,7 @@ export default function App() {
           }
         />
         <Route path="analiz" element={<Analysis />} />
-        <Route
-          path="rubrik"
-          element={
-            <Placeholder
-              title="Rubrik ve Hakkında"
-              description="Kullanılan rubriği, sürümlerini ve projenin yöntemini inceleyin."
-            />
-          }
-        />
+        <Route path="rubrik" element={<RubricPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
