@@ -33,13 +33,14 @@
 | 23 Kas 2026           | Puanlama kararı değişti: yazarlar yalnızca yazar, tek sabit hakem DeepSeek Flash; DeepSeek adaptörü yazıldı, gerçek smoke ve 3 şiirlik pilot çalıştırıldı (bölüm 3.9, 4.8) |
 | 23 Kas 2026           | Tekrar kararlılığı ölçümü (T20, `npm run stability`) yazıldı ve pilot verisinde denendi: s_r 3,33 (bölüm 3.10, 4.8) |
 | 23 Kas 2026           | Enjeksiyon direnci testi (`npm run injection`) yazıldı ve gerçek hakemle çalıştırıldı: 8 saldırıda etki gözlenmedi (bölüm 3.11, 4.9) |
+| 24 Kas 2026           | İstatistik modülü, rubrik yükleme ve T21 yazıldı; ilk veri seti (27 metin) üretildi ve puanlandı: Gemini her türde en düşük, Claude ve GPT arasında fark yok (bölüm 3.12, 4.10). F2 kod işleri tamam |
 | 10 Ocak 2027          | Yazılım dondurma                                                                           |
 | 31 Ocak 2027          | TÜBİTAK bitiş                                                                              |
 | Şubat / Mayıs 2027    | Bitirme raporu / sunum                                                                     |
 
 **[Veri]** F1 planı 23 Kas-6 Ara 2026 arasındaydı; plan başlamadan, 21 Kas'ta birleşti (kaynak: `docs/IS_PLANI.md`). Fazlar F0-F7; sırada F2 (yargıç motoru, iş kuyruğu, istatistik, dışa aktarma).
 
-**[Veri]** Yazılım doğrulama ilerlemesi (otomatik test sayısı): 56 (ilk adım) → 91 → 107 → 129 → 142 → 191 → 204 → 225 → 256 → 275 → 301 → 316 → **329** (22 Kas 2026; 275 OpenAI/model birleşmesi, 301 F2 Adım 1 yargıç motoru, 316 Adım 2 puan kaydı, 329 Adım 3 judge:smoke) → **415** (23 Kas 2026, F2 Adım 7 komut satırı) → **448** (23 Kas 2026, F2 Adım 8 dışa aktarma; PR #14'te, `main`'e henüz birleşmedi) → **472** (23 Kas 2026, DeepSeek adaptörü, `1ffb853`; PR #14'te) → **504** (23 Kas 2026, kararlılık ölçümü T20, `1feff47`; PR #14'te) → **543** (23 Kas 2026, enjeksiyon testi aracı, `bb2bd1d`; PR #14'te). Kod kapsamı yaklaşık %96 (F2 dalında yaklaşık %97). Her PR'da dört otomatik kontrol (biçim, backend, frontend, Docker Compose) çalışır; PR #10 ve #12 hepsini geçti. Kaynak: oturum kayıtları, GitHub Actions.
+**[Veri]** Yazılım doğrulama ilerlemesi (otomatik test sayısı): 56 (ilk adım) → 91 → 107 → 129 → 142 → 191 → 204 → 225 → 256 → 275 → 301 → 316 → **329** (22 Kas 2026; 275 OpenAI/model birleşmesi, 301 F2 Adım 1 yargıç motoru, 316 Adım 2 puan kaydı, 329 Adım 3 judge:smoke) → **415** (23 Kas 2026, F2 Adım 7 komut satırı) → **448** (23 Kas 2026, F2 Adım 8 dışa aktarma; PR #14'te, `main`'e henüz birleşmedi) → **472** (23 Kas 2026, DeepSeek adaptörü, `1ffb853`; PR #14'te) → **504** (23 Kas 2026, kararlılık ölçümü T20, `1feff47`; PR #14'te) → **543** (23 Kas 2026, enjeksiyon testi aracı, `bb2bd1d`; PR #14'te) → **601** (24 Kas 2026, istatistik, rubrik yükleme ve T21, `b7d4cde`; PR #14'te). Kod kapsamı yaklaşık %96 (F2 dalında yaklaşık %97). Her PR'da dört otomatik kontrol (biçim, backend, frontend, Docker Compose) çalışır; PR #10 ve #12 hepsini geçti. Kaynak: oturum kayıtları, GitHub Actions.
 
 ## 3. Yöntem
 
@@ -342,6 +343,24 @@ Kriterler komuta şu biçimde yazılır (düzeyler küçükten büyüğe): `- an
 
 **[Veri] Doğrulama:** 39 yeni otomatik test (sahte hakemle, ücretsiz); test sayısı **504 → 543**, `npm run verify` geçti. Testler her saldırı için hakeme giden komutta tam bir `<metin>` bloğu bulunduğunu, sahte etiketlerin etkisizleştiğini ve kayma hesabını elle hesaplanmış sahte puanlarla sınar. **38 bozmanın 38'i yakalandı;** ilk turda 1 bozma kaçtı (sahte cevap saldırısının tam puanlı olduğu sınanmıyordu), test eklendi. Bu adımda testler ve kod art arda yazıldı; testi önce tek başına kırmızı görme adımı atlandı, bozma denemesiyle telafi edildi. Gerçek servis sonucu: bölüm 4.9 ve Ek A (R16).
 
+### 3.12 Model karşılaştırması istatistiği ve rubrik yükleme: F2, 24 Kas 2026
+
+**[Karar]** İş planı 7.4 (istatistik) ve T21 (yeni rubrikle yeniden puanlama). Komutlar `npm run stats` (`Backend/src/domain/stats.ts`, `analysis.ts`, `Backend/src/services/stats-cli.ts`) ve `npm run rubric` (`Backend/src/services/rubric-cli.ts`); commit `b7d4cde`. Yöntem seçimleri benimdir (kullanıcı "devam et" dedi); iş planı istatistik yönteminin danışmanla teyit edilmesini ister **[TODO]**.
+
+| Karar                                                                                                                                                                                                                                                    | Gerekçe                                                                                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Ölçüm birimi metin:** bir metnin puanı, aynı hakemin başarılı tekrarlarının toplam puan ortalamasıdır. Hakem, rubrik sürümü ve hakem komutu sürümü ayrı koşul olarak analiz edilir                                                                       | Tekrarlar aynı metnin ölçümleridir, bağımsız örnek değildir (sahte çoğaltma önlenir). Tek hakem kararıyla (3.9) hakem etkisi analizde yoktur                              |
+| **Parametrik olmayan testler:** Kruskal-Wallis (bağ düzeltmeli, etki büyüklüğü ε² = H(N+1)/(N²−1)), ikili Mann-Whitney ve etki büyüklüğü Cliff δ                                                                                                          | Örneklem küçük ve normal dağılım varsayılamaz (iş planı 7.4)                                                                                                             |
+| **Mann-Whitney'de N ≤ 20'de tam (permütasyon) test;** üstünde bağ düzeltmeli ve süreklilik düzeltmeli normal yaklaşım                                                                                                                                       | Grup başına 3 metinde normal yaklaşım güvenilir değildir; tam test bağlı veride de çalışır                                                                               |
+| **Holm düzeltmesi,** her kapsamın (tüm türler ve her tür) ikili karşılaştırmaları içinde                                                                                                                                                                   | Çoklu karşılaştırma düzeltmesi; Bonferroni'den güçlüdür                                                                                                                  |
+| **Kruskal-Wallis p'si ki-kare yaklaşımıdır:** grup başına 5 metinden azsa uyarı yazılır; her yazar için en az 2 metin yoksa test yapılmaz ("yetersiz örnek")                                                                                               | Küçük örneklemde yaklaşık p yanıltabilir; uydurma p yok                                                                                                                  |
+| **Eşik ya da "anlamlı" yargısı yok;** ham p, Holm p, ε² ve δ yazılır                                                                                                                                                                                      | Yorum raporda ve makalede yapılır (3.10 ve 3.11 ile aynı ilke)                                                                                                           |
+| **Betimsel kırılım:** tüm türler, tür ve tema. Tema yalnızca betimsel                                                                                                                                                                                      | Tema başına hücrede 1 metin olduğundan test yapılmaz                                                                                                                     |
+| **`--tema` süzgeci ve `--cikti` JSON**                                                                                                                                                                                                                     | Deneme verisi (Sonbahar şiirleri) nihai analize karışmasın                                                                                                               |
+| **Rubrik yükleme** (`npm run rubric -- yukle <dosya>... [--etkinlestir]`): dosya tek rubrik ya da rubrik dizisi; yeni sürüm yüklenir, eski puanlar yerinde kalır; aynı metinleri yeni rubrikle yeniden puanlamak `batch puanla` ile (atlama denetimi rubrik kimliğine bakar) | T21; gerçek rubrik geldiğinde kod değişmeden yüklenir (iş planı ilke 1)                                                                                                  |
+
+**[Veri] Doğrulama:** 58 yeni otomatik test (istatistik çekirdeği 22, analiz 19, `stats` komutu 6, `rubric` komutu 10, T21 MySQL testi 1); test sayısı **543 → 601**, `npm run verify` geçti. İstatistik yazılımı (R, SciPy) bu ortamda olmadığı için doğruluk **bağımsız yollarla** sınandı: ki-kare sağ kuyruğu df=2'de kapalı biçimle (e^(−x/2)) ve df 1-4 için %5 kritik değerlerle; normal sağ kuyruk bilinen değerlerle; Kruskal-Wallis bağlı veride ayrı bir formülle (sıra-ANOVA: H = (N−1)·SS_gruplar/SS_toplam); Mann-Whitney tam p'si elle sayılmış örneklerle (örn. [1,2,2] ve [2,3,4] için p = 6/20); Holm elle. **46 bozmanın 46'sı yakalandı** (rubrik komutu ve T21 12, istatistik 34). R ya da SPSS ile gerçek veri üzerinde bağımsız doğrulama yapılmadı **[TODO]** (iş planı dışa aktarma ile bunu öngörür).
+
 ---
 
 ## 4. Bulgular: gerçek servis deneme verileri
@@ -598,6 +617,57 @@ Aynı üç şiirin dört hakemden aldığı toplam puanlar (DeepSeek: üç tekra
 - Rubrik ya da hakem komutu değişirse test yinelenmelidir **[TODO]**.
 - Ham sonuç (gerekçelerle) yerelde `Backend/exports/enjeksiyon.json` dosyasında, git'e girmez.
 
+### 4.10 İlk veri seti: üretim, puanlama ve model karşılaştırması (F2, 24 Kas 2026)
+
+**[Veri]** Düzen: 3 tür (şiir, hikâye, deneme) × 3 tema (Aşk, Doğa, Teknoloji; başvuru formundaki temalar) × 3 yazar (Claude Sonnet 5.5, Gemini 4 Hydrogen, GPT-6.2 Sol) × 1 tekrar = **27 metin** (metin kimlikleri 4-30; 1-3 Sonbahar deneme şiirleridir, veri setine girmez). Üretim komutu şablonu v1, hakem komutu `judge-v1`, rubrik taslak v0.1 (üç tür). Koşular R17-R19 (yapay zekâ asistanı kullanıcı onayıyla çalıştırdı; ham çıktı Ek A):
+
+- **R17, iş #5:** `npm run batch -- uret --konular "siir:Aşk,siir:Doğa,siir:Teknoloji,hikaye:Aşk,...,deneme:Teknoloji" --modeller claude-sonnet-5-5,gemini-4-hydrogen,gpt-6.2-sol --tekrar 1 --butce 2 --calistir`: 19/27 tamam, 8 başarısız (hepsi Gemini), harcama $0,1595.
+- **R18, iş #6 (aynı komut):** biten 19 öğe atlandı, 8 Gemini öğesi yeniden denendi: 0/8, harcama $0 (HTTP 429 kota).
+- **R19, iş #8 (aynı komut):** kullanıcı Google hesabına 250 TL kredi yükledikten sonra 8/8 tamam, harcama $0,2666.
+- **Puanlama:** iş #7 (metin 4-22, 57/57, $0,0665) ve iş #9 (metin 23-30, 24/24, $0,0294): `batch puanla --metinler <aralık> --hakemler deepseek-flash --tekrar 3`; 81 puanlamanın 81'i ilk denemede geçerli.
+
+**Üretim:** hata kayıtları silinmedi; 16 başarısız Gemini kaydı (üretim #12, #15, #19, #20, #23, #25, #27, #28, #31-#38) `failed` olarak durur.
+
+| Yazar               | Başarı                                  | Süre (sn)                                                 | Çıkış token                                                   | Sözcük (şiir / hikâye / deneme) |
+| ------------------- | --------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------- |
+| `claude-sonnet-5-5` | 9/9                                     | 6,1-18,4 (şiir 6,1-6,7; hikâye 13,5-18,4; deneme 11,9-17,2) | 372-1916 (şiir 372-394; hikâye 1046-1916; deneme 944-1854)    | 96-101 / 246-269 / 230-250      |
+| `gpt-6.2-sol`       | 9/9                                     | 9,8-25,8 (şiir 9,8-10,9; hikâye 19,9-25,8; deneme 20,5-24,1) | 180-762 (şiir 180-187; hikâye 646-762; deneme 619-635)        | 65-74 / 259-277 / 248-278       |
+| `gemini-4-hydrogen` | 1/9 (ücretsiz kota), kredi sonrası 9/9  | 12,4-28,3                                                 | 2369-5980 (şiir 2369-3655; hikâye 4415-5980; deneme 3861-5181) | 69-78 / 277-299 / 278-295       |
+
+Sözcük sayıları boşluğa göre bölünerek sayıldı. Claude'un üç metni (hikâye 246, deneme 230 ve 249 sözcük) üretim komutundaki 250-350 sözcük yönergesinin alt sınırının altında kaldı.
+
+**Başarısızlıklar (Gemini):** ilk çalıştırmada 4 çağrı HTTP 503 "yüksek talep", 4 çağrı HTTP 429 "kota aşıldı"; yeniden denemede 1 × 503 ve 7 × 429. 429 hatası Google hesabının ücretsiz kotasındandı (kullanıcı ücretsiz API kullandığını bildirdi); kredi yüklenince geçti.
+
+**Maliyet [Hesap]:** üretim $0,4261 (iş #5 $0,1595 + iş #8 $0,2666), puanlama $0,0959 (iş #7 $0,0665 + iş #9 $0,0294); veri seti toplamı ≈ **$0,5220**. Gemini metin başına ≈ $0,033 (8 metin $0,2666), diğer 19 metin ortalama ≈ $0,0084; Gemini'nin düşünme tokenleri (2,4-6 bin çıkış tokeni) maliyeti dört kat artırıyor **[Yorum]**. Puanlama çağrı başına ≈ $0,0012.
+
+**Puanlar** (DeepSeek hakem, rubrik taslak 0.1, her metin 3 tekrar ortalaması, 0-100; hücrede n = 3, "tüm" sütununda n = 9):
+
+| Yazar               | Tüm türler (n 9) | Şiir | Hikâye | Deneme |
+| ------------------- | ---------------- | ---- | ------ | ------ |
+| `claude-sonnet-5-5` | 83,5             | 72,8 | 89,4   | 88,3   |
+| `gpt-6.2-sol`       | 82,8             | 70,6 | 87,2   | 90,6   |
+| `gemini-4-hydrogen` | 73,1             | 62,8 | 73,9   | 82,8   |
+
+Tüm türler: Kruskal-Wallis **H 5,40 (sd 2), p 0,0673, ε² 0,21**. İkili (Mann-Whitney, tam test, Holm): Claude-Gemini p 0,0295 (Holm 0,0884), Cliff δ +0,60; Gemini-GPT p 0,0723 (Holm 0,1445), δ −0,51; Claude-GPT p 0,8865 (Holm 0,8865), δ −0,05. Tür içinde Kruskal-Wallis: şiir H 2,92 (p 0,2328, ε² 0,36), hikâye H 4,91 (p 0,0860, ε² 0,61), deneme H 5,31 (p 0,0703, ε² 0,66); tür içinde (n = 3 + 3) tam testin en küçük p'si 0,1 olduğundan Holm sonrası hiçbir çift 0,3'ün altına inemez. Tema kırılımı (betimsel): Aşk 86,7 / 83,9 / 75,6, Doğa 81,7 / 85,6 / 71,7, Teknoloji 82,2 / 78,9 / 72,2 (Claude / GPT / Gemini).
+
+**Tekrar kararlılığı** (bölüm 3.10, DeepSeek, bu veri seti ve 3 pilot şiir; hakem komutu v1): şiir (12 metin) s_r 2,64, en büyük aralık 10, 8/12 metin tamamen aynı, kriter hücrelerinin %90,0'ı aynı; hikâye (9 metin) s_r 3,73, en büyük aralık 15, 5/9, %80,0; deneme (9 metin) s_r 1,36, en büyük aralık 5, 7/9, %95,6.
+
+**Gözlemler:**
+
+1. **[Veri]** **Gemini her üç türde de en düşük ortalamayı aldı** (şiir 62,8, hikâye 73,9, deneme 82,8); Claude ve GPT arasında fark yok (δ −0,05). Kruskal-Wallis p'si 0,067: geleneksel 0,05 eşiğinin hemen üstünde. Claude-Gemini ikilisi düzeltmesiz 0,0295, Holm sonrası 0,0884. **[Yorum]** Yön tutarlı (her türde aynı), ama kanıt kesin değil: tür başına 3, toplamda 9 metin.
+2. **[Veri]** **Tür etkisi büyük:** her yazarda şiirler hikâye ve denemelerden yaklaşık 10-25 puan düşük (şiir 62,8-72,8; hikâye 73,9-89,4; deneme 82,8-90,6). **[Yorum]** Hakemin ya da taslak rubriğin tür eğilimi, şiirlerin kısalığı ya da şiirin gerçekten daha zor olması olabilir; ayrıştırılamadı. Yazarlar arası kıyas tür içinde okunmalı.
+3. **[Veri]** Yazar başına standart sapma 8,8-10,4 puan; en yüksek puanlar 95'te, yani üst uçta yığılma var (hakem puanları 65-95 aralığında). **[Yorum]** Üst uçtaki yığılma ince farkları görmeyi zorlaştırabilir.
+4. **[Veri]** Gemini'nin düşünme tokenleri (2,4-6 bin) süre ve maliyeti belirgin artırdı; 503 ve 429 hataları ücretsiz kotada üretimi neredeyse imkânsız kıldı.
+
+**Sınırlılıklar (bu veri setine özgü):**
+
+- Hücre başına 3 metin: tür içi testler çok düşük güçlü; tam testin en küçük p'si 0,1.
+- Taslak rubrik v0.1 ve taslak üretim komutu v1; gerçek rubrik gelince yeniden puanlanacak (T21, bölüm 3.12). Tek tekrarlı üretim: aynı komutla aynı modelin çıktı çeşitliliği ölçülmedi.
+- Tek hakem (bölüm 3.9, sınırlılık 18); hakem puanları üst uçta yığılıyor.
+- Gemini metinleri ve diğerleri aynı gün ama farklı koşullarda üretildi (Gemini önce ücretsiz kotada, sonra kredili).
+- Metin uzunluğu ile puan ilişkisi ve yönerge dışı uzunluktaki üç Claude metninin etkisi analiz edilmedi **[TODO]**.
+- Veri seti geliştirme veritabanında; sonuç dosyaları yerelde (`Backend/exports/istatistik.json`, `kararlilik-veri.json`), git'e girmez. R ya da SPSS ile bağımsız doğrulama yapılmadı **[TODO]**.
+
 ## 5. Sağlayıcı fiyat ve model envanteri
 
 **[Veri]** Fiyatlar milyon token başına, $, girdi / çıktı, standart katman. Kaynaklar belge adresleriyle 10. bölümde. Fiyatlar zamanla değişir; okunma tarihi: Anthropic fiyatları 21 Kas, Google ve OpenAI fiyatları 21-22 Kas 2026.
@@ -670,6 +740,7 @@ Her biri raporda/makalede ayrıca yazılmalıdır:
 20. **DeepSeek Çin merkezli bir şirkettir ve başvuru formunda yoktur** (bölüm 3.9). Hakeme yalnızca tür, tema, rubrik ve metin gönderilir; metni hangi modelin yazdığı gitmez ve metinler yapay zekâ üretimidir, kişisel veri içermez. Yine de DeepSeek'in hizmet şartları ve veri saklama / model eğitiminde kullanım koşulları **okunmadı** **[TODO]**; formdan sapma danışmanla teyit edilecek **[TODO]**.
 21. **Tekrar kararlılığı ölçümünün kapsamı** (bölüm 3.10, 4.8). Yalnızca üç metin ve üç tekrar: s_r (3,33) üç şiirin yalnızca birindeki sapmadan (90, 80, 80) geliyor, büyüklüğü hakkında genelleme yapılamaz. Eşik koyulmadığı için "kararlı" ya da "kararsız" yargısı verilmiyor. Ölçüm yalnızca aynı hakemin aynı koşuldaki tekrarlarını kapsar; hakemin ortalamasının doğruluğu ya da yanlılığı hakkında bilgi vermez (sınırlılık 18). Komut tüm kayıtları okur ve deneme verisini nihai veri setinden ayırmaz **[TODO]**. Diğer üç hakemin kayıtları tek tekrarlı olduğu için ölçülemedi (karşılaştırma yok). ICC ve ikinci hakemle karşılaştırma yapılmadı.
 22. **Enjeksiyon testinin kapsamı** (bölüm 3.11, 4.9). Yalnızca sekiz elle yazılmış saldırı, iki kontrol şiiri (zayıf ve güçlü), tek hakem (DeepSeek, düşünme kapalı, sıcaklık 0), taslak şiir rubriği ve taslak komut `judge-v1`, üç tekrar. Sonuç "denenen saldırılarda etki gözlenmedi"dir; "dirençli" ya da "güvenli" denemez. Saldırılar hakem komutunu bilmeden yazıldı; komuta özel (adaptif), çok adımlı, uzun metne gömülü ya da yazım hileli saldırılar, hikâye ve deneme, diğer hakemler ve komutsuz model denenmedi. Direnç kısmen `judge-v1`'deki açık kuraldan gelmiş olabilir. Hakem saldırıyı gerekçelerinde anmıyor: yok sayıyor, **tespit** etmiyor. Rubrik ya da komut değişirse test yinelenmelidir **[TODO]**.
+23. **İlk veri setinin kapsamı** (bölüm 4.10). Hücre başına (tür × yazar) 3 metin, toplam 27; tek tekrarlı üretim; taslak rubrik ve taslak üretim komutu; tek hakem, puanlar üst uçta yığılıyor (65-95); şiirler her yazarda hikâye ve denemeden düşük (tür etkisi ayrıştırılamadı); Gemini metinleri ücretsiz kotada başarısız olup kredi yüklenince üretildi. Kruskal-Wallis p'si ki-kare yaklaşımıdır ve grup başına 5 metinden azdır; Holm sonrası tür içi hiçbir çift 0,3'ün altına inemez. Sonuç "Gemini her türde en düşük, Claude ve GPT arasında fark yok; kanıt kesin değil" düzeyindedir. Gerçek rubrik gelince yeniden puanlanacak. İstatistik yöntemi danışmanla teyit edilmedi, R ya da SPSS ile bağımsız doğrulama yapılmadı **[TODO]**.
 
 ## 7. Etik, gizlilik ve şeffaflık
 
@@ -700,7 +771,7 @@ Bu liste, tipik bir karşılaştırmalı değerlendirme makalesinde beklenen uns
 - [ ] Yargıç güvenilirliği: yargıçlar arası ve aynı yargıcın tekrarları arası uyum (örn. Krippendorff α / ICC / Cohen κ). **[23 Kas 2026]** Tekrar sapması (s_r) ölçüldü (bölüm 3.10, 4.8); ICC ve yargıçlar arası uyum yapılmadı (tek hakem).
 - [ ] İnsan puanı (etik kurul sonrası): insan-YZ uyumu, korelasyon, hata analizi.
 - [ ] Puan dağılımları (ham ve normalleştirilmiş 0-100), kriter bazında ortalama ve yayılım.
-- [ ] İstatistiksel karşılaştırma: uygun testler (örn. eşleştirilmiş/sıralı testler, karma etkili modeller), etki büyüklüğü, güven aralıkları, çoklu karşılaştırma düzeltmesi.
+- [x] İstatistiksel karşılaştırma (24 Kas 2026, bölüm 3.12 ve 4.10: Kruskal-Wallis, ikili Mann-Whitney, ε², Cliff δ, Holm yapıldı; güven aralığı ve karma etkili model yapılmadı): uygun testler (örn. eşleştirilmiş/sıralı testler, karma etkili modeller), etki büyüklüğü, güven aralıkları, çoklu karşılaştırma düzeltmesi.
 - [ ] Yanlılık analizleri: kendi-ailesini kayırma, uzunluk-puan ilişkisi, sıra etkisi, tema ve tür etkisi.
 - [ ] Metin uzunluğu ve biçim uyumu (uzunluk yönergesine uyum, başlık/açıklama eklememe).
 - [ ] Nitel örnekler: her modelden temsilî iyi/kötü metinler, yargıç gerekçeleri.
@@ -711,11 +782,11 @@ Bu liste, tipik bir karşılaştırmalı değerlendirme makalesinde beklenen uns
 ## 9. TÜBİTAK sonuç raporu için hazır parçalar
 
 - **Yapılan iş (F0-F1):** Katmanlı backend; sürümlü ve değişmez rubrik modülü (içe/dışa aktarma, etkinleştirme, JSON gidiş-dönüş); üç sağlayıcı için ortak sözleşme (`LLMProvider`) ve adaptörler (Claude, Gemini, GPT) ile sahte sağlayıcı; ortak hata ve yeniden deneme katmanı; sürümlü komut şablonu; üretim servisi (hata izolasyonu, maliyet sınırı, kayıt); gerçek MySQL ile veritabanı katmanı; sürekli entegrasyon.
-- **Yapılan iş (F2, devam ediyor; PR #14 taslak, `main`'e birleşmedi):** Doğrulamalı, kör, enjeksiyona dayanıklı yargıç motoru; hakem puanı kaydı (rubrik sürümü, komut sürümü, token, süre); `judge:smoke` ile gerçek hakem denemesi; veritabanı tabanlı iş kuyruğu (yeniden başlatmada kaldığı yerden devam); toplu üretim ve toplu puanlama işleri (sağlayıcı başına şerit, çalışırken bütçe, kendi-puanı işaretleme); `npm run batch` komut satırı (varsayılan plan, `--calistir` ile gerçek çalıştırma); `npm run export` ile CSV/JSON dışa aktarma; tek sabit hakem kararı (DeepSeek Flash), DeepSeek adaptörü, gerçek smoke ve 3 şiirlik pilot (bölüm 3.9, 4.8); `npm run stability` ile tekrar kararlılığı ölçümü (bölüm 3.10); `npm run injection` ile enjeksiyon direnci testi, 8 saldırıda etki gözlenmedi (bölüm 3.11, 4.9). Kalan: istatistik ve ilk gerçek veri seti.
-- **Kanıt:** 329 otomatik test (22 Kas 2026; F2 dalında 543, 23 Kas 2026), yaklaşık %96 kapsam (F2 dalında %97), her PR'da dört otomatik kontrol; planlanan 38 test senaryosundan T01-T12, T22, T27-T28 yazıldı ve geçti (F2 dalında T13-T20, T36 ve T37 de eklendi) (kaynak: GitHub issue #3, `docs/IS_PLANI.md`).
+- **Yapılan iş (F2, devam ediyor; PR #14 taslak, `main`'e birleşmedi):** Doğrulamalı, kör, enjeksiyona dayanıklı yargıç motoru; hakem puanı kaydı (rubrik sürümü, komut sürümü, token, süre); `judge:smoke` ile gerçek hakem denemesi; veritabanı tabanlı iş kuyruğu (yeniden başlatmada kaldığı yerden devam); toplu üretim ve toplu puanlama işleri (sağlayıcı başına şerit, çalışırken bütçe, kendi-puanı işaretleme); `npm run batch` komut satırı (varsayılan plan, `--calistir` ile gerçek çalıştırma); `npm run export` ile CSV/JSON dışa aktarma; tek sabit hakem kararı (DeepSeek Flash), DeepSeek adaptörü, gerçek smoke ve 3 şiirlik pilot (bölüm 3.9, 4.8); `npm run stability` ile tekrar kararlılığı ölçümü (bölüm 3.10); `npm run injection` ile enjeksiyon direnci testi, 8 saldırıda etki gözlenmedi (bölüm 3.11, 4.9). `npm run stats` ile istatistik, `npm run rubric` ile rubrik yükleme ve ilk veri seti (27 metin, bölüm 3.12 ve 4.10). F2'nin kod işleri tamam; kalan: gerçek rubrik gelince yeniden puanlama, F3 (arayüz).
+- **Kanıt:** 329 otomatik test (22 Kas 2026; F2 dalında 601, 24 Kas 2026), yaklaşık %96 kapsam (F2 dalında %97), her PR'da dört otomatik kontrol; planlanan 38 test senaryosundan T01-T12, T22, T27-T28 yazıldı ve geçti (F2 dalında T13-T20, T36 ve T37 de eklendi) (kaynak: GitHub issue #3, `docs/IS_PLANI.md`).
 - **Süreç:** Faz başına GitHub milestone ve issue (F0 #2, F1 #3 kapalı); her kararın gerekçesi `docs/adr/` altında 10 karar kaydıyla belgelendi; PR #1, #10, #12 birleşti.
 - **Risk yönetimi:** Sessiz yedek yok, maliyet sınırı, anahtar güvenliği, bakiye/kota hataları, servis yoğunluğu (Gemini).
-- **Bütçe/harcama:** Tüm gerçek servis denemeleri toplam yaklaşık **$0,2330** [Hesap]: `llm:smoke` koşuları yaklaşık $0,0065 (4.2), `judge:smoke` $0,0532 (4.6), toplu üretim $0,0331 ve toplu puanlama $0,1020 (4.7; $0,0865 + yeniden deneme $0,0155), DeepSeek smoke $0,0019 ve pilot $0,0097 (4.8; yoğun saat fiyatıyla tahmin, gerçek fatura panelden doğrulanmadı) ve enjeksiyon testi $0,0266 (4.9; aynı fiyatla). **[TODO]** Nihai veri setinin üretim ve puanlama maliyeti eklenecek.
+- **Bütçe/harcama:** Tüm gerçek servis denemeleri toplam yaklaşık **$0,7550** [Hesap]: `llm:smoke` koşuları yaklaşık $0,0065 (4.2), `judge:smoke` $0,0532 (4.6), toplu üretim $0,0331 ve toplu puanlama $0,1020 (4.7; $0,0865 + yeniden deneme $0,0155), DeepSeek smoke $0,0019 ve pilot $0,0097 (4.8; yoğun saat fiyatıyla tahmin, gerçek fatura panelden doğrulanmadı) ve enjeksiyon testi $0,0266 (4.9; aynı fiyatla), ilk veri seti üretimi $0,4261 ve puanlaması $0,0959 (4.10). **[TODO]** Nihai veri setinin üretim ve puanlama maliyeti eklenecek.
 - **Arayüz tasarımı:** Renk dili kullanıcı kararıyla Kum (%60) / Kakao (%30) / Mavi (%10), Inter yazı tipi, hap biçimli düğmeler (ADR 0008); arayüz kodlaması F3'te.
 - **[TODO]** Kalan fazlar (F2-F7) tamamlandıkça bu bölüm güncellenecek.
 
@@ -755,6 +826,7 @@ Hepsi **22 Kasım 2026**'da okundu (fiyat ve model adları sonradan değişebili
 
 | Tarih       | Değişiklik                                                                                                  |
 | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| 24 Kas 2026 | Bölüm 3.12 (istatistik yöntemi ve rubrik yükleme: ölçüm birimi metin, Kruskal-Wallis, tam Mann-Whitney, Holm, Cliff δ, T21; 58 test, 46 bozma), bölüm 4.10 (ilk veri seti, 27 metin: üretim R17-R19, Gemini kota hatası ve kredi, puanlar, kararlılık, maliyet $0,5220), Ek A'ya R17-R19, sınırlılık 23, kontrol listesi, bölüm 2 ve 9 güncellendi, test sayısı 601, toplam harcama $0,7550. |
 | 23 Kas 2026 | Bölüm 3.11 (enjeksiyon direnci testi: eşleşmiş kontrol, 8 saldırı, eşik yok, 39 test, 38/38 bozma), bölüm 4.9 (R16: 8 saldırıda kayma +0,0, giriş tokeni farkı, gerekçelerde saldırı yok, $0,0266), Ek A'ya R16, sınırlılık 11 güncellendi ve 22 eklendi, kontrol listesi, bölüm 2, 3.7 ve 9 güncellendi, test sayısı 543, toplam harcama $0,2330. |
 | 23 Kas 2026 | Bölüm 3.10 (tekrar kararlılığı ölçümü T20: grup ve koşul, s_r, ölçülemedi kuralı, eşik yok, 46 bozma ve yakalanan iki test eksiği), bölüm 4.8'e araçla ölçülen kararlılık (s_r 3,33, 13/15 hücre aynı), Ek A'ya R15, sınırlılık 21, kontrol listesi, bölüm 2, 3.7 ve 9 güncellendi, test sayısı 504. |
 | 23 Kas 2026 | Bölüm 3.9 (tek sabit hakem kararı, TÜBİTAK formuyla ilişki, DeepSeek adaptörü kararları, 24 bozma), bölüm 4.8 (DeepSeek smoke R13 ve 3 şiirlik pilot R14: sıra, seviye, kararlılık, süre, maliyet), bölüm 5'e DeepSeek fiyatları, Ek A'ya R13-R14, sınırlılık 18-20 eklendi, 1/8/14 güncellendi, bölüm 1, 2, 3.7, 3.8, 7, 8, 9, 10, 11 güncellendi, test sayısı 472, toplam harcama $0,2064. |
@@ -1047,4 +1119,86 @@ unut-en        1454  351  2.3  15,15,15  12212  -
 sahte-cevap    1576  304  2.0  15,15,15  12212  -
 yetki          1482  337  2.2  15,15,15  12212  -
 asagi          1500  495  3.4  75,75,75  44444  -
+```
+
+**R17-R19 (24 Kas, ilk veri seti, bölüm 4.10).** Üretim: `batch uret` (iş #5, #6, #8, aynı komut), puanlama: `batch puanla` (iş #7, #9), sonra `npm run stats -- --tema "Aşk,Doğa,Teknoloji"`. Üretim kayıtları veritabanından okundu (yalnızca okuyan bir inceleme betiğiyle, betik saklanmadı; metin içeriği yazılmadı, "söz" boşlukla bölünen sözcük sayısıdır). İş çıktı satırları: R17 `İş #5 bitti: 19/27 tamam, 8 başarısız, harcanan ≈ $0.1595`; R18 `İş #6 bitti: 19/27 tamam, 8 başarısız, harcanan ≈ $0.0000`; R19 `İş #8 bitti: 27/27 tamam, 0 başarısız, harcanan ≈ $0.2666`; puanlama `İş #7 bitti: 57/57 tamam, 0 başarısız, harcanan ≈ $0.0665` ve `İş #9 bitti: 24/24 tamam, 0 başarısız, harcanan ≈ $0.0294`.
+
+```
+Üretim kayıtları (kayıt | yazar | konu | durum | süre | çıkış token | metin kimliği ve sözcük | hata)
+#4  | anthropic/claude-sonnet-5-5 | siir:Aşk          | succeeded | 6.7sn  | 372tok  | metin#4  95söz
+#5  | google/gemini-4-hydrogen    | siir:Aşk          | succeeded | 28.0sn | 2369tok | metin#9  69söz
+#6  | openai/gpt-6.2-sol          | siir:Aşk          | succeeded | 10.9sn | 187tok  | metin#5  69söz
+#7  | anthropic/claude-sonnet-5-5 | siir:Doğa         | succeeded | 6.1sn  | 393tok  | metin#6  101söz
+#8  | openai/gpt-6.2-sol          | siir:Doğa         | succeeded | 10.3sn | 180tok  | metin#8  65söz
+#9  | anthropic/claude-sonnet-5-5 | siir:Teknoloji    | succeeded | 6.2sn  | 394tok  | metin#7  96söz
+#10 | anthropic/claude-sonnet-5-5 | hikaye:Aşk        | succeeded | 13.6sn | 1219tok | metin#11 246söz
+#11 | openai/gpt-6.2-sol          | siir:Teknoloji    | succeeded | 9.8sn  | 182tok  | metin#10 74söz
+#12 | google/gemini-4-hydrogen    | siir:Doğa         | failed    | 8.4sn  | HTTP 503 yüksek talep
+#13 | openai/gpt-6.2-sol          | hikaye:Aşk        | succeeded | 25.8sn | 762tok  | metin#13 259söz
+#14 | anthropic/claude-sonnet-5-5 | hikaye:Doğa       | succeeded | 13.5sn | 1046tok | metin#12 269söz
+#15 | google/gemini-4-hydrogen    | siir:Teknoloji    | failed    | 28.5sn | HTTP 503 yüksek talep
+#16 | anthropic/claude-sonnet-5-5 | hikaye:Teknoloji  | succeeded | 18.4sn | 1916tok | metin#14 257söz
+#17 | openai/gpt-6.2-sol          | hikaye:Doğa       | succeeded | 21.5sn | 658tok  | metin#15 277söz
+#18 | anthropic/claude-sonnet-5-5 | deneme:Aşk        | succeeded | 17.2sn | 1854tok | metin#16 230söz
+#19 | google/gemini-4-hydrogen    | hikaye:Aşk        | failed    | 11.7sn | HTTP 503 yüksek talep
+#20 | google/gemini-4-hydrogen    | hikaye:Doğa       | failed    | 13.6sn | HTTP 503 yüksek talep
+#21 | openai/gpt-6.2-sol          | hikaye:Teknoloji  | succeeded | 19.9sn | 646tok  | metin#18 275söz
+#22 | anthropic/claude-sonnet-5-5 | deneme:Doğa       | succeeded | 11.9sn | 944tok  | metin#17 249söz
+#23 | google/gemini-4-hydrogen    | hikaye:Teknoloji  | failed    | 4.2sn  | HTTP 429 kota aşıldı
+#24 | anthropic/claude-sonnet-5-5 | deneme:Teknoloji  | succeeded | 13.6sn | 1166tok | metin#19 250söz
+#25 | google/gemini-4-hydrogen    | deneme:Aşk        | failed    | 4.7sn  | HTTP 429 kota aşıldı
+#26 | openai/gpt-6.2-sol          | deneme:Aşk        | succeeded | 20.8sn | 619tok  | metin#20 278söz
+#27 | google/gemini-4-hydrogen    | deneme:Doğa       | failed    | 4.4sn  | HTTP 429 kota aşıldı
+#28 | google/gemini-4-hydrogen    | deneme:Teknoloji  | failed    | 3.6sn  | HTTP 429 kota aşıldı
+#29 | openai/gpt-6.2-sol          | deneme:Doğa       | succeeded | 20.5sn | 632tok  | metin#21 248söz
+#30 | openai/gpt-6.2-sol          | deneme:Teknoloji  | succeeded | 24.1sn | 635tok  | metin#22 273söz
+#31 | google/gemini-4-hydrogen    | siir:Doğa         | failed    | 9.2sn  | HTTP 503 yüksek talep (R18)
+#32-#38 | google/gemini-4-hydrogen | siir:Teknoloji, hikaye:Aşk/Doğa/Teknoloji, deneme:Aşk/Doğa/Teknoloji | failed | 3.6-5.7sn | HTTP 429 kota aşıldı (R18)
+#39 | google/gemini-4-hydrogen    | siir:Doğa         | succeeded | 12.4sn | 2561tok | metin#23 78söz  (R19)
+#40 | google/gemini-4-hydrogen    | siir:Teknoloji    | succeeded | 20.8sn | 3655tok | metin#24 71söz
+#41 | google/gemini-4-hydrogen    | hikaye:Aşk        | succeeded | 21.6sn | 4415tok | metin#25 277söz
+#42 | google/gemini-4-hydrogen    | hikaye:Doğa       | succeeded | 26.8sn | 5355tok | metin#26 291söz
+#43 | google/gemini-4-hydrogen    | hikaye:Teknoloji  | succeeded | 28.2sn | 5980tok | metin#27 299söz
+#44 | google/gemini-4-hydrogen    | deneme:Aşk        | succeeded | 28.3sn | 5181tok | metin#28 295söz
+#45 | google/gemini-4-hydrogen    | deneme:Doğa       | succeeded | 21.8sn | 4380tok | metin#29 279söz
+#46 | google/gemini-4-hydrogen    | deneme:Teknoloji  | succeeded | 20.1sn | 3861tok | metin#30 278söz
+
+npm run stats -- --tema "Aşk,Doğa,Teknoloji"  (DeepSeek koşulu, 27 metin)
+Koşul: deepseek/deepseek-flash · rubrik 0.1-taslak · hakem komutu v1
+  27 metin (elle girilen 0, ölçülemeyen 0)
+  [tüm türler]
+    anthropic/claude-sonnet-5-5: n 9 · ort 83.5 · ortanca 85.0 · sd 8.8 · en düşük 68.3 · en yüksek 95.0
+    google/gemini-4-hydrogen: n 9 · ort 73.1 · ortanca 71.7 · sd 9.9 · en düşük 55.0 · en yüksek 85.0
+    openai/gpt-6.2-sol: n 9 · ort 82.8 · ortanca 86.7 · sd 10.4 · en düşük 65.0 · en yüksek 95.0
+    Kruskal-Wallis: H 5.40 (sd 2) · p 0.0673 · ε² 0.21
+    anthropic/claude-sonnet-5-5 ↔ google/gemini-4-hydrogen: p 0.0295 (Holm 0.0884) · Cliff δ +0.60 · tam test
+    anthropic/claude-sonnet-5-5 ↔ openai/gpt-6.2-sol: p 0.8865 (Holm 0.8865) · Cliff δ -0.05 · tam test
+    google/gemini-4-hydrogen ↔ openai/gpt-6.2-sol: p 0.0723 (Holm 0.1445) · Cliff δ -0.51 · tam test
+  [tür deneme]
+    anthropic/claude-sonnet-5-5: n 3 · ort 88.3 · ortanca 90.0 · sd 2.9 · en düşük 85.0 · en yüksek 90.0
+    google/gemini-4-hydrogen: n 3 · ort 82.8 · ortanca 83.3 · sd 2.5 · en düşük 80.0 · en yüksek 85.0
+    openai/gpt-6.2-sol: n 3 · ort 90.6 · ortanca 90.0 · sd 4.2 · en düşük 86.7 · en yüksek 95.0
+    Kruskal-Wallis: H 5.31 (sd 2) · p 0.0703 · ε² 0.66
+    Claude ↔ Gemini: p 0.2000 (Holm 0.4000) · δ +0.89 · Claude ↔ GPT: p 0.7000 (Holm 0.7000) · δ -0.33 · Gemini ↔ GPT: p 0.1000 (Holm 0.3000) · δ -1.00 · tam test
+  [tür hikaye]
+    anthropic/claude-sonnet-5-5: n 3 · ort 89.4 · ortanca 88.3 · sd 5.1 · en düşük 85.0 · en yüksek 95.0
+    google/gemini-4-hydrogen: n 3 · ort 73.9 · ortanca 71.7 · sd 5.4 · en düşük 70.0 · en yüksek 80.0
+    openai/gpt-6.2-sol: n 3 · ort 87.2 · ortanca 90.0 · sd 6.3 · en düşük 80.0 · en yüksek 91.7
+    Kruskal-Wallis: H 4.91 (sd 2) · p 0.0860 · ε² 0.61
+    Claude ↔ Gemini: p 0.1000 (Holm 0.3000) · δ +1.00 · Claude ↔ GPT: p 1.0000 (Holm 1.0000) · δ +0.11 · Gemini ↔ GPT: p 0.2000 (Holm 0.4000) · δ -0.89 · tam test
+  [tür siir]
+    anthropic/claude-sonnet-5-5: n 3 · ort 72.8 · ortanca 75.0 · sd 3.8 · en düşük 68.3 · en yüksek 75.0
+    google/gemini-4-hydrogen: n 3 · ort 62.8 · ortanca 63.3 · sd 7.5 · en düşük 55.0 · en yüksek 70.0
+    openai/gpt-6.2-sol: n 3 · ort 70.6 · ortanca 70.0 · sd 5.9 · en düşük 65.0 · en yüksek 76.7
+    Kruskal-Wallis: H 2.92 (sd 2) · p 0.2328 · ε² 0.36
+    Claude ↔ Gemini: p 0.2000 (Holm 0.6000) · δ +0.78 · Claude ↔ GPT: p 1.0000 (Holm 1.0000) · δ +0.11 · Gemini ↔ GPT: p 0.3000 (Holm 0.6000) · δ -0.67 · tam test
+  [tema Aşk]  Claude 86.7 · Gemini 75.6 · GPT 83.9 (n 3'er, yalnızca betimsel)
+  [tema Doğa]  Claude 81.7 · Gemini 71.7 · GPT 85.6
+  [tema Teknoloji]  Claude 82.2 · Gemini 72.2 · GPT 78.9
+Not (tür içi karşılaştırmalar): Grup başına 5 metinden az: Kruskal-Wallis ki-kare yaklaşımı güvenilir değil
+
+npm run stability  (DeepSeek, özet)
+deneme: Metin 9 · s_r 1.36 · ortalama aralık 1.11 · en büyük aralık 5.00 · tamamen aynı 7/9 · kriter hücresi 43/45 (%95.6)
+hikaye: Metin 9 · s_r 3.73 · ortalama aralık 3.89 · en büyük aralık 15.00 · tamamen aynı 5/9 · kriter hücresi 36/45 (%80.0)
+siir:   Metin 12 · s_r 2.64 · ortalama aralık 2.50 · en büyük aralık 10.00 · tamamen aynı 8/12 · kriter hücresi 54/60 (%90.0)
 ```
