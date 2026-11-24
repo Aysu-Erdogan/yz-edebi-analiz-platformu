@@ -26,6 +26,8 @@
     "export": "tsx scripts/export.ts",
     "stability": "tsx scripts/stability.ts",
     "injection": "tsx scripts/injection.ts",
+    "rubric": "tsx scripts/rubric.ts",
+    "stats": "tsx scripts/stats.ts",
     "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

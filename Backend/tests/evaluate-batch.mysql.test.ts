@@ -530,6 +530,27 @@ if (url) {
         for (const m of Object.values(mocks)) expect(m.calls).toHaveLength(0);
       });
 
+      it('T21: yeni rubrik etkinleşince aynı metinler yeni rubrikle yeniden puanlanır, eski puanlara dokunulmaz', async () => {
+        const { runner } = build();
+        const first = await enqueueEvaluateBatch(enqueueDeps(), rawJob());
+        await runner.runUntilIdle();
+        expect((await jobs.findById(first.id))?.status).toBe('succeeded');
+        expect(await db.evaluation.count({ where: { rubricId: rubricIds.siir } })).toBe(12);
+
+        const next = await rubrics.importRubric(rubricFor('siir', '0.2-test'));
+        await rubrics.activateRubric(next.id);
+        const second = await enqueueEvaluateBatch(enqueueDeps(), rawJob());
+        expect(second.payload).toMatchObject({ rubrics: [{ genre: 'siir', rubricId: next.id }] });
+        expect(second.total).toBe(12); // biten öğeler atlanmaz: puanlar eski rubrikle alınmıştı
+        await runner.runUntilIdle();
+        expect((await jobs.findById(second.id))?.status).toBe('succeeded');
+        expect(
+          await db.evaluation.count({ where: { rubricId: next.id, status: 'succeeded' } }),
+        ).toBe(12);
+        expect(await db.evaluation.count({ where: { rubricId: rubricIds.siir } })).toBe(12);
+        expect(await db.evaluation.count()).toBe(24);
+      });
+
       it('kapalı hakem, anahtarı olmayan sağlayıcı ya da silinmiş metin: iş çağrı yapılmadan failed olur', async () => {
         const { runner, mocks } = build();
         const closed = await enqueueEvaluateBatch(enqueueDeps(), rawJob());
