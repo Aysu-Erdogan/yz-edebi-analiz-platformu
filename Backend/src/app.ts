@@ -8,8 +8,10 @@ import type { Logger } from './lib/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import type { ExportRepository } from './repositories/export.repository.js';
 import { createAnalyticsRouter } from './routes/analytics.js';
+import { createComparisonsRouter } from './routes/comparisons.js';
 import { createHealthRouter } from './routes/health.js';
 import { createRubricsRouter } from './routes/rubrics.js';
+import type { ComparisonService } from './services/comparison.service.js';
 import type { RubricService } from './services/rubric.service.js';
 
 export interface AppDeps {
@@ -22,6 +24,8 @@ export interface AppDeps {
   rubrics?: RubricService;
   /** Puanlama kayıtlarını okuyan depo. Tanımsızsa analiz ve dışa aktarma uçları açılmaz. */
   exports?: ExportRepository;
+  /** Karşılaştır servisi. Tanımsızsa (veritabanı yok) karşılaştırma ucu açılmaz. */
+  comparisons?: ComparisonService;
 }
 
 /** Express uygulamasını kurar (dinlemez). Böylece testler gerçek porta ihtiyaç duymaz. */
@@ -32,6 +36,7 @@ export function createApp({
   checkDb,
   rubrics,
   exports,
+  comparisons,
 }: AppDeps): Express {
   const app = express();
   app.disable('x-powered-by');
@@ -66,6 +71,7 @@ export function createApp({
   api.use(createHealthRouter({ version, checkDb }));
   if (rubrics) api.use(createRubricsRouter(rubrics));
   if (exports) api.use(createAnalyticsRouter(exports));
+  if (comparisons) api.use(createComparisonsRouter(comparisons));
   app.use('/api/v1', api);
 
   app.use(notFoundHandler);

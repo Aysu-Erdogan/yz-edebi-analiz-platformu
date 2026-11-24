@@ -29,6 +29,11 @@ const schema = z
     ANTHROPIC_API_KEY: optionalString,
     OPENAI_API_KEY: optionalString,
     DEEPSEEK_API_KEY: optionalString,
+    /** Karşılaştır sayfasının puanlamada kullandığı hakemin model adı (ADR 0011: tek sabit hakem). */
+    DEFAULT_JUDGE: z.preprocess(
+      (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+      z.string().min(1).default('deepseek-flash'),
+    ),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'test' && !env.DATABASE_URL) {

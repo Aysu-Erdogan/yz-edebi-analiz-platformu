@@ -302,8 +302,13 @@ paths:
     post:
       tags: [Değerlendirme]
       summary: Üç metni yan yana karşılaştır
-      description: Verilen metinleri etkin rubrikle puanlayıp kriter bazında karşılaştırma döndürür.
-      x-status: planned
+      description: |
+        Metinler "elle girilen" olarak kaydedilir (model analizine girmez), her biri sistemin tek sabit hakemiyle
+        (`DEFAULT_JUDGE`, varsayılan `deepseek-flash`) etkin rubrikle ayrı puanlanır. Hakem etiketi ve model adını
+        görmez. GERÇEK, ÜCRETLİ çağrı yapar; yönetici girişi ve hız sınırı F4'te gelene kadar herkese açıktır.
+        Biri puanlanamazsa o öğe `failed` döner, diğerlerinin sonucu korunur.
+        Hakem, sağlayıcı anahtarı ya da etkin rubrik yoksa hiçbir kayıt açılmadan 503 / 404 döner.
+      x-status: implemented
       operationId: compareTexts
       requestBody:
         required: true
@@ -311,24 +316,85 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [genre, theme, items]
               properties:
                 genre: { $ref: '#/components/schemas/Genre' }
-                theme: { type: string }
+                theme: { type: string, minLength: 1, maxLength: 32 }
                 items:
                   type: array
                   minItems: 2
                   maxItems: 3
                   items:
                     type: object
+                    additionalProperties: false
                     required: [body]
                     properties:
-                      label: { type: string }
-                      body: { type: string, maxLength: 20000 }
+                      label: { type: string, maxLength: 128, description: Metni yazan modelin etiketi (örn. ChatGPT) }
+                      body: { type: string, minLength: 1, maxLength: 20000 }
       responses:
         '200':
-          description: Karşılaştırma sonucu
+          description: Karşılaştırma sonucu (öğeler istek sırasıyla)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [genre, theme, judge, rubric, items, totalCostUsd]
+                        properties:
+                          genre: { $ref: '#/components/schemas/Genre' }
+                          theme: { type: string }
+                          judge: { type: string, example: deepseek/deepseek-flash }
+                          rubric:
+                            type: object
+                            properties:
+                              id: { type: integer }
+                              version: { type: string }
+                              scale:
+                                type: object
+                                properties:
+                                  min: { type: integer }
+                                  max: { type: integer }
+                              criteria:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    key: { type: string }
+                                    label: { type: string }
+                                    weight: { type: number }
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              required: [label, textId, status]
+                              properties:
+                                label: { type: [string, 'null'] }
+                                textId: { type: integer }
+                                status: { type: string, enum: [succeeded, failed] }
+                                totalScore: { type: number, description: 'Ağırlıklı toplam, 0-100 (yalnızca succeeded)' }
+                                scores:
+                                  type: array
+                                  description: Yalnızca succeeded
+                                  items:
+                                    type: object
+                                    properties:
+                                      key: { type: string }
+                                      score: { type: integer, description: Ham puan (rubrik ölçeğinde) }
+                                      normalized: { type: number, description: 0-100 karşılığı }
+                                      comment: { type: string }
+                                costUsd: { type: [number, 'null'], description: Yalnızca succeeded }
+                                error: { type: string, description: Yalnızca failed }
+                          totalCostUsd: { type: [number, 'null'] }
         '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '503':
           $ref: '#/components/responses/Error'
 
   /analytics/summary:
