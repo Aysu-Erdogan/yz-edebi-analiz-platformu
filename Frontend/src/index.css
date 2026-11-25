@@ -1,4 +1,6 @@
 @import '@fontsource-variable/inter';
+@import '@fontsource-variable/crimson-pro';
+@import '@fontsource-variable/crimson-pro/wght-italic.css';
 @import 'tailwindcss';
 
 /*
@@ -21,7 +23,7 @@
   --color-model-2: #00785a;
   --color-model-3: #a8508a;
   --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
-  --font-serif: 'Crimson Pro', Georgia, serif;
+  --font-serif: 'Crimson Pro Variable', 'Crimson Pro', Georgia, serif;
   --radius-card: 20px;
 }
 
