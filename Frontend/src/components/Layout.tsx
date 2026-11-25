@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { HealthStatus } from '../features/health/HealthStatus';
 
 const NAV_ITEMS = [
@@ -8,7 +9,29 @@ const NAV_ITEMS = [
   { to: '/rubrik', label: 'Rubrik ve Hakkında', end: false },
 ] as const;
 
+/** Adresin ait olduğu menü öğesinin adı (alt sayfalar üst sayfanınkini alır); menüde olmayan adres 404'tür. */
+function pageTitle(pathname: string): string {
+  const item = NAV_ITEMS.find((i) =>
+    i.end ? pathname === i.to : pathname === i.to || pathname.startsWith(`${i.to}/`),
+  );
+  return item?.label ?? 'Sayfa bulunamadı';
+}
+
 export function Layout() {
+  const { pathname } = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+  const lastPath = useRef(pathname);
+
+  // Tek sayfa uygulamasında sayfa yenilenmez: başlık sayfayı anlatmalı (WCAG 2.4.2) ve sayfa değişince odak
+  // içeriğe taşınmalı ki ekran okuyucu ve klavye kullanıcısı yeni sayfayı fark etsin. İlk açılışta odak çalınmaz.
+  useEffect(() => {
+    document.title = `${pageTitle(pathname)} · YZ Edebi Analiz`;
+    if (lastPath.current !== pathname) {
+      lastPath.current = pathname;
+      mainRef.current?.focus({ preventScroll: true });
+    }
+  }, [pathname]);
+
   return (
     <div className="flex min-h-screen flex-col">
       <a
@@ -45,7 +68,12 @@ export function Layout() {
         </div>
       </header>
 
-      <main id="icerik" className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
+      <main
+        id="icerik"
+        ref={mainRef}
+        tabIndex={-1}
+        className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 focus:outline-none"
+      >
         <Outlet />
       </main>
 

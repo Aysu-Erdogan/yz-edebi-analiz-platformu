@@ -16,8 +16,6 @@ import { ApiError, apiRequest } from '../lib/api';
 
 const emptySlots = (): Slot[] => SLOT_LETTERS.map(() => ({ label: '', body: '' }));
 
-const field = 'border-line bg-page w-full rounded-xl border px-3 py-2';
-
 export function Compare() {
   const [genre, setGenre] = useState<string>('siir');
   const [theme, setTheme] = useState<string>(THEMES[0]);
@@ -61,11 +59,7 @@ export function Compare() {
         <div className="flex flex-wrap gap-4">
           <label className="flex items-center gap-2">
             Tür
-            <select
-              className={`${field} w-auto`}
-              value={genre}
-              onChange={(e) => setGenre(e.target.value)}
-            >
+            <select className="field" value={genre} onChange={(e) => setGenre(e.target.value)}>
               {GENRES.map((g) => (
                 <option key={g} value={g}>
                   {genreLabel(g)}
@@ -75,11 +69,7 @@ export function Compare() {
           </label>
           <label className="flex items-center gap-2">
             Tema
-            <select
-              className={`${field} w-auto`}
-              value={theme}
-              onChange={(e) => setTheme(e.target.value)}
-            >
+            <select className="field" value={theme} onChange={(e) => setTheme(e.target.value)}>
               {THEMES.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -101,7 +91,7 @@ export function Compare() {
                   </label>
                   <input
                     id={`etiket-${letter}`}
-                    className={field}
+                    className="field w-full"
                     maxLength={128}
                     placeholder="Örn. ChatGPT"
                     value={slot.label}
@@ -114,10 +104,12 @@ export function Compare() {
                   </label>
                   <textarea
                     id={`metin-${letter}`}
-                    className={`${field} font-serif text-lg`}
+                    className="field w-full font-serif text-lg"
                     rows={12}
                     maxLength={MAX_BODY_LENGTH}
-                    aria-describedby={`sayac-${letter}`}
+                    // Hata, alana bağlanır: ekran okuyucu alana gelince hem sayacı hem hatayı okur.
+                    aria-invalid={formError && !slot.body.trim() ? true : undefined}
+                    aria-describedby={`sayac-${letter}${formError ? ' form-hata' : ''}`}
                     value={slot.body}
                     onChange={(e) => setSlot(i, { body: e.target.value })}
                   />
@@ -132,13 +124,14 @@ export function Compare() {
         </div>
 
         {formError && (
-          <p role="alert" className="text-bad font-bold">
+          <p id="form-hata" role="alert" className="text-bad font-bold">
             ✖ {formError}
           </p>
         )}
 
         <div className="flex flex-wrap items-center gap-4">
-          <button type="submit" className="btn btn-primary" disabled={compare.isPending}>
+          {/* aria-disabled (disabled değil): odak düğmede kalır, klavye kullanıcısı yerini kaybetmez; tıklama submit() içinde engellenir. */}
+          <button type="submit" className="btn btn-primary" aria-disabled={compare.isPending}>
             {compare.isPending ? 'Puanlanıyor…' : 'Karşılaştır'}
           </button>
           {compare.isPending && (

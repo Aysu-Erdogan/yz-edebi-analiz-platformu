@@ -56,7 +56,7 @@ export function RubricPage() {
             <label className="flex items-center gap-2">
               Sürüm
               <select
-                className="border-line bg-page rounded-xl border px-3 py-2"
+                className="field"
                 value={rubric?.version}
                 onChange={(e) => setVersion(e.target.value)}
               >

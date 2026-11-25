@@ -103,7 +103,7 @@ export function Analysis() {
           <label className="flex items-center gap-2">
             Koşul
             <select
-              className="border-line bg-page rounded-xl border px-3 py-2"
+              className="field"
               value={index}
               onChange={(e) => setPicked(Number(e.target.value))}
             >

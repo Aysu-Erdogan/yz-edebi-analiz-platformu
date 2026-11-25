@@ -79,8 +79,17 @@ describe('Üretim ve Kütüphane sayfası', () => {
     stub();
     renderPage();
     await screen.findByRole('table');
-    expect(screen.getByRole('link', { name: 'Metin 4' })).toHaveAttribute('href', '/uretim/4');
-    expect(screen.getByRole('link', { name: 'Metin 31' })).toHaveAttribute('href', '/uretim/31');
+    expect(screen.getByRole('link', { name: 'Metin #4' })).toHaveAttribute('href', '/uretim/4');
+    expect(screen.getByRole('link', { name: 'Metin #31' })).toHaveAttribute('href', '/uretim/31');
+  });
+
+  it('bağlantının erişilebilir adı görünen metni ("#4") içerir (WCAG 2.5.3)', async () => {
+    stub();
+    renderPage();
+    await screen.findByRole('table');
+    const link = screen.getByRole('link', { name: 'Metin #4' });
+    expect(link.textContent).toBe('#4');
+    expect(link.getAttribute('aria-label')).toContain(link.textContent);
   });
 
   it('metin sayısını bildirir', async () => {

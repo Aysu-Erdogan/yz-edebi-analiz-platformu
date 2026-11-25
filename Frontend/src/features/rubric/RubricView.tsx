@@ -1,3 +1,4 @@
+import { ScrollRegion } from '../../components/ScrollRegion';
 import { weightPercents } from '../compare/data';
 import { genreLabel } from '../analytics/data';
 import { STATUS_LABEL, normalizedScore, type Rubric } from './data';
@@ -44,7 +45,7 @@ export function RubricView({ rubric }: { rubric: Rubric }) {
               </span>
             </h4>
             <p className="text-muted mb-3">{criterion.description}</p>
-            <div className="overflow-x-auto">
+            <ScrollRegion label={`${criterion.label}: puan düzeyleri`}>
               <table className="table-plain">
                 <caption className="sr-only">{criterion.label}: puan düzeyleri</caption>
                 <thead>
@@ -70,7 +71,7 @@ export function RubricView({ rubric }: { rubric: Rubric }) {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollRegion>
           </li>
         ))}
       </ul>

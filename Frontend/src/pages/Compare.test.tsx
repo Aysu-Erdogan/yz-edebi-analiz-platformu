@@ -108,7 +108,7 @@ describe('Karşılaştır sayfası', () => {
     });
   });
 
-  it('puanlanırken düğme kapanır, durum bildirilir; çift tıklama ikinci istek atmaz', async () => {
+  it('puanlanırken düğme "kapalı" bildirilir ama odak onda kalır; durum bildirilir; çift tıklama ikinci istek atmaz', async () => {
     let finish: (r: Response) => void = () => {};
     const fetchMock = vi.fn(() => new Promise<Response>((resolve) => (finish = resolve)));
     vi.stubGlobal('fetch', fetchMock);
@@ -119,13 +119,60 @@ describe('Karşılaştır sayfası', () => {
     await userEvent.dblClick(button);
 
     expect(await screen.findByRole('status')).toHaveTextContent('Hakem metinleri puanlıyor');
-    expect(screen.getByRole('button', { name: 'Puanlanıyor…' })).toBeDisabled();
+    // aria-disabled (disabled değil): odak düğmede kalır, klavye kullanıcısı yerini kaybetmez.
+    const busy = screen.getByRole('button', { name: 'Puanlanıyor…' });
+    expect(busy).toHaveAttribute('aria-disabled', 'true');
+    expect(busy).toHaveFocus();
     expect(post(fetchMock)).toHaveLength(1);
 
     finish(envelope(threeItems));
     await screen.findByRole('heading', { name: 'Sonuç' });
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Karşılaştır' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Karşılaştır' })).toHaveAttribute(
+      'aria-disabled',
+      'false',
+    );
+  });
+
+  it('form hatası alanlara bağlanır: boş alanlar geçersiz işaretlenir, hepsi hata metnini açıklama olarak alır; düzelince kalkar', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(envelope(threeItems))),
+    );
+    renderPage();
+    await fill('A', 'tek metin');
+    await userEvent.click(screen.getByRole('button', { name: 'Karşılaştır' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveAttribute('id', 'form-hata');
+
+    const box = (l: string) => screen.getByLabelText(`Metin ${l} içeriği`);
+    expect(box('A')).not.toHaveAttribute('aria-invalid');
+    expect(box('B')).toHaveAttribute('aria-invalid', 'true');
+    expect(box('C')).toHaveAttribute('aria-invalid', 'true');
+    for (const l of ['A', 'B', 'C']) {
+      // Sayaç da açıklama olarak kalır: iki kimlik birlikte.
+      expect(box(l).getAttribute('aria-describedby')).toBe(`sayac-${l} form-hata`);
+    }
+
+    await fill('B', 'ikinci');
+    await userEvent.click(screen.getByRole('button', { name: 'Karşılaştır' }));
+    await screen.findByRole('heading', { name: 'Sonuç' });
+    for (const l of ['A', 'B', 'C']) {
+      expect(box(l)).not.toHaveAttribute('aria-invalid');
+      expect(box(l).getAttribute('aria-describedby')).toBe(`sayac-${l}`);
+    }
+  });
+
+  it('sonuç belirince odak "Sonuç" başlığına taşınır (ekran okuyucuya haber verilir)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(envelope(threeItems))),
+    );
+    renderPage();
+    await fill('A', 'bir');
+    await fill('B', 'iki');
+    await userEvent.click(screen.getByRole('button', { name: 'Karşılaştır' }));
+    expect(await screen.findByRole('heading', { name: 'Sonuç' })).toHaveFocus();
   });
 
   it('sonuç: toplam puanlar, en yüksek toplam, kriter tablosu, ağırlıklar ve maliyet görünür', async () => {
@@ -218,7 +265,7 @@ describe('Karşılaştır sayfası', () => {
     const table = within(section).getByRole('table', { name: /kriter bazında/ });
     const imge = within(table).getByRole('row', { name: /İmge gücü/ });
     // Başarısız metin 0 sayılmaz, "puan yok" görünür; tek puan olan metin "en yüksek" sayılmaz çünkü karşılaştırılacak biri yok.
-    expect(within(imge).getByLabelText('puan yok')).toBeInTheDocument();
+    expect(within(imge).getByText('puan yok')).toHaveClass('sr-only');
   });
 
   it('sunucu hatasında mesajı gösterir ve yazılan metinleri korur', async () => {

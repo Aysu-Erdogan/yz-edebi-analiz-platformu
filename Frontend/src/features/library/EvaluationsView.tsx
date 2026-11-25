@@ -1,3 +1,4 @@
+import { ScrollRegion } from '../../components/ScrollRegion';
 import { modelName } from '../analytics/data';
 import { groupEvaluations, type TextEvaluation } from './data';
 
@@ -43,7 +44,9 @@ export function EvaluationsView({ evaluations }: { evaluations: TextEvaluation[]
             )}
 
             {group.succeeded.length > 0 && (
-              <div className="overflow-x-auto">
+              <ScrollRegion
+                label={`${modelName(group.judge)}, rubrik ${group.rubricVersion}: kriter puanları`}
+              >
                 <table className="table-plain">
                   <caption className="sr-only">
                     {modelName(group.judge)}, rubrik {group.rubricVersion}: kriter puanları (ham
@@ -85,7 +88,7 @@ export function EvaluationsView({ evaluations }: { evaluations: TextEvaluation[]
                     </tr>
                   </tbody>
                 </table>
-              </div>
+              </ScrollRegion>
             )}
 
             {failed.length > 0 && (

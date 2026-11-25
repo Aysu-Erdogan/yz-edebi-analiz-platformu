@@ -61,7 +61,8 @@ describe('Analysis sayfası', () => {
     // 80,0 ve 40,0 tr-TR ondalık virgülüyle; eksik hücre "veri yok".
     expect(within(table).getByText('80,0')).toBeInTheDocument();
     expect(within(table).getByText('40,0')).toBeInTheDocument();
-    expect(within(table).getByLabelText('veri yok')).toBeInTheDocument();
+    // "-" görsel; ekran okuyucu için görünmez metin "veri yok" (rolsüz span'da aria-label geçersiz olurdu).
+    expect(within(table).getByText('veri yok')).toHaveClass('sr-only');
     expect(screen.getByText(/Taslak rubrik \(0\.1-taslak\)/)).toBeInTheDocument();
     expect(screen.getByText('deepseek-flash')).toBeInTheDocument();
   });

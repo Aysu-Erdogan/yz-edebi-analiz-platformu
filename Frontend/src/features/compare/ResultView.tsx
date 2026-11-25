@@ -1,3 +1,5 @@
+import { ScrollRegion } from '../../components/ScrollRegion';
+import { useEffect, useRef } from 'react';
 import { genreLabel } from '../analytics/data';
 import { bestIndexes, rawScore, weightPercents, type ComparisonResult } from './data';
 
@@ -15,10 +17,15 @@ export function ResultView({ result }: { result: ComparisonResult }) {
   const weights = weightPercents(result.rubric.criteria);
   const scaleMax = result.rubric.scale.max;
 
+  // Sonuç yüklenen sayfanın altında belirir: odağı başlığa taşıyarak hem ekran okuyucuya haber verilir hem
+  // klavye kullanıcısı sonuca iner (sonuç yalnızca başarıdan sonra bağlanır, her yeni sonuçta yeniden).
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => heading.current?.focus(), []);
+
   return (
     <section aria-labelledby="sonuc-baslik" className="space-y-6">
       <div>
-        <h2 id="sonuc-baslik" className="text-3xl">
+        <h2 id="sonuc-baslik" ref={heading} tabIndex={-1} className="text-3xl focus:outline-none">
           Sonuç
         </h2>
         <p className="text-muted">
@@ -65,7 +72,7 @@ export function ResultView({ result }: { result: ComparisonResult }) {
           Puanlar rubrikteki ham ölçektedir (en çok {scaleMax}); kalın yazılan, o kriterde en yüksek
           puandır.
         </p>
-        <div className="overflow-x-auto">
+        <ScrollRegion label="Metinlerin kriter bazında ham puanları">
           <table className="table-plain">
             <caption className="sr-only">Metinlerin kriter bazında ham puanları</caption>
             <thead>
@@ -93,7 +100,10 @@ export function ResultView({ result }: { result: ComparisonResult }) {
                     {scores.map((score, i) => (
                       <td key={result.items[i]!.textId} className="num">
                         {score === null ? (
-                          <span aria-label="puan yok">-</span>
+                          <>
+                            <span aria-hidden="true">-</span>
+                            <span className="sr-only">puan yok</span>
+                          </>
                         ) : best.includes(i) && result.items.length > 1 ? (
                           <strong>
                             {score} / {scaleMax}
@@ -117,7 +127,7 @@ export function ResultView({ result }: { result: ComparisonResult }) {
               </tr>
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       </div>
 
       <div className="card">

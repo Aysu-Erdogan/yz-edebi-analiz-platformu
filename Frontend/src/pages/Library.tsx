@@ -1,3 +1,4 @@
+import { ScrollRegion } from '../components/ScrollRegion';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -14,8 +15,6 @@ import {
   type TextSummary,
 } from '../features/library/data';
 import { ApiError, apiRequest } from '../lib/api';
-
-const select = 'border-line bg-page rounded-xl border px-3 py-2';
 
 export function Library() {
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
@@ -62,7 +61,7 @@ export function Library() {
           <label className="flex items-center gap-2">
             Tür
             <select
-              className={select}
+              className="field"
               value={filters.genre}
               onChange={(e) => set({ genre: e.target.value })}
             >
@@ -77,7 +76,7 @@ export function Library() {
           <label className="flex items-center gap-2">
             Tema
             <select
-              className={select}
+              className="field"
               value={filters.theme}
               onChange={(e) => set({ theme: e.target.value })}
             >
@@ -92,7 +91,7 @@ export function Library() {
           <label className="flex items-center gap-2">
             Kaynak
             <select
-              className={select}
+              className="field"
               value={filters.source}
               onChange={(e) => set({ source: e.target.value })}
             >
@@ -146,7 +145,7 @@ export function Library() {
         )}
 
         {texts.isSuccess && texts.data.length > 0 && (
-          <div className="overflow-x-auto">
+          <ScrollRegion label="Metin kütüphanesi">
             <table className="table-plain">
               <caption className="sr-only">Metin kütüphanesi</caption>
               <thead>
@@ -169,7 +168,8 @@ export function Library() {
                 {texts.data.map((t) => (
                   <tr key={t.id}>
                     <th scope="row">
-                      <Link to={`/uretim/${t.id}`} aria-label={`Metin ${t.id}`}>
+                      {/* Erişilebilir ad görünen "#4" metnini içerir (WCAG 2.5.3, ses komutuyla seçilebilsin). */}
+                      <Link to={`/uretim/${t.id}`} aria-label={`Metin #${t.id}`}>
                         #{t.id}
                       </Link>
                     </th>
@@ -184,7 +184,7 @@ export function Library() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ScrollRegion>
         )}
       </section>
     </div>

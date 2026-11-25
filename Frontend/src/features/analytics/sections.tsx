@@ -1,3 +1,4 @@
+import { ScrollRegion } from '../../components/ScrollRegion';
 import { useMemo } from 'react';
 import { barConfig, modelStyle, radarConfig } from './charts';
 import { ChartCanvas } from './ChartCanvas';
@@ -39,7 +40,7 @@ export function ModelLegend({ authors }: { authors: string[] }) {
 /** Model × tür (ya da tema) ortalama puan tablosu; hücre koyuluğu ikincildir, sayı her zaman yazılıdır. */
 export function HeatTableView({ heat, caption }: { heat: HeatTable; caption: string }) {
   return (
-    <div className="overflow-x-auto">
+    <ScrollRegion label={caption}>
       <table className="table-plain">
         <caption className="sr-only">{caption}</caption>
         <thead>
@@ -74,7 +75,10 @@ export function HeatTableView({ heat, caption }: { heat: HeatTable; caption: str
                       <span className="text-xs"> (n {cell.n})</span>
                     </>
                   ) : (
-                    <span aria-label="veri yok">-</span>
+                    <>
+                      <span aria-hidden="true">-</span>
+                      <span className="sr-only">veri yok</span>
+                    </>
                   )}
                 </td>
               ))}
@@ -82,7 +86,7 @@ export function HeatTableView({ heat, caption }: { heat: HeatTable; caption: str
           ))}
         </tbody>
       </table>
-    </div>
+    </ScrollRegion>
   );
 }
 
@@ -133,7 +137,10 @@ function RadarCard({
       />
       <details className="mt-3">
         <summary className="cursor-pointer font-semibold">Tablo olarak göster</summary>
-        <div className="mt-2 overflow-x-auto">
+        <ScrollRegion
+          label={`${genreLabel(genre)}: kriter başına ortalama ham puan`}
+          className="mt-2"
+        >
           <table className="table-plain">
             <caption className="sr-only">
               {genreLabel(genre)}: kriter başına ortalama ham puan (rubrik ölçeği, en çok {scaleMax}
@@ -162,7 +169,7 @@ function RadarCard({
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       </details>
     </div>
   );
@@ -208,7 +215,7 @@ function ComparisonView({ cmp }: { cmp: Comparison }) {
   return (
     <div className="mt-6">
       <h3 className="text-lg">{scopeLabel(cmp.kapsam)}</h3>
-      <div className="overflow-x-auto">
+      <ScrollRegion label={`${scopeLabel(cmp.kapsam)}: model başına betimsel değerler`}>
         <table className="table-plain">
           <caption className="sr-only">
             {scopeLabel(cmp.kapsam)}: model başına betimsel değerler
@@ -250,7 +257,7 @@ function ComparisonView({ cmp }: { cmp: Comparison }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </ScrollRegion>
 
       {kw && (
         <p className="mt-3">
@@ -260,7 +267,7 @@ function ComparisonView({ cmp }: { cmp: Comparison }) {
       )}
 
       {cmp.ikililer.length > 0 && (
-        <div className="mt-3 overflow-x-auto">
+        <ScrollRegion label={`${scopeLabel(cmp.kapsam)}: ikili karşılaştırmalar`} className="mt-3">
           <table className="table-plain">
             <caption className="sr-only">{scopeLabel(cmp.kapsam)}: ikili karşılaştırmalar</caption>
             <thead>
@@ -292,7 +299,7 @@ function ComparisonView({ cmp }: { cmp: Comparison }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollRegion>
       )}
 
       {cmp.notlar.map((note) => (

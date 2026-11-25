@@ -15,6 +15,8 @@
   --color-muted: #584d43;
   --color-soft: #d4d1c9;
   --color-line: rgb(53 40 30 / 0.3);
+  /* Form alanı kenarlığı: tek görünür sınırı olduğu için zemine karşı en az 3:1 (WCAG 1.4.11); line yalnızca süstür (2,08:1). */
+  --color-ctrl: rgb(53 40 30 / 0.6);
   --color-accent: #2e6bff;
   --color-ok: #166534;
   --color-warn: #92400e;
@@ -55,8 +57,14 @@
   .card-dark {
     @apply bg-ink text-page rounded-(--radius-card) p-6;
   }
+  .field {
+    @apply border-ctrl bg-page min-h-11 rounded-xl border px-3 py-2;
+  }
   .btn {
     @apply inline-flex min-h-11 items-center justify-center rounded-full border border-ink px-5 py-2 font-semibold no-underline;
+  }
+  .btn[aria-disabled='true'] {
+    @apply cursor-not-allowed opacity-60;
   }
   .btn-primary {
     @apply border-accent bg-accent text-white;
