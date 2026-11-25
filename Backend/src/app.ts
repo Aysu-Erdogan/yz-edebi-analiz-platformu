@@ -11,6 +11,8 @@ import { createAnalyticsRouter } from './routes/analytics.js';
 import { createComparisonsRouter } from './routes/comparisons.js';
 import { createHealthRouter } from './routes/health.js';
 import { createRubricsRouter } from './routes/rubrics.js';
+import { createTextsRouter } from './routes/texts.js';
+import type { TextLibraryRepository } from './repositories/text-library.repository.js';
 import type { ComparisonService } from './services/comparison.service.js';
 import type { RubricService } from './services/rubric.service.js';
 
@@ -26,6 +28,8 @@ export interface AppDeps {
   exports?: ExportRepository;
   /** Karşılaştır servisi. Tanımsızsa (veritabanı yok) karşılaştırma ucu açılmaz. */
   comparisons?: ComparisonService;
+  /** Metin kütüphanesi (okuma). Tanımsızsa (veritabanı yok) metin uçları açılmaz. */
+  texts?: TextLibraryRepository;
 }
 
 /** Express uygulamasını kurar (dinlemez). Böylece testler gerçek porta ihtiyaç duymaz. */
@@ -37,6 +41,7 @@ export function createApp({
   rubrics,
   exports,
   comparisons,
+  texts,
 }: AppDeps): Express {
   const app = express();
   app.disable('x-powered-by');
@@ -72,6 +77,7 @@ export function createApp({
   if (rubrics) api.use(createRubricsRouter(rubrics));
   if (exports) api.use(createAnalyticsRouter(exports));
   if (comparisons) api.use(createComparisonsRouter(comparisons));
+  if (texts) api.use(createTextsRouter(texts));
   app.use('/api/v1', api);
 
   app.use(notFoundHandler);

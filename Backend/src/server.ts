@@ -8,6 +8,7 @@ import { PrismaExportRepository } from './repositories/prisma-export.repository.
 import { PrismaPromptTemplateRepository } from './repositories/prisma-prompt-template.repository.js';
 import { PrismaProviderModelRepository } from './repositories/prisma-provider-model.repository.js';
 import { PrismaRubricRepository } from './repositories/prisma-rubric.repository.js';
+import { PrismaTextLibraryRepository } from './repositories/prisma-text-library.repository.js';
 import { PrismaTextRepository } from './repositories/prisma-text.repository.js';
 import { createComparisonService } from './services/comparison.service.js';
 import { createEvaluationService } from './services/evaluation.service.js';
@@ -68,6 +69,7 @@ async function main(): Promise<void> {
     rubrics,
     exports: db ? new PrismaExportRepository(db) : undefined,
     comparisons: db && rubrics ? buildComparisons(env, db, rubrics) : undefined,
+    texts: db ? new PrismaTextLibraryRepository(db) : undefined,
   });
 
   const server = app.listen(env.PORT, () => {
