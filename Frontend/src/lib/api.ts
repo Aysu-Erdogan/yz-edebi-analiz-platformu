@@ -8,6 +8,9 @@
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api/v1';
 
+/** Tarayıcının doğrudan açacağı adresler (dosya indirme gibi) için tam adres. */
+export const apiUrl = (path: string): string => `${API_BASE}${path}`;
+
 export type ApiErrorCode = 'NETWORK_ERROR' | 'INVALID_RESPONSE' | 'HTTP_ERROR' | (string & {});
 
 export class ApiError extends Error {

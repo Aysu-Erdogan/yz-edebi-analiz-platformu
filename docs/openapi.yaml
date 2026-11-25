@@ -232,15 +232,50 @@ paths:
     get:
       tags: [Üretim]
       summary: Metin kütüphanesi
-      x-status: planned
+      description: |
+        Süzgece uyan metinleri kimliğe göre artan sırada, **gövdesiz özet** olarak verir (sözcük sayısı ve ilk
+        160 karakter); gövde ve puanlamalar `GET /texts/{id}` ucundadır. Yalnızca okur; yönetici girişi
+        (F4) gelene kadar herkese açıktır.
+      x-status: implemented
       operationId: listTexts
       parameters:
         - { name: genre, in: query, schema: { $ref: '#/components/schemas/Genre' } }
-        - { name: theme, in: query, schema: { type: string } }
+        - { name: theme, in: query, schema: { type: string, minLength: 1, maxLength: 32 } }
         - { name: source, in: query, schema: { type: string, enum: [generated, manual] } }
       responses:
         '200':
-          description: Metin listesi
+          description: Metin listesi (eşleşme yoksa boş liste)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+                          required: [id, genre, theme, source, wordCount, excerpt, succeededEvaluations]
+                          properties:
+                            id: { type: integer }
+                            genre: { $ref: '#/components/schemas/Genre' }
+                            theme: { type: string }
+                            source: { type: string, enum: [generated, manual] }
+                            label: { type: [string, 'null'], description: Elle girilen metinde kullanıcının etiketi }
+                            author:
+                              type: [object, 'null']
+                              description: Üretilen metnin yazarı (üretim kaydındaki model); elle girilende boş
+                              properties:
+                                provider: { type: string }
+                                modelId: { type: string }
+                                displayName: { type: string }
+                            wordCount: { type: integer }
+                            excerpt: { type: string }
+                            createdAt: { type: string, format: date-time }
+                            succeededEvaluations: { type: integer, description: Başarılı puanlama sayısı (tüm hakemler, tekrarlar dahil) }
+        '400':
+          $ref: '#/components/responses/Error'
     post:
       tags: [Üretim]
       summary: Elle metin ekle
@@ -262,6 +297,83 @@ paths:
         '201':
           description: Oluşturuldu
         '400':
+          $ref: '#/components/responses/Error'
+
+  /texts/{id}:
+    get:
+      tags: [Üretim]
+      summary: Metin ayrıntısı (gövde, üretim bilgisi ve tüm puanlamalar)
+      description: |
+        Puanlamalar kimliğe göre sıralıdır; her birinde hakem, rubrik ve komut sürümü, tekrar no, durum ve
+        kriter puanları (rubrik sırasıyla, kriter adı ve gerekçesiyle) bulunur. Başarısız puanlamada puan
+        satırı yoktur, `error` doludur. Elle girilen metinde `author` ve `generation` boştur.
+      x-status: implemented
+      operationId: getText
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: Metin
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [id, genre, theme, source, body, wordCount, evaluations]
+                        properties:
+                          id: { type: integer }
+                          genre: { $ref: '#/components/schemas/Genre' }
+                          theme: { type: string }
+                          source: { type: string, enum: [generated, manual] }
+                          label: { type: [string, 'null'] }
+                          author:
+                            type: [object, 'null']
+                            properties:
+                              provider: { type: string }
+                              modelId: { type: string }
+                              displayName: { type: string }
+                          body: { type: string }
+                          wordCount: { type: integer }
+                          createdAt: { type: string, format: date-time }
+                          succeededEvaluations: { type: integer }
+                          generation:
+                            type: [object, 'null']
+                            properties:
+                              templateVersion: { type: string }
+                              replicateNo: { type: integer }
+                              inputTokens: { type: [integer, 'null'] }
+                              outputTokens: { type: [integer, 'null'] }
+                              latencyMs: { type: [integer, 'null'] }
+                          evaluations:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id: { type: integer }
+                                judge: { type: string, example: deepseek/deepseek-flash }
+                                rubricVersion: { type: string }
+                                templateVersion: { type: [string, 'null'] }
+                                replicateNo: { type: integer }
+                                status: { type: string }
+                                error: { type: [string, 'null'] }
+                                totalScore: { type: [number, 'null'], description: 'Ağırlıklı toplam, 0-100' }
+                                createdAt: { type: string, format: date-time }
+                                scores:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      key: { type: string }
+                                      label: { type: string }
+                                      score: { type: number, description: Ham puan (rubrik ölçeğinde) }
+                                      comment: { type: [string, 'null'] }
+        '400':
+          $ref: '#/components/responses/Error'
+        '404':
           $ref: '#/components/responses/Error'
 
   /evaluations:
@@ -302,8 +414,13 @@ paths:
     post:
       tags: [Değerlendirme]
       summary: Üç metni yan yana karşılaştır
-      description: Verilen metinleri etkin rubrikle puanlayıp kriter bazında karşılaştırma döndürür.
-      x-status: planned
+      description: |
+        Metinler "elle girilen" olarak kaydedilir (model analizine girmez), her biri sistemin tek sabit hakemiyle
+        (`DEFAULT_JUDGE`, varsayılan `deepseek-flash`) etkin rubrikle ayrı puanlanır. Hakem etiketi ve model adını
+        görmez. GERÇEK, ÜCRETLİ çağrı yapar; yönetici girişi ve hız sınırı F4'te gelene kadar herkese açıktır.
+        Biri puanlanamazsa o öğe `failed` döner, diğerlerinin sonucu korunur.
+        Hakem, sağlayıcı anahtarı ya da etkin rubrik yoksa hiçbir kayıt açılmadan 503 / 404 döner.
+      x-status: implemented
       operationId: compareTexts
       requestBody:
         required: true
@@ -311,24 +428,85 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               required: [genre, theme, items]
               properties:
                 genre: { $ref: '#/components/schemas/Genre' }
-                theme: { type: string }
+                theme: { type: string, minLength: 1, maxLength: 32 }
                 items:
                   type: array
                   minItems: 2
                   maxItems: 3
                   items:
                     type: object
+                    additionalProperties: false
                     required: [body]
                     properties:
-                      label: { type: string }
-                      body: { type: string, maxLength: 20000 }
+                      label: { type: string, maxLength: 128, description: Metni yazan modelin etiketi (örn. ChatGPT) }
+                      body: { type: string, minLength: 1, maxLength: 20000 }
       responses:
         '200':
-          description: Karşılaştırma sonucu
+          description: Karşılaştırma sonucu (öğeler istek sırasıyla)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [genre, theme, judge, rubric, items, totalCostUsd]
+                        properties:
+                          genre: { $ref: '#/components/schemas/Genre' }
+                          theme: { type: string }
+                          judge: { type: string, example: deepseek/deepseek-flash }
+                          rubric:
+                            type: object
+                            properties:
+                              id: { type: integer }
+                              version: { type: string }
+                              scale:
+                                type: object
+                                properties:
+                                  min: { type: integer }
+                                  max: { type: integer }
+                              criteria:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    key: { type: string }
+                                    label: { type: string }
+                                    weight: { type: number }
+                          items:
+                            type: array
+                            items:
+                              type: object
+                              required: [label, textId, status]
+                              properties:
+                                label: { type: [string, 'null'] }
+                                textId: { type: integer }
+                                status: { type: string, enum: [succeeded, failed] }
+                                totalScore: { type: number, description: 'Ağırlıklı toplam, 0-100 (yalnızca succeeded)' }
+                                scores:
+                                  type: array
+                                  description: Yalnızca succeeded
+                                  items:
+                                    type: object
+                                    properties:
+                                      key: { type: string }
+                                      score: { type: integer, description: Ham puan (rubrik ölçeğinde) }
+                                      normalized: { type: number, description: 0-100 karşılığı }
+                                      comment: { type: string }
+                                costUsd: { type: [number, 'null'], description: Yalnızca succeeded }
+                                error: { type: string, description: Yalnızca failed }
+                          totalCostUsd: { type: [number, 'null'] }
         '400':
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/Error'
+        '503':
           $ref: '#/components/responses/Error'
 
   /analytics/summary:
@@ -343,18 +521,37 @@ paths:
   /analytics/stats:
     get:
       tags: [Analiz]
-      summary: İstatistik testleri (Kruskal-Wallis vb.)
-      x-status: planned
+      summary: Model karşılaştırması (betimsel değerler, Kruskal-Wallis, Mann-Whitney) ve kriter profili
+      description: >
+        Ölçüm birimi metindir (tekrarlar ortalanır); hakem, rubrik ve komut sürümü ayrı koşuldur.
+        `kirilimlar` tüm türler, tür ve tema bazında betimsel değerleri, `karsilastirmalar`
+        Kruskal-Wallis ve ikili Mann-Whitney sonuçlarını (Holm düzeltmeli, Cliff δ), `profiller`
+        radar grafiği için türe göre yazar başına kriter ortalamalarını verir. Eşik ya da
+        "anlamlı" yargısı yoktur, ham değerler döner.
+      x-status: implemented
       operationId: getAnalyticsStats
+      parameters:
+        - name: tema
+          in: query
+          required: false
+          description: Virgülle ayrılmış temalar; verilmezse tüm temalar (deneme verisi dahil).
+          schema: { type: string }
       responses:
         '200':
-          description: İstatistik sonuçları
+          description: >
+            `{ success, data: { olusturulma, kosullar: [{ hakem, rubrikSurumu, hakemKomutSurumu,
+            metin, elleGirilen, olculemeyen, kirilimlar, karsilastirmalar, profiller }] } }`
+        '400':
+          $ref: '#/components/responses/Error'
   /export:
     get:
       tags: [Analiz]
       summary: Veriyi dışa aktar
-      description: UTF-8 CSV ya da JSON. Taslak rubrikle üretilen sonuçlar işaretlenir.
-      x-status: planned
+      description: >
+        Dosya olarak iner (`puanlar.csv` ya da `puanlar.json`). CSV UTF-8 BOM ile, kriter başına bir
+        satır; JSON metin ve hakem gerekçeleriyle tam kayıt. Her kayıtta rubrik notu (taslak uyarısı)
+        bulunur. Başarılı yanıt zarfsızdır (dosya gövdesi).
+      x-status: implemented
       operationId: exportData
       parameters:
         - name: format
@@ -367,6 +564,8 @@ paths:
           content:
             text/csv: { schema: { type: string } }
             application/json: { schema: { type: object } }
+        '400':
+          $ref: '#/components/responses/Error'
 
   /auth/login:
     post:

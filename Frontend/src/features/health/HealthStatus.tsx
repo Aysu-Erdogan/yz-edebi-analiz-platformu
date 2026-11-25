@@ -47,7 +47,7 @@ export function HealthStatus() {
   const view = describe(isPending, error, data);
 
   return (
-    <p role="status" className="flex items-center gap-2 text-sm text-muted">
+    <p role="status" className="flex items-center gap-2 text-sm">
       <span
         aria-hidden="true"
         className={`inline-block h-2.5 w-2.5 rounded-full ${TONE_CLASS[view.tone]}`}

@@ -1,32 +1,97 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/crimson-pro';
+@import '@fontsource-variable/crimson-pro/wght-italic.css';
 @import 'tailwindcss';
 
-/* Tasarım belirteçleri: tema renkleri tek yerde. Açık/koyu tema ileride (F3) bu değişkenlerle yönetilir. */
+/*
+ * Yön C (ADR 0008): %60 Kum, %30 Kakao, %10 Elektrik mavi. Yalnızca açık tema.
+ * Mavi küçük metinde kullanılmaz (kum üstünde kontrast 3.41); yalnızca düğme, odak halkası, seçili sayfa çizgisi.
+ * Model renkleri ve durum renkleri veri rengidir, %10 payın dışındadır.
+ */
 @theme {
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-ink: #1e293b;
-  --color-muted: #64748b;
-  --color-surface: #ffffff;
-  --color-page: #f8fafc;
-  --color-line: #e2e8f0;
-  --color-ok: #059669;
-  --color-warn: #d97706;
-  --color-bad: #dc2626;
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-page: #e2e0d8;
+  --color-surface: #e2e0d8;
+  --color-ink: #35281e;
+  --color-muted: #584d43;
+  --color-soft: #d4d1c9;
+  --color-line: rgb(53 40 30 / 0.3);
+  /* Form alanı kenarlığı: tek görünür sınırı olduğu için zemine karşı en az 3:1 (WCAG 1.4.11); line yalnızca süstür (2,08:1). */
+  --color-ctrl: rgb(53 40 30 / 0.6);
+  --color-accent: #2e6bff;
+  --color-ok: #166534;
+  --color-warn: #92400e;
+  --color-bad: #b91c1c;
+  --color-model-1: #b84f00;
+  --color-model-2: #00785a;
+  --color-model-3: #a8508a;
+  --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-serif: 'Crimson Pro Variable', 'Crimson Pro', Georgia, serif;
+  --radius-card: 20px;
 }
 
 @layer base {
-  html {
-    color-scheme: light;
-  }
   body {
     @apply bg-page text-ink font-sans antialiased;
   }
-  /* Klavye ile gezenler için belirgin odak halkası */
+  h1 {
+    @apply font-extrabold tracking-tight;
+  }
+  h2,
+  h3 {
+    @apply font-bold tracking-tight;
+  }
+  a {
+    @apply underline;
+  }
   :focus-visible {
-    @apply outline-2 outline-offset-2 outline-brand-600;
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/* Ortak bileşenler (sayfalar arasında tekrar eden biçimler). */
+@layer components {
+  .card {
+    @apply border-line rounded-(--radius-card) border p-6;
+  }
+  .card-dark {
+    @apply bg-ink text-page rounded-(--radius-card) p-6;
+  }
+  .field {
+    @apply border-ctrl bg-page min-h-11 rounded-xl border px-3 py-2;
+  }
+  .btn {
+    @apply inline-flex min-h-11 items-center justify-center rounded-full border border-ink px-5 py-2 font-semibold no-underline;
+  }
+  .btn[aria-disabled='true'] {
+    @apply cursor-not-allowed opacity-60;
+  }
+  .btn-primary {
+    @apply border-accent bg-accent text-white;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-current px-3 py-0.5 text-sm font-bold;
+  }
+  .table-plain {
+    @apply w-full border-collapse text-left text-sm;
+  }
+  .table-plain th {
+    @apply bg-ink text-page px-3 py-2 font-bold;
+  }
+  .table-plain tbody th {
+    @apply text-ink bg-transparent font-semibold;
+  }
+  .table-plain td {
+    @apply border-line border-b px-3 py-2;
+  }
+  .num {
+    @apply text-right tabular-nums;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
